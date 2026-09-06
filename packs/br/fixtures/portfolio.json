@@ -1,0 +1,5 @@
+{
+  "$comment": "PACKS.md §11.5 golden portfolio. Transactions across every BR instrument kind. Fill in when the kernel valuation path exists (Milestones 1–3); the conformance suite skips the golden test while status is draft AND expected.json is empty.",
+  "baseCurrency": "BRL",
+  "transactions": []
+}

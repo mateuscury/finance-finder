@@ -1,0 +1,7 @@
+{
+  "$comment": "Hand-computed expected values, stated independently of the kernel. Kernel output must match to 1e-8.",
+  "asOf": null,
+  "valuation": null,
+  "twr": null,
+  "mwr": null
+}
