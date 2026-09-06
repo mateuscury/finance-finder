@@ -76,7 +76,7 @@ never by the database.
 
 ```sql
 create table series_points (
-  series_id text        not null,   -- 'br.cdi', 'uk.sonia', 'fx.usdbrl'
+  series_id text        not null,   -- 'br.cdi', 'uk.sonia', 'global.usdbrl'
   date      date        not null,
   value     numeric(24,10) not null,
   primary key (series_id, date)
@@ -86,10 +86,13 @@ create table series_points (
 This table is **global public market data, not user data**. It carries no
 `user_id`. Writes come only from cron via the service role (ARCHITECTURE §4.3 is
 about user-scoped tables; state this explicitly in the migration comment so a
-future reviewer does not "fix" it by adding RLS).
+future reviewer does not "fix" it by adding RLS). Because Supabase grants
+`anon`/`authenticated` full privileges on new public tables by default, the
+migration must `revoke all` from those roles and `grant select` back — no RLS
+does not mean no access control.
 
-The USDBRL series from the original spec is no longer special. It is a series
-with `kind: fx_rate`.
+The USDBRL series from the original spec is no longer special. It is
+`global.usdbrl`, a series with `kind: fx_rate` registered by `packs/global`.
 
 ### 3.3 `user_settings` gains base currency
 
@@ -253,9 +256,10 @@ identical compounding path CDI uses, with no new code.
 
 `roles` is what drives the UI. Anything with `benchmark` appears in the
 comparison toggles; anything with `deflator` can be selected for real returns.
-The original spec's "eight benchmarks with togglable UI" becomes "the BR pack
-registers eight series with the benchmark role" — a data change, not a code
-change, and the UK pack registering six more requires nothing of you.
+The original spec's "benchmarks with togglable UI" becomes "the BR pack
+registers series with the benchmark role" (today: CDI, SELIC, IPCA, Ibovespa,
+IFIX, plus USDBRL from `global`) — a data change, not a code change, and the UK
+pack registering six more requires nothing of you.
 
 `inflation_index` carries an interpolation policy because monthly inflation
 prints against daily portfolio valuations is a real decision, and IPCA and CPIH
@@ -434,7 +438,8 @@ Move out of `SPEC.md` into `packs/br`:
 
 - The six ingestion sources → three `PriceSource` adapters
   (Tesouro Transparente, brapi.dev, BCB SGS) plus three that belong elsewhere.
-- The eight benchmarks → eight `SeriesDescriptor`s with the `benchmark` role.
+- The benchmarks → `SeriesDescriptor`s with the `benchmark` role (five in `br`,
+  USDBRL in `global`).
 - TD, CDB/LCI, FII definitions → `InstrumentKind`s.
 - BUS/252 conventions, B3 holidays → `MarketCalendar`.
 

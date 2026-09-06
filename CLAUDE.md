@@ -8,18 +8,28 @@ for validation, vitest + fast-check for tests.
 
 ## Design documents (root)
 
-| Doc | Status | Owns |
-|---|---|---|
-| `PACKS.md` | **present** | market-pack architecture; kernel/pack boundary; conformance gates |
-| `ARCHITECTURE.md` | **missing** | §2 scope (no tax/fiscal), §3 Vercel Hobby limits, §4 invariants (transactions untouchable, BRL→base currency decomposition, RLS, decimal discipline) |
-| `SPEC.md` | **missing** | schema core, calculation formulas + citations, the ten screens, design system, Recharts config, the eight BR benchmarks |
-| `MILESTONES.md` | **missing** | delivery order; PACKS.md §14 says `packs/br` from the first commit and a canary `packs/uk` as Milestone 4 |
+| Doc | Owns |
+|---|---|
+| `PACKS.md` | **architecture**: market-pack model, kernel/pack boundary, schema changes for multi-country, conformance gates, governance |
+| `ARCHITECTURE.md` | **features & principles**: scope (no tax/fiscal, no brokers), the nine invariants (§4.9 = privacy posture), data flow, glossary |
+| `SPEC.md` | **features**: calculation formulas, ingestion/snapshot behaviour, the ten screens, design system, edge cases; §2–3 mirror the migration |
+| `MILESTONES.md` | **missing** — delivery order. PACKS.md §14: `packs/br` from the first commit, canary `packs/uk` + conformance as Milestone 4 |
 
-When the missing docs arrive, reconcile: the initial migration's base columns,
-`packs/br/series.ts` benchmark list, and `lib/calc/` formulas.
+### Document precedence
 
-Your own living spec for user stories lives in `specs/SPEC.md` (QA system);
-the root `SPEC.md` is the technical spec. Keep them distinct.
+`PACKS.md` was written after `ARCHITECTURE.md`/`SPEC.md`, once the project
+became multi-country and open-source; the code was scaffolded from it.
+
+- **Architecture, schema shape, multi-country, contribution model** →
+  `PACKS.md` + the code it produced (`supabase/migrations/`, `packs/types.ts`,
+  `packs/schema.ts`, `packs/conformance/`) win.
+- **What the product does** (scope, calculations, screens, design, edge cases)
+  → `ARCHITECTURE.md` and `SPEC.md` win.
+- The installed stack (`package.json`) beats any version pinned in prose.
+
+The root `SPEC.md` is the technical spec. `specs/SPEC.md` and
+`specs/PERSONAS.md` are the QA-system user-story templates (still unfilled) —
+keep them distinct.
 
 ## The one rule (PACKS.md §1)
 
@@ -49,6 +59,7 @@ pnpm dev                 # Next.js
 pnpm typecheck           # next typegen && tsc
 pnpm lint                # ESLint; bans fetch/axios/lib imports inside packs/
 pnpm test                # all vitest
+pnpm test:calc           # lib/calc only — the suite that catches financial bugs
 pnpm test:packs          # conformance suite only
 pnpm codeowners          # regenerate .github/CODEOWNERS from manifests
 pnpm db:start / db:reset # local Supabase (Docker)
@@ -59,10 +70,16 @@ pnpm db:start / db:reset # local Supabase (Docker)
 - Money and rates are `decimal.js` in the kernel and **decimal strings** at
   every boundary (pack `FetchResult`, JSON fixtures). Never `parseFloat`, never
   a JS `number` for a value.
-- `series_points` has NO `user_id` and NO RLS by design. Do not "fix" it.
+- `series_points` and `ingest_cursors` have NO `user_id` and NO RLS by design.
+  Access control is by grants: writes revoked from `anon`/`authenticated`, so
+  only cron (service role) writes. Do not "fix" it by adding RLS.
 - Packs never import from `lib/`, never add npm deps, never use global `fetch`.
   Lint and the conformance suite both enforce this.
 - `transactions` and `portfolio_snapshots` are never touched by pack work.
+- Logs carry ids, counts, status codes, durations — **never row values, never
+  a full pack URL** (brapi's token is a query param). No analytics, telemetry
+  or error-reporting SaaS by default; fonts via `next/font`, never a CDN. Auth
+  reads identity with `getUser()`, never `getSession()`. SPEC §12.
 - No tax or fiscal reporting features, ever (ARCHITECTURE §2).
 - Two Vercel crons total. Ingestion iterates sources inside one invocation
   with a per-source time budget and `ingest_cursors` resume markers.
@@ -80,6 +97,13 @@ pnpm db:start / db:reset # local Supabase (Docker)
 ## Current state (2026-09-05)
 
 Scaffold only. `packs/br` and `packs/global` are `draft`: manifests, B3/ANBIMA
-calendar and the BCB SGS adapter are real; brapi, Tesouro Transparente and PTAX
-adapters are stubs. `lib/calc` and `lib/packs` are empty READMEs. The 13 skipped
-conformance tests are the to-do list for Milestone 1.
+calendar and the BCB SGS adapter are real; brapi, Tesouro Transparente, PTAX
+and AwesomeAPI adapters are stubs. `lib/calc` and `lib/packs` are empty READMEs.
+The initial migration is reconciled with SPEC.md (txn_type enum, cash_flows,
+per-asset snapshots with `carried_forward`, manual prices) and has not been
+applied to any environment yet — it may still be edited in place. The 13
+skipped conformance tests are the to-do list for Milestone 1. `app/page.tsx`
+is still the Next.js starter. Specified but unbuilt: CSV import (SPEC §9.1),
+navigation/first-run/empty states (SPEC §9.2–9.5), auto price fetch on asset
+creation, resumable snapshot rebuild (SPEC §8), and `scripts/bootstrap-user.ts`
+— do not add its `package.json` entry until the script exists.

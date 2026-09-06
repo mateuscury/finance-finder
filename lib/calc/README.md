@@ -11,4 +11,5 @@ Planned modules (Milestones 1–3, per SPEC.md formulas):
 - `series/` — one cumulative-return function per closed `SeriesKind`.
 - `fx.ts` — resolution, USD triangulation, carry-forward with staleness flags (PACKS.md §8).
 
-Nothing here yet: SPEC.md (formulas and citations) is not in the repo.
+Nothing here yet. Formulas: SPEC.md §4–§6. `pnpm test:calc` runs only this
+directory.

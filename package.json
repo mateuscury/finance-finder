@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:calc": "vitest run lib/calc --passWithNoTests",
     "test:packs": "vitest run packs",
     "codeowners": "tsx scripts/generate-codeowners.ts",
     "db:start": "supabase start",

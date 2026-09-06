@@ -40,7 +40,8 @@ describe("bcb-sgs adapter", () => {
 
   it("property: every emitted point satisfies the output contract for any well-formed payload", async () => {
     const row = fc.record({
-      data: fc.date({ min: new Date("1990-01-01"), max: new Date("2025-06-30") }).map((d) => {
+      // noInvalidDate: fast-check 4 emits `Invalid Date` by default, and toISOString() then throws.
+      data: fc.date({ min: new Date("1990-01-01"), max: new Date("2025-06-30"), noInvalidDate: true }).map((d) => {
         const iso = d.toISOString().slice(0, 10);
         const [y, m, dd] = iso.split("-");
         return `${dd}/${m}/${y}`;
