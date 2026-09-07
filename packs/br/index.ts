@@ -4,6 +4,7 @@ import { brInstruments } from "./instruments";
 import { brSeries } from "./series";
 import { bcbSgsSource } from "./sources/bcb-sgs";
 import { brapiSource } from "./sources/brapi";
+import { ibgeSidraSource } from "./sources/ibge-sidra";
 import { tesouroTransparenteSource } from "./sources/tesouro-transparente";
 
 export const brPack: MarketPack = {
@@ -14,7 +15,7 @@ export const brPack: MarketPack = {
   locale: "pt-BR",
   instruments: brInstruments,
   series: brSeries,
-  sources: [bcbSgsSource, brapiSource, tesouroTransparenteSource],
+  sources: [bcbSgsSource, ibgeSidraSource, brapiSource, tesouroTransparenteSource],
   calendar: brCalendar,
   maintainers: ["mateuscury"],
   status: "draft",

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { PACKS } from "..";
-import { CURVE_METADATA_SAMPLE, MarketPackSchema } from "../schema";
+import { CURVE_METADATA_SAMPLE, CurveMetadataBaseSchema, MarketPackSchema } from "../schema";
 import { PACK_API_VERSION, type MarketPack } from "../types";
 
 const packIds = PACKS.map((p) => p.id);
@@ -61,13 +61,38 @@ describe("registry", () => {
       }
     }
   });
+
+  it("has no dependency cycles", () => {
+    const visit = (pack: MarketPack, path: string[]) => {
+      expect(path, `pack dependency cycle: ${[...path, pack.id].join(" -> ")}`).not.toContain(pack.id);
+      for (const dependencyId of pack.dependencies ?? []) {
+        const dependency = PACKS.find((candidate) => candidate.id === dependencyId);
+        if (dependency) visit(dependency, [...path, pack.id]);
+      }
+    };
+    for (const pack of PACKS) visit(pack, []);
+  });
 });
 
 function resolvable(pack: MarketPack) {
-  const scope = [pack, ...PACKS.filter((p) => (pack.dependencies ?? []).includes(p.id))];
+  const scope = scopePacks(pack);
   const series = new Set(scope.flatMap((p) => p.series.map((s) => s.id)));
   const sources = new Set(scope.flatMap((p) => p.sources.map((s) => s.id)));
   return { series, sources };
+}
+
+function scopePacks(pack: MarketPack): MarketPack[] {
+  const found = new Map<string, MarketPack>();
+  const visit = (candidate: MarketPack) => {
+    if (found.has(candidate.id)) return;
+    found.set(candidate.id, candidate);
+    for (const dependencyId of candidate.dependencies ?? []) {
+      const dependency = PACKS.find((p) => p.id === dependencyId);
+      if (dependency) visit(dependency);
+    }
+  };
+  visit(pack);
+  return [...found.values()];
 }
 
 describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential integrity", (_, pack) => {
@@ -117,7 +142,7 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential i
 });
 
 function scopeSeries(pack: MarketPack) {
-  return [pack, ...PACKS.filter((p) => (pack.dependencies ?? []).includes(p.id))].flatMap((p) => p.series);
+  return scopePacks(pack).flatMap((p) => p.series);
 }
 
 describe("curve_mark_to_market metadata constraint (PACKS.md §5)", () => {
@@ -125,7 +150,21 @@ describe("curve_mark_to_market metadata constraint (PACKS.md §5)", () => {
     p.instruments.filter((i) => i.valuation.kind === "curve_mark_to_market").map((k) => [k.id, k] as const),
   );
 
-  it.skipIf(curveKinds.length === 0)("every curve instrument accepts the kernel shape and rejects an empty object", () => {
+  // Deliberately NOT skipped when no pack currently uses the strategy. Since
+  // `br.tesouro_direto` moved to `nav_unit_price` (MILESTONES.md decision 2)
+  // there are no curve instruments in-repo, but the kernel constraint still
+  // governs the next pack that adds one, so it is asserted directly. Skipping
+  // here would let the shared shape rot unnoticed until Milestone 4.
+  it("the kernel curve metadata shape accepts its canonical sample and rejects an empty object", () => {
+    expect(CurveMetadataBaseSchema.safeParse(CURVE_METADATA_SAMPLE).success).toBe(true);
+    expect(CurveMetadataBaseSchema.safeParse({}).success).toBe(false);
+    expect(
+      CurveMetadataBaseSchema.safeParse({ ...CURVE_METADATA_SAMPLE, maturity: undefined }).success,
+      "a curve instrument without a maturity cannot be discounted",
+    ).toBe(false);
+  });
+
+  it("every in-repo curve instrument accepts the kernel shape and rejects an empty object", () => {
     for (const [id, kind] of curveKinds) {
       // Packs may add required fields on top; fill the common ones permissively.
       const sample = { ...CURVE_METADATA_SAMPLE, titulo: "x", name: "x" };

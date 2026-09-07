@@ -65,8 +65,9 @@ keeps every self-hoster running only reviewed code. Full contract: `PACKS.md`.
 
 ## 2. Schema (`supabase/migrations/20260905000000_initial_schema.sql`)
 
-Authoritative DDL lives in the migration; this is the same schema with the
-commentary stripped. Column names follow the migration (`trade_date`,
+Authoritative, executable DDL and every integrity constraint live in the
+migration; this section is a readable shape, not a substitute for applying or
+reviewing that file. Column names follow the migration (`trade_date`,
 `unit_price`, `fees`, `note`, `source_id`).
 
 ```sql
@@ -74,14 +75,13 @@ commentary stripped. Column names follow the migration (`trade_date`,
 -- never quantity (§11).
 create type txn_type as enum ('buy', 'sell', 'dividend', 'interest', 'fee');
 
--- Currencies are char(3) ISO 4217, validated in the app (packs/schema.ts
--- CurrencyCodeSchema), never by the database.
+-- Currencies are char(3) ISO 4217, validated both in the app and by DB checks.
 
 -- USER SETTINGS
 create table user_settings (
   user_id       uuid primary key references auth.users on delete cascade,
   base_currency char(3) not null default 'BRL',    -- display currency (§1.2)
-  enabled_packs text[]  not null default '{br}',    -- dependencies resolved transitively (§7)
+  enabled_packs text[]  not null default '{}',      -- draft packs are never enabled by default
   locale        text    not null default 'pt-BR',   -- number/date formatting only
   theme         text    not null default 'system',  -- 'system' | 'light' | 'dark'
   last_export_at timestamptz,                      -- backup reminder (§12.3); null = never exported
@@ -107,7 +107,7 @@ create table assets (
 create table transactions (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users on delete cascade,
-  asset_id    uuid not null references assets on delete cascade,
+  asset_id    uuid not null,              -- composite FK (asset_id,user_id) prevents cross-owner references
   trade_date  date not null,
   type        txn_type not null,
   quantity    numeric(24,10) not null,   -- signed: buy +, sell −; 0 for dividend/interest/fee
@@ -148,7 +148,8 @@ create table series_points (
   series_id text not null,
   date      date not null,
   value     numeric(24,10) not null,
-  primary key (series_id, date)
+  tenor_days integer not null default 0, -- 0 scalar; >0 yield-curve maturity in days
+  primary key (series_id, date, tenor_days)
 );
 
 -- INGEST_CURSORS (per-source resume markers for the single ingest cron — §7)
@@ -162,7 +163,7 @@ create table ingest_cursors (
 -- PORTFOLIO_SNAPSHOTS (daily valuation cache; one row per user × asset × day)
 create table portfolio_snapshots (
   user_id           uuid not null references auth.users on delete cascade,
-  asset_id          uuid not null references assets on delete cascade,
+  asset_id          uuid not null, -- composite FK (asset_id,user_id) prevents cross-owner references
   date              date not null,
   quantity          numeric(24,10) not null,
   price_native      numeric(24,10) not null,
@@ -183,10 +184,14 @@ create index assets_user_idx                  on assets (user_id);
 create index transactions_user_asset_date_idx on transactions (user_id, asset_id, trade_date);
 create index transactions_user_date_idx       on transactions (user_id, trade_date desc);
 create index cash_flows_user_date_idx         on cash_flows (user_id, date desc);
-create index prices_asset_date_idx            on prices (asset_id, date desc);
-create index series_points_id_date_idx        on series_points (series_id, date desc);
 create index snapshots_user_date_idx          on portfolio_snapshots (user_id, date desc);
 ```
+
+The migration additionally enforces transaction signs by type, positive prices
+and FX rates, valid currencies/themes, unique per-user asset identity, and
+owner-matching composite foreign keys. The `prices` and `series_points` primary
+keys already serve their date-range scans; duplicate descending indexes are not
+created.
 
 ---
 
@@ -210,19 +215,20 @@ create policy "own transactions" on transactions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own cash flows" on cash_flows
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own snapshots" on portfolio_snapshots
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "read own snapshots" on portfolio_snapshots
+  for select using (auth.uid() = user_id);
 
--- prices are scoped through the parent asset; users may write 'manual' prices
-create policy "prices of own assets" on prices for all
-  using      (exists (select 1 from assets a where a.id = prices.asset_id and a.user_id = auth.uid()))
-  with check (exists (select 1 from assets a where a.id = prices.asset_id and a.user_id = auth.uid()));
+-- prices are scoped through the parent asset; authenticated clients can mutate
+-- only rows whose resulting source_id is 'manual'. Pack provenance and all
+-- snapshot writes are service-role-only. See the migration for verb policies.
 
 -- Supabase grants anon/authenticated ALL on new public tables by default.
 -- Without these revokes, any anon-key holder could write market data.
 revoke all    on series_points  from anon, authenticated;
 grant  select on series_points  to   authenticated;
 revoke all    on ingest_cursors from anon, authenticated;
+revoke insert, update, delete, truncate, references, trigger
+  on portfolio_snapshots from anon, authenticated;
 ```
 
 ---
@@ -275,6 +281,11 @@ exact compounding path. Series carry `roles` (`benchmark`, `deflator`,
 `accrual_index`, `discount_curve`, `fx`) that drive the UI: anything with
 `benchmark` appears in the Performance toggles; anything with `deflator` is
 selectable for real returns.
+
+Rates cross the adapter boundary in unit form (`"0.12"` means 12%), index kinds
+cross as levels, and FX crosses as quote units per base unit. Yield curves store
+one `series_points` row per declared tenor using `tenor_days`; scalar series use
+zero. An adapter must reject data it cannot normalize safely.
 
 ---
 
@@ -331,15 +342,17 @@ Writes go to `prices` (per-asset native quotes) and `series_points` (market
 series), both idempotent on `(…, date)`; per-source progress is recorded in
 `ingest_cursors`. The BR pack's initial sources map from
 the original six: Tesouro Transparente, brapi.dev, BCB SGS live in `packs/br`;
-CoinGecko, a Yahoo `market_price` source, and PTAX/AwesomeAPI FX live in
-`packs/global`.
+CoinGecko, a Yahoo `market_price` source, and PTAX FX live in
+`packs/global` (AwesomeAPI deferred until a series needs it — `MILESTONES.md`
+Milestone 1 decisions).
 
 **Cron authentication.** Both cron routes are `GET` (Vercel Cron issues GET)
 and require `Authorization: Bearer ${CRON_SECRET}`, checked before any work.
 Reject with 401 otherwise. Vercel sends the header automatically; manual
 invocation uses the same header. Schedules live in `vercel.json`.
 
-**Cron budget.** Vercel Hobby allows two cron jobs total. Do not create one job
+**Cron budget.** This project ships two cron jobs by design (Vercel Hobby
+currently allows far more, each at most daily). Do not create one job
 per pack. The single ingest job iterates all enabled packs' sources within one
 invocation, with a per-source time budget and resume markers so a slow source
 can't starve the rest.
@@ -663,8 +676,12 @@ canonical format — so the app's own import reads it back — and
 `finance-finder-YYYY-MM-DD.json`, a complete dump:
 `{ version: 1, exported_at, settings, assets, transactions, cash_flows,
 manual_prices }`. Money as decimal strings, as at every boundary. Each export
-stamps `user_settings.last_export_at`. Restoring from the JSON is not in v1;
-the CSV round-trip is the guaranteed portability path.
+stamps `user_settings.last_export_at`.
+
+**Release blocker:** full JSON restore and an automated export→delete→restore
+round-trip test must exist before the project is declared safe for real data.
+CSV alone cannot restore settings, fixed-income metadata, cash flows, or manual
+prices. Until then, `pnpm release:check` intentionally fails.
 
 **Backup reminder.** Supabase's free tier keeps no automated backups. Settings
 shows the last export date and the status strip (§9.2) nudges once

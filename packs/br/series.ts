@@ -30,7 +30,10 @@ export const brSeries: SeriesDescriptor[] = [
     id: "br.ipca",
     label: "IPCA",
     kind: { kind: "inflation_index", interpolation: "linear_daily" },
-    sourceId: "br.bcb_sgs",
+    // IBGE publishes the número-índice directly. BCB SGS 433 is a monthly
+    // percentage change, and chaining it into a level would be math inside a
+    // pack (MILESTONES.md decision 1).
+    sourceId: "br.ibge_sidra",
     roles: ["benchmark", "deflator", "accrual_index"],
   },
   {
@@ -46,13 +49,5 @@ export const brSeries: SeriesDescriptor[] = [
     kind: { kind: "index_level" },
     sourceId: "br.brapi",
     roles: ["benchmark"],
-  },
-  {
-    id: "br.td_curve",
-    label: "Tesouro Direto — taxas de referência",
-    // Tenors in business days (BUS/252), matching how Brazilian curves are quoted.
-    kind: { kind: "yield_curve", tenors: [21, 63, 126, 252, 504, 756, 1260, 2520, 5040, 7560] },
-    sourceId: "br.tesouro_transparente",
-    roles: ["discount_curve"],
   },
 ];

@@ -12,7 +12,7 @@
 
 import type { ZodType } from "zod";
 
-export const PACK_API_VERSION = 1 as const;
+export const PACK_API_VERSION = 3 as const;
 
 /** ISO 4217, upper-case, three letters. Validated by the manifest schema. */
 export type CurrencyCode = string;
@@ -54,11 +54,16 @@ export type ValuationStrategyKind = ValuationStrategy["kind"];
 // ---------------------------------------------------------------------------
 
 export type SeriesKind =
+  /** `value` is a unit rate: "0.0005" means 0.05%, never 0.0005%. */
   | { kind: "rate_daily"; dayCount: DayCount }
+  /** `value` is a unit rate: "0.12" means 12% per year. */
   | { kind: "rate_annual"; dayCount: DayCount }
   | { kind: "index_level" }
+  /** `value` is an index level, not a periodic percentage change. */
   | { kind: "inflation_index"; interpolation: "none" | "linear_daily" }
+  /** `value` is quote-currency units per one base-currency unit. */
   | { kind: "fx_rate"; base: CurrencyCode; quote: CurrencyCode }
+  /** Each point carries one of these maturities in `tenorDays`. Rates are unit rates. */
   | { kind: "yield_curve"; tenors: number[] };
 
 export type SeriesRole =
@@ -129,7 +134,20 @@ export interface FetchContext {
   env: Readonly<Record<string, string | undefined>>;
   /** Wall clock, injectable so fixtures replay deterministically. */
   now(): Date;
-  log(message: string): void;
+  /**
+   * Aborted when this source's slice of the invocation budget is spent.
+   * `ctx.http` is already bound to it, so an in-flight request is cancelled for
+   * free. An adapter that parses a large body MUST also poll this inside its
+   * loop: a `Promise.race` around the whole parse returns early while the
+   * underlying work keeps burning the invocation (plan §0.1).
+   *
+   * On abort an adapter returns a warning and NO points. A partially parsed
+   * range is indistinguishable from a genuinely short one, and the scheduler
+   * would record it as covered.
+   */
+  signal: AbortSignal;
+  /** Milliseconds left before `signal` aborts. Never negative. */
+  remainingMs(): number;
 }
 
 export interface FetchPoint {
@@ -137,11 +155,58 @@ export interface FetchPoint {
   date: IsoDate;
   value: DecimalString; // never a JS number
   currency: CurrencyCode | null;
+  /** Required for yield-curve series; absent for every scalar series and asset price. */
+  tenorDays?: number;
+}
+
+/**
+ * What a source is able to say about ONE requested ref over a bounded window.
+ *
+ * This exists so the scheduler never has to read warning prose to decide
+ * whether a watermark may advance (plan §0.1, §3.2):
+ *
+ * - `complete: true` with no points means "successfully checked, nothing
+ *   exists" — the only way an empty interval may certify itself as covered.
+ * - `complete: false` means "known incomplete". When `returned` starts after
+ *   `requested`, `returned.from` is the source's honest lower availability
+ *   boundary and is persisted as `unavailable_before` rather than being
+ *   re-requested every night.
+ */
+export interface RefCoverage {
+  ref: string;
+  /** The window the adapter actually asked upstream for. */
+  requested: { from: IsoDate; to: IsoDate };
+  /** Span of the points returned for this ref, or null when there were none. */
+  returned: { from: IsoDate; to: IsoDate } | null;
+  /** True only when the source authoritatively covered the whole request. */
+  complete: boolean;
+  /**
+   * The source's honest lower availability boundary: it confirmed it cannot
+   * serve ANY observation before this date, whatever window is requested.
+   *
+   * This must be stated EXPLICITLY rather than inferred from `returned`,
+   * because the case that matters most is the one where nothing came back at
+   * all. A source with a rolling window (brapi's free plan reaches back three
+   * months) asked for a window entirely older than that returns no points and
+   * `complete: false` — indistinguishable from a transient failure. The
+   * scheduler would then refuse to advance and re-request the identical
+   * unreachable chunk on every run, forever.
+   *
+   * Set it whenever the source KNOWS the limit; leave it undefined when a lack
+   * of data means "temporarily unavailable" rather than "structurally
+   * unreachable".
+   */
+  unavailableBefore?: IsoDate;
 }
 
 export interface FetchResult {
   points: FetchPoint[];
   warnings: string[];
+  /**
+   * One entry per requested ref, for bounded (`from`/`to`) requests only.
+   * Omitted for unbounded `spot` requests, which carry no interval to cover.
+   */
+  coverage?: RefCoverage[];
 }
 
 export interface PriceSource {

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "cases": [
+    {
+      "input": {
+        "capability": "series",
+        "refs": [
+          "br.ipca"
+        ],
+        "from": "2090-01-01",
+        "to": "2090-03-31"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/209001-209003/h/n",
+            "headers": {
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8"
+            },
+            "body": "[]"
+          }
+        }
+      ]
+    }
+  ]
+}

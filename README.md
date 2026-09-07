@@ -7,20 +7,25 @@ other markets are added as **packs** of data and mappings, never as new math.
 Read [`PACKS.md`](./PACKS.md) for the architecture (multi-country packs,
 kernel boundary, contribution model), then [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 for principles and scope and [`SPEC.md`](./SPEC.md) for calculations, screens
-and design. `MILESTONES.md` is still to be added. Precedence between them is
+and design. [`MILESTONES.md`](./MILESTONES.md) defines delivery and safety
+gates. Precedence between them is
 set out in [`CLAUDE.md`](./CLAUDE.md).
 
 ## Stack
 
-Next.js 16 · Supabase (Postgres, RLS) · Vercel (two crons) · pnpm ·
+Next.js 16 · Supabase (Postgres, RLS) · Vercel (two crons, by design) · pnpm ·
 TypeScript · decimal.js · zod · vitest + fast-check
 
 ## Getting started
+
+Prerequisites: Node 22+, pnpm 10, a Docker-compatible container runtime, and
+the Supabase CLI. The checked-in local configuration disables public signups.
 
 ```bash
 pnpm install
 cp .env.example .env.local        # fill Supabase keys
 pnpm db:start                     # local Supabase via Docker; applies supabase/migrations
+pnpm bootstrap:user               # create the one owner without enabling signups
 pnpm dev
 ```
 
@@ -36,6 +41,12 @@ conformance suite in `packs/conformance/`. `pnpm test:packs` is the gate.
 ## Status
 
 Scaffold. Packs `br` and `global` are draft. Kernel math not yet implemented.
+
+**Do not enter real portfolio data yet.** Normal CI validates development work,
+including explicitly skipped draft-pack tests. `pnpm release:check` is the
+separate production-data gate and intentionally fails until all adapters,
+financial golden tests, authentication screens, and full backup restore are
+implemented. Draft packs are never enabled for new users.
 
 ## Licence
 
@@ -59,11 +70,10 @@ values. Nothing else goes anywhere: no analytics, no telemetry, no
 error-reporting service, fonts served from your own origin. Full detail in
 [`SPEC.md`](./SPEC.md) §12.
 
-One owner account, created from the CLI; signups are disabled. Optional TOTP
-second factor. Export everything any time — transactions in the same CSV the
-app imports, plus a full JSON dump — and delete everything with one confirmed
-action. Supabase's free tier keeps no backups, so export regularly; the app
-reminds you.
+The target product has one owner account created from the CLI, disabled public
+signups, and optional TOTP. Export, tested full restore, backup reminders, and
+confirmed deletion are release-gated features described in `SPEC.md`; they are
+not present in this scaffold yet.
 
 ## Disclaimer
 

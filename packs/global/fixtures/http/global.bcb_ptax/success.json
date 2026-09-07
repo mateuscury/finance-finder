@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "cases": [
+    {
+      "input": {
+        "capability": "fx",
+        "refs": [
+          "global.usdbrl"
+        ],
+        "from": "2026-09-01",
+        "to": "2026-09-04"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@dataInicial='09-01-2026'&@dataFinalCotacao='09-04-2026'&$format=text/csv",
+            "headers": {
+              "accept": "text/csv",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/csv;charset=UTF-8"
+            },
+            "body": "cotacaoCompra,cotacaoVenda,dataHoraCotacao\r\n\"5,1564\",\"5,157\",2026-09-01 13:06:03.857125\r\n\"5,1267\",\"5,1273\",2026-09-02 13:02:37.601302\r\n\"5,0956\",\"5,0962\",2026-09-03 13:06:38.232974\r\n\"5,1247\",\"5,1253\",2026-09-04 13:03:59.556874\r\n"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "capability": "historical",
+        "refs": [
+          "global.usdbrl"
+        ],
+        "from": "2026-09-01",
+        "to": "2026-09-04"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@dataInicial='09-01-2026'&@dataFinalCotacao='09-04-2026'&$format=text/csv",
+            "headers": {
+              "accept": "text/csv",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/csv;charset=UTF-8"
+            },
+            "body": "cotacaoCompra,cotacaoVenda,dataHoraCotacao\r\n\"5,1564\",\"5,157\",2026-09-01 13:06:03.857125\r\n\"5,1267\",\"5,1273\",2026-09-02 13:02:37.601302\r\n\"5,0956\",\"5,0962\",2026-09-03 13:06:38.232974\r\n\"5,1247\",\"5,1253\",2026-09-04 13:03:59.556874\r\n"
+          }
+        }
+      ]
+    }
+  ]
+}

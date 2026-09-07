@@ -49,3 +49,57 @@ export function importSpecifiers(file: string): string[] {
   while ((m = re2.exec(src))) specs.push(m[1]);
   return specs;
 }
+
+// ---------------------------------------------------------------------------
+// Adapter test context (plan §1: "hand-rolled context tests like bcb-sgs.test.ts")
+//
+// Every adapter test builds a FetchContext. Centralising it means the pack API
+// contract has exactly one test-side twin: when types.ts changes, this file
+// fails to compile and every adapter test is updated together, rather than five
+// near-identical fakes drifting apart.
+// ---------------------------------------------------------------------------
+import type { FetchContext, PackHttpResponse } from "../types";
+
+export function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}): PackHttpResponse {
+  const text = JSON.stringify(body);
+  return { status, headers, text: async () => text, json: async () => body };
+}
+
+/** For sources whose decimal lexemes only survive as raw text (PTAX CSV, Tesouro CSV). */
+export function textResponse(status: number, text: string, headers: Record<string, string> = {}): PackHttpResponse {
+  return {
+    status,
+    headers,
+    text: async () => text,
+    json: async () => JSON.parse(text) as unknown,
+  };
+}
+
+export interface TestContextOptions {
+  /** Handles every ctx.http.get. Throw to simulate a transport failure or abort. */
+  get: (url: string, init?: { headers?: Record<string, string> }) => Promise<PackHttpResponse> | PackHttpResponse;
+  env?: Record<string, string | undefined>;
+  now?: string;
+  signal?: AbortSignal;
+  /** Static budget, or a function so a test can drain it across calls. */
+  remainingMs?: number | (() => number);
+}
+
+export function testContext(options: TestContextOptions): FetchContext {
+  const { get, env = {}, now = "2026-09-06T12:00:00Z", signal = new AbortController().signal } = options;
+  const remaining = options.remainingMs ?? 60_000;
+  return {
+    http: { get: async (url, init) => get(url, init) },
+    env,
+    now: () => new Date(now),
+    signal,
+    remainingMs: () => Math.max(0, typeof remaining === "function" ? remaining() : remaining),
+  };
+}
+
+/** An already-aborted signal, for budget-exhaustion tests. */
+export function abortedSignal(): AbortSignal {
+  const c = new AbortController();
+  c.abort();
+  return c.signal;
+}

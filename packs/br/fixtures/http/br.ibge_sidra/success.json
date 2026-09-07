@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "cases": [
+    {
+      "input": {
+        "capability": "series",
+        "refs": [
+          "br.ipca"
+        ],
+        "from": "2026-01-01",
+        "to": "2026-07-31"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/202601-202607/h/n",
+            "headers": {
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8"
+            },
+            "body": "[\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7427.7200000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202601\",\r\n    \"D3N\": \"janeiro 2026\"\r\n  },\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7479.7100000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202602\",\r\n    \"D3N\": \"fevereiro 2026\"\r\n  },\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7545.5300000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202603\",\r\n    \"D3N\": \"março 2026\"\r\n  },\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7596.0900000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202604\",\r\n    \"D3N\": \"abril 2026\"\r\n  },\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7640.1500000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202605\",\r\n    \"D3N\": \"maio 2026\"\r\n  },\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7652.3700000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202606\",\r\n    \"D3N\": \"junho 2026\"\r\n  },\r\n  {\r\n    \"NC\": \"1\",\r\n    \"NN\": \"Brasil\",\r\n    \"MC\": \"30\",\r\n    \"MN\": \"Número-índice\",\r\n    \"V\": \"7657.7300000000000\",\r\n    \"D1C\": \"1\",\r\n    \"D1N\": \"Brasil\",\r\n    \"D2C\": \"2266\",\r\n    \"D2N\": \"IPCA - Número-índice (base: dezembro de 1993 = 100)\",\r\n    \"D3C\": \"202607\",\r\n    \"D3N\": \"julho 2026\"\r\n  }\r\n]"
+          }
+        }
+      ]
+    }
+  ]
+}

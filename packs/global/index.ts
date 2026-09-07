@@ -7,7 +7,6 @@
  * staleness for these series is judged against the *consuming* pack's calendar.
  */
 import { PACK_API_VERSION, type MarketPack, type SeriesDescriptor } from "../types";
-import { awesomeApiSource } from "./sources/awesomeapi";
 import { bcbPtaxSource } from "./sources/bcb-ptax";
 
 export const globalSeries: SeriesDescriptor[] = [
@@ -28,7 +27,7 @@ export const globalPack: MarketPack = {
   locale: "en-US",
   instruments: [],
   series: globalSeries,
-  sources: [bcbPtaxSource, awesomeApiSource],
+  sources: [bcbPtaxSource],
   calendar: {
     timezone: "UTC",
     weekend: [],

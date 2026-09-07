@@ -13,11 +13,15 @@
     "test:calc": "vitest run lib/calc --passWithNoTests",
     "test:packs": "vitest run packs",
     "codeowners": "tsx scripts/generate-codeowners.ts",
+    "bootstrap:user": "tsx --env-file-if-exists=.env.local scripts/bootstrap-user.ts",
+    "release:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm codeowners --check && tsx scripts/check-release-readiness.ts && pnpm build",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > lib/database.types.ts"
+    "db:types": "supabase gen types typescript --local > lib/database.types.ts",
+    "fixtures:record": "tsx --env-file-if-exists=.env.local scripts/record-fixtures.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
     "decimal.js": "^10.6.0",
     "next": "16.3.4",
     "react": "19.2.8",

@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "cases": [
+    {
+      "input": {
+        "capability": "spot",
+        "refs": [
+          "HGLG11"
+        ]
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://brapi.dev/api/quote/HGLG11",
+            "headers": {
+              "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json"
+            },
+            "body": "{\"results\":[{\"symbol\":\"HGLG11\",\"shortName\":\"HGLG11\",\"longName\":\"Patria Log - Fundo de Investimento Imobiliario - Responsabilidade Limitada Cotas\",\"currency\":\"BRL\",\"regularMarketPrice\":148.3,\"regularMarketDayHigh\":148.48,\"regularMarketDayLow\":147.5,\"regularMarketDayRange\":\"147.5 - 148.48\",\"regularMarketChange\":-0.19,\"regularMarketChangePercent\":-0.13,\"regularMarketTime\":\"2026-09-06T19:38:26.000Z\",\"marketCap\":null,\"regularMarketVolume\":142955,\"regularMarketPreviousClose\":148.3,\"regularMarketOpen\":148.48,\"fiftyTwoWeekRange\":\"143.39 - 163.3\",\"fiftyTwoWeekLow\":143.39,\"fiftyTwoWeekHigh\":163.3,\"priceEarnings\":null,\"earningsPerShare\":null,\"logourl\":\"https://icons.brapi.dev/icons/HGLG11.svg\"}],\"requestedAt\":\"2026-09-06T22:12:35.945Z\",\"took\":1}"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "capability": "historical",
+        "refs": [
+          "HGLG11"
+        ],
+        "from": "2026-09-01",
+        "to": "2026-09-04"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://brapi.dev/api/quote/HGLG11?range=5d&interval=1d",
+            "headers": {
+              "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json"
+            },
+            "body": "{\"results\":[{\"symbol\":\"HGLG11\",\"shortName\":\"HGLG11\",\"longName\":\"Patria Log - Fundo de Investimento Imobiliario - Responsabilidade Limitada Cotas\",\"currency\":\"BRL\",\"regularMarketPrice\":148.3,\"regularMarketDayHigh\":148.48,\"regularMarketDayLow\":147.5,\"regularMarketDayRange\":\"147.5 - 148.48\",\"regularMarketChange\":-0.19,\"regularMarketChangePercent\":-0.13,\"regularMarketTime\":\"2026-09-06T19:38:26.000Z\",\"marketCap\":null,\"regularMarketVolume\":142955,\"regularMarketPreviousClose\":148.3,\"regularMarketOpen\":148.48,\"fiftyTwoWeekRange\":\"143.39 - 163.3\",\"fiftyTwoWeekLow\":143.39,\"fiftyTwoWeekHigh\":163.3,\"priceEarnings\":null,\"earningsPerShare\":null,\"logourl\":\"https://icons.brapi.dev/icons/HGLG11.svg\",\"usedInterval\":\"1d\",\"usedRange\":\"5d\",\"historicalDataPrice\":[{\"date\":1788231600,\"open\":147.45,\"high\":147.45,\"low\":146.41,\"close\":147,\"volume\":131137,\"adjustedClose\":147},{\"date\":1788318000,\"open\":147.49,\"high\":147.89,\"low\":146.57,\"close\":147.82,\"volume\":134782,\"adjustedClose\":147.82},{\"date\":1788404400,\"open\":147.82,\"high\":148.87,\"low\":147.27,\"close\":148.49,\"volume\":135443,\"adjustedClose\":148.49},{\"date\":1788490800,\"open\":148.48,\"high\":148.48,\"low\":147.5,\"close\":148.3,\"volume\":142955,\"adjustedClose\":148.3}],\"validRanges\":[\"1d\",\"2d\",\"5d\",\"7d\",\"1mo\",\"3mo\",\"6mo\",\"1y\",\"2y\",\"5y\",\"10y\",\"ytd\",\"max\"],\"validIntervals\":[\"1m\",\"2m\",\"5m\",\"15m\",\"30m\",\"60m\",\"90m\",\"1h\",\"1d\",\"5d\",\"1wk\",\"1mo\",\"3mo\"]}],\"requestedAt\":\"2026-09-06T22:12:36.392Z\",\"took\":1}"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "capability": "series",
+        "refs": [
+          "br.ibovespa",
+          "br.ifix"
+        ],
+        "from": "2026-09-01",
+        "to": "2026-09-04"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://brapi.dev/api/quote/%5EBVSP?range=5d&interval=1d",
+            "headers": {
+              "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json"
+            },
+            "body": "{\"results\":[{\"symbol\":\"^BVSP\",\"shortName\":\"IBOVESPA\",\"longName\":\"IBOVESPA\",\"currency\":\"BRL\",\"regularMarketPrice\":185147.16,\"regularMarketDayHigh\":186544.81,\"regularMarketDayLow\":183251.94,\"regularMarketDayRange\":\"183251.94 - 186544.81\",\"regularMarketChange\":-40.84,\"regularMarketChangePercent\":-0.02,\"regularMarketTime\":\"2026-09-06T22:11:05.000Z\",\"marketCap\":null,\"regularMarketVolume\":0,\"regularMarketPreviousClose\":185188,\"regularMarketOpen\":185147.16,\"fiftyTwoWeekRange\":\"140231 - 199355\",\"fiftyTwoWeekLow\":140231,\"fiftyTwoWeekHigh\":199355,\"priceEarnings\":null,\"earningsPerShare\":null,\"logourl\":\"https://icons.brapi.dev/icons/^BVSP.svg\",\"usedInterval\":\"1d\",\"usedRange\":\"5d\",\"historicalDataPrice\":[{\"date\":1788231600,\"open\":177436,\"high\":181061,\"low\":177300,\"close\":179723,\"volume\":9836300,\"adjustedClose\":179723},{\"date\":1788318000,\"open\":179734,\"high\":186028,\"low\":179734,\"close\":185205,\"volume\":13716400,\"adjustedClose\":185205},{\"date\":1788404400,\"open\":185218,\"high\":188892,\"low\":184718,\"close\":185188,\"volume\":11170900,\"adjustedClose\":185188},{\"date\":1788490800,\"open\":185191,\"high\":186545,\"low\":183252,\"close\":185147,\"volume\":8300200,\"adjustedClose\":185147}],\"validRanges\":[\"1d\",\"2d\",\"5d\",\"7d\",\"1mo\",\"3mo\",\"6mo\",\"1y\",\"2y\",\"5y\",\"10y\",\"ytd\",\"max\"],\"validIntervals\":[\"1m\",\"2m\",\"5m\",\"15m\",\"30m\",\"60m\",\"90m\",\"1h\",\"1d\",\"5d\",\"1wk\",\"1mo\",\"3mo\"]}],\"requestedAt\":\"2026-09-06T22:12:36.562Z\",\"took\":0}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://brapi.dev/api/quote/IFIX.SA?range=5d&interval=1d",
+            "headers": {
+              "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json"
+            },
+            "body": "{\"results\":[{\"symbol\":\"IFIX.SA\",\"shortName\":\"IND FDO IMOB\",\"longName\":\"IND FDO IMOB\",\"currency\":\"BRL\",\"regularMarketPrice\":3769.71,\"regularMarketDayHigh\":3770.45,\"regularMarketDayLow\":3756.9,\"regularMarketDayRange\":\"3756.9 - 3770.45\",\"regularMarketChange\":8.23,\"regularMarketChangePercent\":0.22,\"regularMarketTime\":\"2026-09-06T22:02:20.000Z\",\"marketCap\":null,\"regularMarketVolume\":0,\"regularMarketPreviousClose\":3761.48,\"regularMarketOpen\":3769.71,\"fiftyTwoWeekRange\":\"3756.9 - 3770.45\",\"fiftyTwoWeekLow\":3756.9,\"fiftyTwoWeekHigh\":3770.45,\"priceEarnings\":null,\"earningsPerShare\":null,\"logourl\":\"https://icons.brapi.dev/icons/IFIX.SA.svg\",\"usedInterval\":\"1d\",\"usedRange\":\"5d\",\"historicalDataPrice\":[{\"date\":1788490800,\"open\":3761.48,\"high\":3770.45,\"low\":3756.8999,\"close\":3769.71,\"volume\":0,\"adjustedClose\":3769.71}],\"validRanges\":[\"1d\",\"2d\",\"5d\",\"7d\",\"1mo\",\"3mo\",\"6mo\",\"1y\",\"2y\",\"5y\",\"10y\",\"ytd\",\"max\"],\"validIntervals\":[\"1m\",\"2m\",\"5m\",\"15m\",\"30m\",\"60m\",\"90m\",\"1h\",\"1d\",\"5d\",\"1wk\",\"1mo\",\"3mo\"]}],\"requestedAt\":\"2026-09-06T22:12:37.633Z\",\"took\":0}"
+          }
+        }
+      ]
+    }
+  ]
+}

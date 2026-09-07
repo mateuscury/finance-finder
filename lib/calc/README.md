@@ -13,3 +13,8 @@ Planned modules (Milestones 1–3, per SPEC.md formulas):
 
 Nothing here yet. Formulas: SPEC.md §4–§6. `pnpm test:calc` runs only this
 directory.
+
+All series rates arrive in unit form (`"0.12"` means 12%). Yield-curve input is
+grouped by `(series_id, date)` and contains one positive `tenor_days` point per
+manifest tenor. Do not add compatibility branches for percentage-point input;
+normalization belongs at the pack boundary.

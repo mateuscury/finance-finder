@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "cases": [
+    {
+      "input": {
+        "capability": "series",
+        "refs": [
+          "br.cdi"
+        ],
+        "from": "2026-09-01",
+        "to": "2026-09-03"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=01/09/2026&dataFinal=03/09/2026",
+            "headers": {
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 429,
+            "headers": {
+              "content-type": "text/plain;charset=UTF-8",
+              "retry-after": "1"
+            },
+            "body": "{\"error\":\"rate limited\",\"synthetic\":true}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=01/09/2026&dataFinal=03/09/2026",
+            "headers": {
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 429,
+            "headers": {
+              "content-type": "text/plain;charset=UTF-8",
+              "retry-after": "1"
+            },
+            "body": "{\"error\":\"rate limited\",\"synthetic\":true}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=01/09/2026&dataFinal=03/09/2026",
+            "headers": {
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 429,
+            "headers": {
+              "content-type": "text/plain;charset=UTF-8",
+              "retry-after": "1"
+            },
+            "body": "{\"error\":\"rate limited\",\"synthetic\":true}"
+          }
+        }
+      ]
+    }
+  ]
+}

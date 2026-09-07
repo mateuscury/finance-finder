@@ -93,7 +93,7 @@ installing, per the rule below.
 | Forms | react-hook-form + zod | react-hook-form *planned* |
 | Validation | zod | **4.x** installed (`z.iso.date()`, `z.url()` are v4 APIs) |
 | Hosting | Vercel | Hobby tier |
-| Cron | Vercel Cron via `vercel.json` | Hobby tier: **max 2 jobs**, both already declared |
+| Cron | Vercel Cron via `vercel.json` | **Two jobs by design**, not by platform cap (Hobby currently allows up to 100 entries, each at most daily) |
 | Testing | Vitest 5 + fast-check 4 | installed; React Testing Library *planned* |
 
 **Do not add libraries without asking first.** If a problem seems to need a new
@@ -258,12 +258,20 @@ nav; light and dark are both first-class, neither an afterthought. Full tokens i
 2. Copy `.env.example` → `.env.local`; fill Supabase credentials.
 3. `pnpm db:start` — local Supabase via Docker; applies `supabase/migrations/`.
    For a hosted project, `supabase db push` instead. Never paste SQL by hand.
-4. Supabase Auth → Providers: enable Email, **disable new signups**.
+4. Local signups are disabled in `supabase/config.toml`. For hosted Supabase,
+   mirror the checked-in password, signup, and TOTP settings in the dashboard;
+   `config.toml` does not configure the hosted project.
 5. `pnpm bootstrap:user` — prompts for email + password and creates the owner
    through the service-role key, plus their `user_settings` row. The only
    account-creation path; the app itself never signs anyone up.
 6. `pnpm dev`, log in. Overview shows the setup card (`SPEC.md` §9.3) until
    the first asset, transaction and price exist.
+
+**Production-data gate.** `pnpm release:check` is intentionally stricter than
+CI and must pass before entering real portfolio data. It rejects draft packs,
+stub adapters, missing replay/golden fixtures, placeholder UX, absent kernel
+modules, and the currently unimplemented full-restore path. See
+`MILESTONES.md`.
 
 **Adding a new country / market.** This is a pack, not a kernel change. See
 `PACKS.md` — add `packs/<id>/`, implement its instruments/series/sources against

@@ -79,7 +79,8 @@ create table series_points (
   series_id text        not null,   -- 'br.cdi', 'uk.sonia', 'global.usdbrl'
   date      date        not null,
   value     numeric(24,10) not null,
-  primary key (series_id, date)
+  tenor_days integer    not null default 0, -- 0 scalar; >0 yield-curve maturity
+  primary key (series_id, date, tenor_days)
 );
 ```
 
@@ -99,7 +100,7 @@ The USDBRL series from the original spec is no longer special. It is
 ```sql
 alter table user_settings
   add column base_currency char(3) not null default 'BRL',
-  add column enabled_packs text[]  not null default '{br}',
+  add column enabled_packs text[]  not null default '{}',
   add column locale        text    not null default 'pt-BR';
 ```
 
@@ -265,6 +266,13 @@ pack registering six more requires nothing of you.
 prints against daily portfolio valuations is a real decision, and IPCA and CPIH
 contributors should not each invent an answer silently.
 
+**Series value units are part of the kernel contract.** Daily and annual rates,
+inflation changes used to construct an index, and yield-curve rates are unit
+rates (`"0.12"` = 12%), never percentage points. `index_level` is a level and
+`fx_rate` is quote units per one base unit. Adapters normalize upstream units
+using decimal-string operations. A `yield_curve` emits one point per tenor with
+`tenorDays`; scalar series omit it and persist as `tenor_days = 0`.
+
 ---
 
 ## 7. Price source adapters
@@ -288,6 +296,7 @@ export interface FetchResult {
     date:     string;        // ISO 8601 date
     value:    string;        // DECIMAL STRING — never a JS number
     currency: CurrencyCode | null;
+    tenorDays?: number;      // required for yield_curve; absent for scalar data
   }>;
   warnings: string[];
 }
@@ -299,9 +308,11 @@ Three rules that make third-party adapters safe to merge:
    declared rate limit, retries with backoff, sets a project user-agent, and —
    critically — records and replays HTTP fixtures. A lint rule bans `fetch` and
    `axios` inside `packs/`.
-2. **Values cross the boundary as strings.** ARCHITECTURE §4.4 says money is
-   decimal; the pack boundary is exactly where a careless `parseFloat` would
-   enter. The type system prevents it.
+2. **Values cross the boundary as normalized strings.** ARCHITECTURE §4.4 says
+   money is decimal; the pack boundary is exactly where a careless `parseFloat`
+   would enter. Rates use unit form (`"0.12"` = 12%), not an upstream source's
+   percentage-point form. The type system prevents float conversion; fixtures
+   prove the semantic unit.
 3. **`license` is mandatory and reviewed.** You are asking self-hosters to run
    this code. An adapter scraping a source that forbids it is a liability for
    every deployment, not just the contributor's.
@@ -369,7 +380,8 @@ Static imports, resolved at build time. At runtime the app activates only the
 packs listed in `user_settings.enabled_packs`; the rest contribute manifest
 bytes and nothing else. Cron jobs iterate enabled packs' sources.
 
-Because Vercel Hobby caps you at two cron jobs (`ARCHITECTURE.md` §3), the price
+Because this project deliberately ships two cron jobs (`ARCHITECTURE.md` §3) — an
+atomicity, rate-limit and resume choice, not a platform cap — the price
 job must iterate sources within a single invocation with a per-source time
 budget and resume markers, not one job per pack. Design this in Milestone 1 —
 it is the constraint most likely to be discovered painfully later.
@@ -416,7 +428,7 @@ in CI. Pack owners approve changes to their own directory. Changes to
 
 | Status | Meaning | Consequence |
 |---|---|---|
-| `draft` | Incomplete or unvalidated | Tests run; not in default `enabled_packs`; UI banner |
+| `draft` | Incomplete or unvalidated | Tests run; never in default `enabled_packs`; UI banner; blocks `pnpm release:check` |
 | `supported` | ≥1 responsive maintainer, CI green, fixtures refreshed within 90 days | Fully offered |
 | `unmaintained` | CI red 30 days or maintainer unreachable | UI banner; removed after two releases |
 
@@ -447,6 +459,8 @@ Goes into a new `packs/global`:
 
 - CoinGecko (crypto is not a national market), AwesomeAPI and PTAX as `fx`
   sources, Yahoo Finance as a multi-market `market_price` source.
+  *AwesomeAPI deferred 2026-09-06: no series consumes it. See `MILESTONES.md`
+  Milestone 1 decisions.*
 
 Goes into `packs/us`:
 

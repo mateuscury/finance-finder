@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "cases": [
+    {
+      "input": {
+        "capability": "series",
+        "refs": [
+          "br.cdi"
+        ],
+        "from": "2026-09-05",
+        "to": "2026-09-06"
+      },
+      "exchanges": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json&dataInicial=05/09/2026&dataFinal=06/09/2026",
+            "headers": {
+              "accept": "application/json",
+              "user-agent": "finance-finder/0.1 (+https://github.com/mateuscury/finance-finder)"
+            }
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "content-type": "application/json; charset=utf-8"
+            },
+            "body": "{\"erro\":{\"statusCode\":404,\"detail\":\"br.gov.bcb.pec.sgs.comum.excecoes.SGSNegocioException: Value(s) not found\"}}"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -50,7 +50,13 @@ export const SeriesKindSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("index_level") }),
   z.object({ kind: z.literal("inflation_index"), interpolation: z.enum(["none", "linear_daily"]) }),
   z.object({ kind: z.literal("fx_rate"), base: CurrencyCodeSchema, quote: CurrencyCodeSchema }),
-  z.object({ kind: z.literal("yield_curve"), tenors: z.array(z.number().int().positive()).min(1) }),
+  z.object({
+    kind: z.literal("yield_curve"),
+    tenors: z
+      .array(z.number().int().positive())
+      .min(1)
+      .refine((values) => new Set(values).size === values.length, "yield-curve tenors must be unique"),
+  }),
 ]);
 
 export const SeriesRoleSchema = z.enum([
@@ -67,6 +73,59 @@ export const SeriesDescriptorSchema = z.object({
   kind: SeriesKindSchema,
   sourceId: PrefixedIdSchema,
   roles: z.array(SeriesRoleSchema),
+});
+
+/**
+ * Structural adapter-output validation. The ingestion layer additionally checks
+ * `tenorDays` against the referenced series kind and rejects future dates.
+ */
+export const FetchPointSchema = z.object({
+  ref: z.string().min(1),
+  date: IsoDateSchema,
+  value: DecimalStringSchema,
+  currency: CurrencyCodeSchema.nullable(),
+  tenorDays: z.number().int().positive().optional(),
+});
+
+/**
+ * Runtime twin of `RefCoverage`. The `superRefine` encodes the invariants the
+ * scheduler relies on, so a malformed coverage claim is rejected at the pack
+ * boundary rather than silently advancing a watermark (plan §2.3, §3.2).
+ */
+export const RefCoverageSchema = z
+  .object({
+    ref: z.string().min(1),
+    requested: z.object({ from: IsoDateSchema, to: IsoDateSchema }),
+    returned: z.object({ from: IsoDateSchema, to: IsoDateSchema }).nullable(),
+    complete: z.boolean(),
+    unavailableBefore: IsoDateSchema.optional(),
+  })
+  .superRefine((c, ctx) => {
+    if (c.requested.from > c.requested.to) {
+      ctx.addIssue({ code: "custom", message: "requested.from must not be after requested.to" });
+    }
+    if (c.unavailableBefore !== undefined && c.complete) {
+      // "I covered the whole window" and "I cannot reach part of it" cannot
+      // both be true.
+      ctx.addIssue({ code: "custom", message: "a complete result cannot declare unavailableBefore" });
+    }
+    if (c.returned === null) return;
+    if (c.unavailableBefore !== undefined && c.returned.from < c.unavailableBefore) {
+      ctx.addIssue({ code: "custom", message: "returned data cannot predate unavailableBefore" });
+    }
+    if (c.returned.from > c.returned.to) {
+      ctx.addIssue({ code: "custom", message: "returned.from must not be after returned.to" });
+    }
+    // A source may not claim to have returned data outside what it asked for.
+    if (c.returned.from < c.requested.from || c.returned.to > c.requested.to) {
+      ctx.addIssue({ code: "custom", message: "returned interval must lie inside requested" });
+    }
+  });
+
+export const FetchResultSchema = z.object({
+  points: z.array(FetchPointSchema),
+  warnings: z.array(z.string()),
+  coverage: z.array(RefCoverageSchema).optional(),
 });
 
 const isFunction = (v: unknown): v is (...args: unknown[]) => unknown => typeof v === "function";

@@ -13,7 +13,7 @@ for validation, vitest + fast-check for tests.
 | `PACKS.md` | **architecture**: market-pack model, kernel/pack boundary, schema changes for multi-country, conformance gates, governance |
 | `ARCHITECTURE.md` | **features & principles**: scope (no tax/fiscal, no brokers), the nine invariants (§4.9 = privacy posture), data flow, glossary |
 | `SPEC.md` | **features**: calculation formulas, ingestion/snapshot behaviour, the ten screens, design system, edge cases; §2–3 mirror the migration |
-| `MILESTONES.md` | **missing** — delivery order. PACKS.md §14: `packs/br` from the first commit, canary `packs/uk` + conformance as Milestone 4 |
+| `MILESTONES.md` | Delivery order and production-data safety gate. PACKS.md §14: `packs/br` from the first commit, canary `packs/uk` + conformance as Milestone 4 |
 
 ### Document precedence
 
@@ -47,7 +47,7 @@ packs/            market packs (data + mappings). types.ts/schema.ts/index.ts ar
   conformance/    `pnpm test:packs` — the merge gate for pack PRs (PACKS.md §11)
 lib/calc/         kernel math, pure functions (TWR, MWR, valuation, series returns, FX)
 lib/packs/        kernel pack runtime: PackHttp impl (rate limit/retry/fixtures), activation, ingest job
-app/              Next.js routes. app/api/cron/* = the ONLY two Vercel Hobby crons
+app/              Next.js routes. app/api/cron/* = the only two crons (by design)
 supabase/         config + migrations. Packs ship ZERO migrations.
 scripts/          generate-codeowners.ts (CODEOWNERS is generated — never hand-edit)
 ```
@@ -69,7 +69,8 @@ pnpm db:start / db:reset # local Supabase (Docker)
 
 - Money and rates are `decimal.js` in the kernel and **decimal strings** at
   every boundary (pack `FetchResult`, JSON fixtures). Never `parseFloat`, never
-  a JS `number` for a value.
+  a JS `number` for a value. Rate strings use unit form (`"0.12"` = 12%), never
+  upstream percentage points. Yield-curve points carry `tenorDays`.
 - `series_points` and `ingest_cursors` have NO `user_id` and NO RLS by design.
   Access control is by grants: writes revoked from `anon`/`authenticated`, so
   only cron (service role) writes. Do not "fix" it by adding RLS.
@@ -81,8 +82,12 @@ pnpm db:start / db:reset # local Supabase (Docker)
   or error-reporting SaaS by default; fonts via `next/font`, never a CDN. Auth
   reads identity with `getUser()`, never `getSession()`. SPEC §12.
 - No tax or fiscal reporting features, ever (ARCHITECTURE §2).
-- Two Vercel crons total. Ingestion iterates sources inside one invocation
+- Two Vercel crons by design (not a platform cap). Ingestion iterates sources inside one invocation
   with a per-source time budget and `ingest_cursors` resume markers.
+- Cron auth uses `lib/cron/auth.ts` and fails closed unless `CRON_SECRET` is at
+  least 32 bytes. Never inline an environment-string comparison in a route.
+- `pnpm release:check` must pass before real portfolio data is entered. Green
+  scaffold CI is not a production-readiness signal.
 - `PACK_API_VERSION` bump ⇒ same PR updates every in-repo pack.
 
 ## Adding a pack (contributor path)
@@ -94,16 +99,22 @@ pnpm db:start / db:reset # local Supabase (Docker)
 5. `fixtures/portfolio.json` + hand-computed `fixtures/expected.json` (the real gate).
 6. `README.md` with Coverage, Sources, Quirks. `pnpm test:packs` green. `pnpm codeowners`.
 
-## Current state (2026-09-05)
+## Current state (2026-09-06)
 
-Scaffold only. `packs/br` and `packs/global` are `draft`: manifests, B3/ANBIMA
-calendar and the BCB SGS adapter are real; brapi, Tesouro Transparente, PTAX
-and AwesomeAPI adapters are stubs. `lib/calc` and `lib/packs` are empty READMEs.
-The initial migration is reconciled with SPEC.md (txn_type enum, cash_flows,
-per-asset snapshots with `carried_forward`, manual prices) and has not been
-applied to any environment yet — it may still be edited in place. The 13
-skipped conformance tests are the to-do list for Milestone 1. `app/page.tsx`
-is still the Next.js starter. Specified but unbuilt: CSV import (SPEC §9.1),
-navigation/first-run/empty states (SPEC §9.2–9.5), auto price fetch on asset
-creation, resumable snapshot rebuild (SPEC §8), and `scripts/bootstrap-user.ts`
-— do not add its `package.json` entry until the script exists.
+Milestone 1 (trusted ingestion) is implemented; `packs/br` and `packs/global`
+remain `draft`. All five registered sources are real adapters — `global.bcb_ptax`
+(Olinda CSV), `br.bcb_sgs` (CDI/SELIC), `br.ibge_sidra` (IPCA número-índice),
+`br.brapi` (FII spot/historical + `^BVSP`/`IFIX.SA`) and
+`br.tesouro_transparente` (`PU Base Manha`, ODbL) — each with recorded
+success / empty / 5xx / 429 fixtures that replay offline. `lib/packs` now holds
+`http.ts`, `redact.ts`, `fixtures.ts`, `validate.ts`, `activate.ts`, `ingest.ts`
+and `store.ts`; `PACK_API_VERSION` is 3 (`ctx.signal` + `remainingMs()`, no
+`ctx.log`, structured `RefCoverage` carrying an explicit `unavailableBefore`).
+`initial_schema_hardening`, `ingest_watermarks` and the atomic
+`commit_ingest_chunk` RPC all ship as forward migrations — the initial migration
+is applied and therefore frozen, and must never be edited in place. `GET /api/cron/prices` returns a redacted run
+summary. `pnpm test:packs` reports 3 skips (down from 13).
+
+`lib/calc` is still an empty README, so `pnpm release:check` remains red.
+Specified but unbuilt: the financial kernel, the real screens, login, snapshots,
+and tested export/restore.

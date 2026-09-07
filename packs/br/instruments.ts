@@ -1,15 +1,31 @@
 import { z } from "zod";
 import type { InstrumentKind } from "../types";
-import { CurveMetadataBaseSchema, DecimalStringSchema, IsoDateSchema } from "../schema";
+import { DecimalStringSchema, IsoDateSchema } from "../schema";
 
 /**
  * Instrument kinds the BR pack maps onto kernel valuation strategies
  * (PACKS.md §4.1, §5, §13). No math lives here — only the mapping.
  */
 
-const TesouroDiretoMetadata = CurveMetadataBaseSchema.extend({
-  /** Official bond name, e.g. "Tesouro IPCA+ 2035". */
+/**
+ * Tesouro Direto is valued from the published unit price (`nav_unit_price`),
+ * so this metadata is about IDENTITY and DISPLAY, not discounting
+ * (MILESTONES.md decision 2). The kernel curve shape is deliberately not
+ * extended: coupon and indexation fields are what a `curve_mark_to_market`
+ * strategy would need, and this instrument no longer uses one.
+ */
+const TesouroDiretoMetadata = z.object({
+  /** Official bond name exactly as Tesouro publishes it: "Tesouro IPCA+ com Juros Semestrais". */
   titulo: z.string().min(1),
+  /** Second half of the canonical identifier; the file has no ISIN. */
+  maturity: IsoDateSchema,
+  /**
+   * "Taxa Compra Manha" on the purchase date, as a unit rate. DISPLAY ONLY.
+   * Valuing a holding by accruing at this rate ("marcação na curva") produces a
+   * different number from market value; if ever wanted it is a kernel
+   * `accrual` feature, never a silent substitution here.
+   */
+  purchaseRate: DecimalStringSchema.optional(),
 });
 
 /** "110% do CDI", "IPCA + 6%", or a plain prefixado rate — all via AccrualConvention. */
@@ -32,9 +48,12 @@ export const brInstruments: InstrumentKind[] = [
   {
     id: "br.tesouro_direto",
     label: "Tesouro Direto",
-    valuation: { kind: "curve_mark_to_market", seriesId: "br.td_curve" },
+    valuation: { kind: "nav_unit_price", sourceId: "br.tesouro_transparente" },
     metadataSchema: TesouroDiretoMetadata,
-    identifier: "isin",
+    // The published CSV identifies a bond by (Tipo Titulo, Data Vencimento) and
+    // contains no ISIN. `tesouroCanonicalId` in sources/tesouro-transparente.ts
+    // builds the canonical `td:<slug>:<YYYY-MM-DD>` form.
+    identifier: "custom",
     quoteCurrency: "BRL",
   },
   {
