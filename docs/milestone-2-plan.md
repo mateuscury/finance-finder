@@ -33,7 +33,7 @@ follow-up commit → record Advisory findings → next phase.
 | 1 — Money, dates, calendar, kernel types | `31fe537` + `0f6a056` | merged |
 | 2 — Positions, series, FX | `08a4bdc` + `4b0f276` | merged |
 | 3 — Valuation, staleness, portfolio builder | (this commit) | merged |
-| 4 — Performance math | — | not started |
+| 4 — Performance math | (this commit) | merged |
 | 5 — Golden portfolio | — | not started |
 | 6 — Backup and restore | — | not started |
 | 7 — Documentation and gates | — | not started |
@@ -643,7 +643,7 @@ amount and to shifting every date; the solution satisfies `|NPV| < 1e-10`;
 contributions sum exactly to the simple return; the attribution identity holds
 exactly and `R_fx` equals the FX series return when quantity is constant.
 
-### Grounding (2026-09-20) — status: not started
+### Grounding (2026-09-20) — status: merged
 
 Everything here consumes Phase 3's `PortfolioValuation` and `toBase`; the
 performance modules never look up a price themselves.
@@ -665,9 +665,10 @@ performance modules never look up a price themselves.
   `|Δr| < 1e-14`; bisection on a sign change found by scanning
   `[−0.999999, 10]` when Newton leaves `(−0.999999, 1e6)`, meets a flat
   derivative or does not converge.
-- `contribution.ts` — `contribution({ from, to, start, end, transactions,
-  flows, toBase })` with `start`/`end` as `PortfolioValuation`s and `flows`
-  the base-currency external flows in `(from, to]`. Per asset,
+- `contribution.ts` — `contribution({ input, from, to, start, end, flows })`
+  with `input` the `PortfolioInput` (it carries the transactions and is what
+  `toBase` needs), `start`/`end` as `PortfolioValuation`s and `flows` the
+  base-currency external flows in `(from, to]`. Per asset,
   `netInvested` is rebuilt in base by converting each transaction's cash
   amount with `toBase` at its trade date (decision 15): expose the
   per-transaction breakdown `investedFlows(transactions, from, to)` from
@@ -677,17 +678,21 @@ performance modules never look up a price themselves.
   FX, → that asset `null` with the reason and the total marked partial.
 - `attribution.ts` — `attribution(input: PortfolioInput, assetId, from, to)`
   splits at the asset's own transaction dates inside `(from, to)`, values
-  the holding at every boundary with `valueHolding` + `resolveFx`, chains
-  `R_native` and `R_base`, and returns `R_fx` as the residual. A
+  each sub-period at both ends with the lots open at its START (the only
+  way quantity is constant inside it) via `valueHolding` + `resolveFx`,
+  chains `R_native` and `R_base`, and returns `R_fx` as the residual. A
   same-currency asset returns `R_fx = 0` exactly. Any boundary that is
-  `stale`/`unpriced` → `null` with the reason.
-- `real.ts` — `realReturn(nominal, market, deflatorSeriesId, interpolation,
-  from, to)` → `Observed<KDecimal>`; `π` from `inflationLevelAt` at both
-  ends, status the worse leg.
+  `stale`/`unpriced` → `null` with the reason; never held in the window →
+  `null` with `no_position`.
+- `real.ts` — `realReturn(nominal, market, deflator: SeriesDescriptor,
+  from, to)` → `Observed<KDecimal>` (the descriptor carries the id and the
+  interpolation and lets the kind be checked); `π` from `inflationLevelAt`
+  at both ends, status the worse leg.
 
 Property tests are the ones this phase lists; add: `xirr` over a stream with
 no negative amount is `insufficient_flows`; `twr` over a single valuation is
-`null` with an empty chain. This phase clears the `twr.ts` / `mwr.ts`
+`null` with an empty chain; `mwr` reports flows after `to` in `ignored`, as
+`twr` does (decision 16). This phase clears the `twr.ts` / `mwr.ts`
 blockers in `scripts/check-release-readiness.ts`. Gates as Phase 3.
 
 ## Phase 5 — Golden portfolio

@@ -86,6 +86,11 @@ export function compareDates(a: string, b: string): -1 | 0 | 1 {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
+/** True when `date` lies in the half-open window `(from, to]` — the kernel's period convention. */
+export function inWindow(date: string, from: string, to: string): boolean {
+  return compareDates(date, from) > 0 && compareDates(date, to) <= 0;
+}
+
 /** JS convention: 0 = Sunday … 6 = Saturday, so it matches `MarketCalendar.weekend`. */
 export function dayOfWeek(date: string): number {
   return new Date(toEpochMs(date)).getUTCDay();

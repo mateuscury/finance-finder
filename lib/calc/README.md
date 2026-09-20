@@ -19,7 +19,8 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
   by a Decimal is the only multiplication.
 - `dates.ts` — ISO "YYYY-MM-DD" arithmetic in UTC: `addDays`,
   `daysBetween`, `addMonths` (end-of-month clamp), `completedMonths`
-  (anniversaries), `days30360` (US/NASD), `dayOfWeek`.
+  (anniversaries), `days30360` (US/NASD), `dayOfWeek`, `inWindow` for the
+  kernel's half-open `(from, to]` periods.
 - `calendar.ts` — over a pack `MarketCalendar`: `isBusinessDay`,
   `businessDaysBetween` on `(from, to]`, `yearFraction` per `DayCount`,
   `longestClosureRun`, `stalenessWindowDays` (BR 2026 = 5).
@@ -37,8 +38,9 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
   forward from Phase 3 because Phase 2's carry-forward property needs it.
 - `positions.ts` — `sortLedger` (`(tradeDate, rank, id)`, rank
   `buy < dividend = interest = fee < sell`), `lotsAt` (FIFO,
-  `oversell` throws), `lotQuantity`, `quantityAt`, `netInvested` over
-  `(from, to]`, `groupByAsset`.
+  `oversell` throws), `lotQuantity`, `quantityAt`, `investedFlows` (one
+  signed cash effect per transaction in `(from, to]`) and `netInvested`, their
+  sum in one currency, `groupByAsset`.
 - `series/` — one function per closed `SeriesKind`; every result is a
   status-carrying union, never `NaN`:
   - `rate.ts` — `compoundRate` for `rate_daily` (Π(1 + m·rᵈ)) and
@@ -96,9 +98,45 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
 `before_first_anchor`, `no_fx_series`, `no_price`,
 `indexation_not_supported`, `invalid_metadata`, `matured`.
 
-## Planned (Phases 4–5)
+## Modules (Phase 4 — present)
 
-`twr.ts`, `mwr.ts` (XIRR), `contribution.ts`, `attribution.ts`, `real.ts`,
+Every function here consumes valuations and flows already in BASE currency
+and never looks up a price itself.
+
+- `twr.ts` — `twr(valuations, flows)` chains `r = V_d / (V_{d−1} + CF_d) − 1`
+  over consecutive valuation dates: START-OF-DAY flows (decision 1). A flow on
+  a non-valuation date attaches to the next valuation date; flows on or before
+  the first date are part of `V₀`; flows after the last date are `ignored`
+  (decision 16). A sub-period with a non-positive denominator is `skipped`
+  and reported, never divided (decision 2); `twr` is null only when nothing
+  survives.
+- `mwr.ts` — `xirr(stream)` solves `Σ CF_i (1 + r)^(−t_i) = 0`, `t_i` in
+  ACT/365 years from the earliest date: Newton from 0.1 (≤ 50 iterations,
+  `|Δr| < 1e-14`), bisection over a sign change scanned in `[−0.999999, 10]`
+  when Newton leaves `(−0.999999, 1e6)`, meets a flat derivative or fails to
+  converge. `null` with `insufficient_flows` (no negative and positive
+  amount) or `no_root`. `mwr({ from, to, startValue, flows, endValue })`
+  builds the stream: `−startValue` when positive, flows in `(from, to]`
+  negated, `+endValue`; flows after `to` are reported in `ignored`.
+- `contribution.ts` — `gain_i = V_i(to) − V_i(from) − netInvested_i`,
+  `D = V(from) + Σ flows in (from, to]`, `c_i = gain_i / D`, so `Σ c_i` is
+  exactly the simple return. `netInvested_i` is rebuilt in base by converting
+  each `investedFlows` entry with `toBase` at its own date (decision 15). An
+  asset `stale` or `unpriced` at either end, or with a transaction that has no
+  FX, is null with the reason and `partial` is set; `D ≤ 0` is
+  `zero_start_value` for every asset.
+- `attribution.ts` — one holding, `[from, to]` split at its own transaction
+  dates, each sub-period valued at both ends with the lots open at its start;
+  `R_native` and `R_base` chained, `R_fx = (1 + R_base) / (1 + R_native) − 1`
+  as the residual. Base-currency holdings have `R_fx = 0` exactly; a `stale`
+  or `unpriced` boundary is null with the reason; never held is
+  `no_position`.
+- `real.ts` — `realReturn(nominal, market, deflator, from, to)` =
+  `(1 + R) / (level(to) / level(from)) − 1` through `inflationLevelAt`;
+  status the worse leg.
+
+## Planned (Phase 5)
+
 `golden.ts`.
 
 `pnpm test:calc` runs only this directory and carries the `fast-check`

@@ -13,7 +13,7 @@
  */
 import type { IsoDate } from "@/packs/types";
 import { ZERO, parseDecimal, type KDecimal } from "./decimal";
-import { compareDates } from "./dates";
+import { compareDates, inWindow } from "./dates";
 import { KernelError } from "./errors";
 import { Money } from "./money";
 import type { LedgerTransaction, TransactionType } from "./types";
@@ -122,23 +122,27 @@ export function quantityAt(transactions: readonly LedgerTransaction[], date: Iso
   return lotQuantity(lotsAt(transactions, date));
 }
 
+/** One transaction's signed cash effect: money put in is positive, money taken out negative. */
+export interface InvestedFlow {
+  transactionId: string;
+  date: IsoDate;
+  amount: Money;
+}
+
 /**
- * Net money put into ONE asset over `(from, to]`, in `currency`:
- *   Σ buy cost (quantity × unitPrice + fees)
- * − Σ sell proceeds (|quantity| × unitPrice − fees)
- * − Σ dividend and interest amounts (unitPrice holds the cash amount)
- * + Σ fee transactions (unitPrice holds the cash amount).
- * A transaction in another currency is `currency_mismatch`.
+ * The money put into ONE asset over `(from, to]`, one entry per transaction,
+ * in each transaction's own currency:
+ *   buy      → + quantity × unitPrice + fees
+ *   sell     → − (|quantity| × unitPrice − fees)
+ *   dividend / interest → − unitPrice (the cash amount)
+ *   fee      → + unitPrice (the cash amount).
+ * Contribution converts each entry at its own date (MILESTONES.md §2
+ * decision 15); `netInvested` sums them in one currency.
  */
-export function netInvested(
-  transactions: readonly LedgerTransaction[],
-  currency: string,
-  from: IsoDate,
-  to: IsoDate,
-): Money {
-  let total = Money.zero(currency);
-  for (const t of transactions) {
-    if (compareDates(t.tradeDate, from) <= 0 || compareDates(t.tradeDate, to) > 0) continue;
+export function investedFlows(transactions: readonly LedgerTransaction[], from: IsoDate, to: IsoDate): readonly InvestedFlow[] {
+  const flows: InvestedFlow[] = [];
+  for (const t of sortLedger(transactions)) {
+    if (!inWindow(t.tradeDate, from, to)) continue;
     const { quantity, unitPrice, fees } = parsed(t);
     let amount: KDecimal;
     switch (t.type) {
@@ -156,8 +160,23 @@ export function netInvested(
         amount = unitPrice;
         break;
     }
-    // Money.add enforces the currency: a row in another currency throws.
-    total = total.add(Money.of(amount, t.currency));
+    flows.push({ transactionId: t.id, date: t.tradeDate, amount: Money.of(amount, t.currency) });
   }
+  return flows;
+}
+
+/**
+ * Net money put into ONE asset over `(from, to]`, in `currency`: the sum of
+ * `investedFlows`. A transaction in another currency is `currency_mismatch`.
+ */
+export function netInvested(
+  transactions: readonly LedgerTransaction[],
+  currency: string,
+  from: IsoDate,
+  to: IsoDate,
+): Money {
+  let total = Money.zero(currency);
+  // Money.add enforces the currency: a row in another currency throws.
+  for (const flow of investedFlows(transactions, from, to)) total = total.add(flow.amount);
   return total;
 }

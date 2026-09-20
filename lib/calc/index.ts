@@ -17,3 +17,8 @@ export * from "./series";
 export * from "./fx";
 export * from "./valuation";
 export * from "./portfolio";
+export * from "./twr";
+export * from "./mwr";
+export * from "./contribution";
+export * from "./attribution";
+export * from "./real";

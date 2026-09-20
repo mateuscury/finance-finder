@@ -9,6 +9,7 @@ import {
   days30360,
   daysBetween,
   daysInMonth,
+  inWindow,
   isIsoDate,
   isLeapYear,
   parseIsoDate,
@@ -159,5 +160,14 @@ describe("30/360 (US)", () => {
       }),
     );
     expect(days30360("1928-02-29", "1929-02-28")).toBe(359);
+  });
+});
+
+describe("inWindow", () => {
+  it("is the half-open (from, to]", () => {
+    expect(inWindow("2026-02-10", "2026-02-10", "2026-02-13")).toBe(false);
+    expect(inWindow("2026-02-11", "2026-02-10", "2026-02-13")).toBe(true);
+    expect(inWindow("2026-02-13", "2026-02-10", "2026-02-13")).toBe(true);
+    expect(inWindow("2026-02-14", "2026-02-10", "2026-02-13")).toBe(false);
   });
 });
