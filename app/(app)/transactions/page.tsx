@@ -1,18 +1,29 @@
+import Link from "next/link";
+import { PACKS } from "@/packs";
+import { Notice } from "@/app/(app)/_components/notice";
 import { Pager, pageNumber } from "@/app/(app)/_components/pager";
 import { requireUser } from "@/lib/auth/session";
-import { listTransactions } from "@/lib/ledger/queries";
+import { listAssets, listTransactions } from "@/lib/ledger/queries";
+import { TransactionForm } from "./_form";
+import { createTransactionAction, deleteTransactionAction } from "./actions";
 
-/** Transactions list (SPEC §9 screen 7). Forms and CSV import arrive in Phases 4 and 5. */
+// Server-action route budget (decision 30); kept in step with the cron routes.
+export const maxDuration = 60;
+
+/** Transactions (SPEC §9 screen 7). CSV import arrives in Phase 5. */
 export default async function TransactionsPage({ searchParams }: PageProps<"/transactions">) {
   const { client } = await requireUser();
-  const { page: pageParam } = await searchParams;
-  const page = pageNumber(pageParam);
-  const result = await listTransactions(client, page);
+  const params = await searchParams;
+  const page = pageNumber(params.page);
+  const [result, assets] = await Promise.all([listTransactions(client, page), listAssets(client, PACKS)]);
   return (
     <main>
       <h1>Transactions</h1>
+      <Notice searchParams={params} />
       {result.total === 0 ? (
-        <p>No transactions yet.</p>
+        <p>
+          No transactions yet. Add one below, or <Link href="/transactions/import">import a CSV</Link>.
+        </p>
       ) : (
         <>
           <table>
@@ -24,6 +35,7 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
                 <th>Quantity</th>
                 <th>Unit price</th>
                 <th>Fees</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -39,12 +51,27 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
                     {t.unit_price} {t.currency}
                   </td>
                   <td>{t.fees}</td>
+                  <td>
+                    <Link href={`/transactions/${t.id}`}>Edit</Link>{" "}
+                    <form action={deleteTransactionAction}>
+                      <input type="hidden" name="transaction_id" value={t.id} />
+                      <button type="submit">Delete</button>
+                    </form>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           <Pager href="/transactions" page={page} total={result.total} />
         </>
+      )}
+      <h2>Add a transaction</h2>
+      {assets.length === 0 ? (
+        <p>
+          <Link href="/assets">Add an asset</Link> first.
+        </p>
+      ) : (
+        <TransactionForm action={createTransactionAction} assets={assets} submitLabel="Add transaction" />
       )}
     </main>
   );

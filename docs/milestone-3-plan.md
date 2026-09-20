@@ -36,7 +36,7 @@ finished.
 | 1 — Sessions and login | (this commit) | merged |
 | 2 — Data access layer and ledger reads | (this commit) | merged |
 | 3 — Snapshot invalidation, snapshot job, cron route | (this commit) | merged |
-| 4 — Asset, transaction, cash-flow and manual-price flows | — | not started |
+| 4 — Asset, transaction, cash-flow and manual-price flows | (this commit) | merged |
 | 5 — CSV import | — | not started |
 | 6 — Settings: security and your data | — | not started |
 | 7 — Documentation and gates | — | not started |
@@ -533,6 +533,27 @@ Corrections to the prose above, found while building:
   code; dbtests: cross-user references refused by RLS/FK, manual price not
   overwritten by `commit_ingest_chunk` (already in the tier), identity
   immutability and delete refusal (decision 27), base lock (decision 26).
+
+### Grounding (2026-09-20) — status: merged
+
+1. Each ledger module (`lib/ledger/{assets,transactions,cashFlows,prices,
+   settings}.ts`) takes the user's client and returns an `ActionResult`;
+   the `"use server"` files under `app/(app)/*/actions.ts` only verify the
+   session, parse `FormData`, call the module, revalidate and redirect with
+   the outcome in the query string (`?saved=1` / `?error=<reason>&fields=`),
+   rendered by one `Notice` component. That keeps the modules testable with
+   a fake PostgREST builder (`lib/ledger/fake-client.ts`) and the pages
+   native forms (decision 19).
+2. `changeBaseCurrency` landed here, not Phase 6: AC-004.6 belongs to
+   US-004. The Settings form for it is Phase 6.
+3. A manual price can be removed (`deleteManualPrice`) — the inverse of
+   "Enter a price" in SPEC §9.4, allowed by the hardening migration's
+   delete-manual policy.
+4. Metadata is a JSON textarea with the kind's schema keys as a hint;
+   the per-field form is Milestone 5's design work. Validation is the
+   pack's schema either way.
+5. Every page carrying an action exports `maxDuration = 60`, not only the
+   one whose action schedules a job.
 
 ## Phase 5 — CSV import
 

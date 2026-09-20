@@ -134,7 +134,8 @@ export interface LedgerRead {
   packs: MarketPack[];
 }
 
-async function readSettings(client: SupabaseClient, userId?: string): Promise<SettingsRow> {
+/** The user's settings row; defaults when the account has none yet. */
+export async function readSettings(client: SupabaseClient, userId?: string): Promise<SettingsRow> {
   let q = client.from("user_settings").select(SETTINGS_SELECT);
   if (userId) q = q.eq("user_id", userId);
   const { data, error } = await q.maybeSingle();
