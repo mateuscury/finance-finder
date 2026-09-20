@@ -47,20 +47,29 @@ arithmetic where the spec leaves it open.
   tolerance of `1e-8` for values and rates alike.
 - Kernel code may `import` only `decimal.js`, `zod`, `@/packs/types`,
   `@/packs/schema`, `@/packs/decimal-text` and relative `lib/calc` files.
-  `@supabase/*`, `next/*`, `@/lib/packs` and `@/lib/supabase` are banned by
-  lint, as are `parseFloat`, `Number(` and `Math.*` on values.
+  `@supabase/*`, `next/*`, `@/lib/packs`, `@/lib/supabase`, `@/lib/cron`,
+  `@/lib/testing` and `@/app` are banned by lint for every file under
+  `lib/calc` (tests included); the pack registry and any specific pack are
+  banned for kernel source only, so a test may use `packs/br/calendar` as a
+  fixture; `parseFloat`, `Number(`, `Math.*` and `Decimal.set` are banned in
+  kernel source.
 
 ### Calendar and staleness
 
 - `isBusinessDay(calendar, date)`: not in `calendar.weekend` and not in
   `calendar.holidays(year)`.
 - `businessDaysBetween(calendar, from, to)` counts business days in the
-  half-open interval `(from, to]`. `BUS/252` year fraction is that count / 252.
+  half-open interval `(from, to]`, and is **signed**: when `to` precedes
+  `from` it returns the negated count of `(to, from]`, so the function is
+  additive over adjacent intervals in either direction and never produces
+  `-0`. `BUS/252` year fraction is that count / 252.
 - `ACT/365` and `ACT/360` use calendar days in `(from, to]` over 365 or 360.
   `30/360` uses the US (NASD) convention.
 - **Staleness window** for a pack: the longest run of consecutive closed days
-  (weekend ∪ holidays) in the year of the valuation date, plus one day. For BR
-  in 2026 that is Carnival (Sat 14 – Tue 17 Feb, four days) → 5 days. The
+  (weekend ∪ holidays) **touching** the year of the valuation date, plus one
+  day. A run that straddles New Year is measured whole, not cut at the
+  boundary, so the window is never shorter than the closure it must cover.
+  For BR in 2026 that is Carnival (Sat 14 – Tue 17 Feb, four days) → 5 days. The
   window comes from the **asset's pack calendar** for both the price leg and
   the FX leg; the `global` calendar (7-day, no holidays) is never used for
   staleness, exactly as `packs/global/index.ts` says.
@@ -390,15 +399,19 @@ with rationale, as Milestone 1 did.
 ## Phase 1 — Money, dates, calendar, kernel types
 
 - `decimal.ts`: the private constructor and `toDecimalString(d)`.
-- `money.ts`: `Money` with `parse`, `add`, `sub`, `scale`, `neg`, `isZero`,
-  `compare`, `toString`; currency-mismatch throws.
+- `money.ts`: `Money` with `parse`, `zero`, `add`, `sub`, `scale`, `neg`,
+  `isZero`, `isNegative`, `compare`, `equals`, `toString`, `toJSON` (strings
+  only); currency-mismatch throws. Constructors from a Decimal are added
+  with their first consumer (valuation, Phase 3), not before.
 - `types.ts`: kernel input rows — `LedgerTransaction`, `ExternalCashFlow`,
   `HoldingAsset` (with the resolved `InstrumentKind`), `PriceObservation`,
   `SeriesObservation` — all with decimal strings, plus `MarketData`, a
   read-only lookup built from arrays with per-id date-sorted indexes.
-- `dates.ts`: ISO date arithmetic in UTC (`addDays`, `daysBetween`,
-  `days30360`, month arithmetic for anniversaries). `lib/packs/ingest.ts` has
-  its own `addDays`; leave it — `lib/calc` never imports `lib/packs`.
+- `dates.ts`: ISO date arithmetic in UTC (`parseIsoDate` strict, `addDays`,
+  `daysBetween`, `compareDates`, `dayOfWeek`, `days30360`, and month
+  arithmetic for anniversaries: `addMonths` with end-of-month clamping,
+  `completedMonths`). `lib/packs/ingest.ts` has its own `addDays`; leave it
+  — `lib/calc` never imports `lib/packs`.
 - `calendar.ts`: `isBusinessDay`, `businessDaysBetween`, `yearFraction`,
   `longestClosureRun`, `stalenessWindowDays`.
 - `errors.ts`: `KernelError` with the closed code set.

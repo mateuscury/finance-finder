@@ -36,11 +36,6 @@ export class Money {
     return new Money(parseDecimal(amount, field), assertCurrency(currency));
   }
 
-  /** From a Decimal already inside the kernel. */
-  static of(amount: Decimal, currency: string): Money {
-    return new Money(new KernelDecimal(amount), assertCurrency(currency));
-  }
-
   static zero(currency: string): Money {
     return new Money(new KernelDecimal(0), assertCurrency(currency));
   }

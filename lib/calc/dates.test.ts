@@ -11,8 +11,6 @@ import {
   daysInMonth,
   isIsoDate,
   isLeapYear,
-  maxDate,
-  minDate,
   parseIsoDate,
   yearOf,
 } from "./dates";
@@ -81,12 +79,11 @@ describe("day arithmetic", () => {
     );
   });
 
-  it("property: compareDates agrees with daysBetween; min/max are consistent", () => {
+  it("property: compareDates agrees with daysBetween", () => {
     fc.assert(
       fc.property(isoDate, isoDate, (a, b) => {
         const d = daysBetween(a, b);
         expect(compareDates(a, b)).toBe(d > 0 ? -1 : d < 0 ? 1 : 0);
-        expect(daysBetween(minDate(a, b), maxDate(a, b))).toBeGreaterThanOrEqual(0);
       }),
     );
   });

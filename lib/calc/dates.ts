@@ -86,14 +86,6 @@ export function compareDates(a: string, b: string): -1 | 0 | 1 {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-export function minDate(a: string, b: string): string {
-  return compareDates(a, b) <= 0 ? a : b;
-}
-
-export function maxDate(a: string, b: string): string {
-  return compareDates(a, b) >= 0 ? a : b;
-}
-
 /** JS convention: 0 = Sunday … 6 = Saturday, so it matches `MarketCalendar.weekend`. */
 export function dayOfWeek(date: string): number {
   return new Date(toEpochMs(date)).getUTCDay();
