@@ -32,7 +32,7 @@ follow-up commit → record Advisory findings → next phase.
 | 0 — Baseline, harness, decisions | `5b58484`, `8c34239`, `c78e760` | merged |
 | 1 — Money, dates, calendar, kernel types | `31fe537` + `0f6a056` | merged |
 | 2 — Positions, series, FX | `08a4bdc` + `4b0f276` | merged |
-| 3 — Valuation, staleness, portfolio builder | — | in progress |
+| 3 — Valuation, staleness, portfolio builder | (this commit) | merged |
 | 4 — Performance math | — | not started |
 | 5 — Golden portfolio | — | not started |
 | 6 — Backup and restore | — | not started |
@@ -546,7 +546,7 @@ two-coupon bond against a flat curve where the closed form is known, NAV window
 versus market window at the boundary, and a portfolio whose one stale holding
 is excluded from the total and listed.
 
-### Grounding (2026-09-20) — status: in progress
+### Grounding (2026-09-20) — status: merged
 
 Already in the tree from Phase 2, so this phase does not add them:
 `staleness.ts` (`classify`, `Observed<T>`, `observed`, `unpriced`,

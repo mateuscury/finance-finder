@@ -55,6 +55,17 @@ function parsed(t: LedgerTransaction): { quantity: KDecimal; unitPrice: KDecimal
   return { quantity, unitPrice, fees };
 }
 
+/** One asset's rows per asset id, in input order; an asset with no rows has no entry. */
+export function groupByAsset(transactions: readonly LedgerTransaction[]): ReadonlyMap<string, readonly LedgerTransaction[]> {
+  const groups = new Map<string, LedgerTransaction[]>();
+  for (const t of transactions) {
+    const rows = groups.get(t.assetId);
+    if (rows) rows.push(t);
+    else groups.set(t.assetId, [t]);
+  }
+  return groups;
+}
+
 /** Ledger rows in processing order. Pure; the input is not mutated. */
 export function sortLedger(transactions: readonly LedgerTransaction[]): LedgerTransaction[] {
   return [...transactions].sort(compareTransactions);
@@ -101,9 +112,14 @@ export function lotsAt(transactions: readonly LedgerTransaction[], date: IsoDate
   return Object.freeze(lots);
 }
 
+/** Sum of the lots' quantities. */
+export function lotQuantity(lots: readonly Lot[]): KDecimal {
+  return lots.reduce((sum, lot) => sum.plus(lot.quantity), ZERO);
+}
+
 /** Sum of open lot quantities as of `date`. */
 export function quantityAt(transactions: readonly LedgerTransaction[], date: IsoDate): KDecimal {
-  return lotsAt(transactions, date).reduce((sum, lot) => sum.plus(lot.quantity), ZERO);
+  return lotQuantity(lotsAt(transactions, date));
 }
 
 /**

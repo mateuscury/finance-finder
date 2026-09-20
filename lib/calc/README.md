@@ -32,12 +32,13 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
 ## Modules (Phase 2 — present)
 
 - `staleness.ts` — `classify(observedOn, asOf, windowDays)` → fresh /
-  carried_forward / stale, and the shared `Observed<T>` result shape with the
-  closed `UnpricedReason` set. Pulled forward from Phase 3 because Phase 2's
-  carry-forward property needs it.
+  carried_forward / stale, the shared `Observed<T>` result shape with the
+  closed `UnpricedReason` set, and `worseOf` over `ValueStatus`. Pulled
+  forward from Phase 3 because Phase 2's carry-forward property needs it.
 - `positions.ts` — `sortLedger` (`(tradeDate, rank, id)`, rank
   `buy < dividend = interest = fee < sell`), `lotsAt` (FIFO,
-  `oversell` throws), `quantityAt`, `netInvested` over `(from, to]`. (`groupByAsset` arrives with `portfolio.ts`.)
+  `oversell` throws), `lotQuantity`, `quantityAt`, `netInvested` over
+  `(from, to]`, `groupByAsset`.
 - `series/` — one function per closed `SeriesKind`; every result is a
   status-carrying union, never `NaN`:
   - `rate.ts` — `compoundRate` for `rate_daily` (Π(1 + m·rᵈ)) and
@@ -55,9 +56,48 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
   divides; else USD triangulation (`derived: true`); carried forward if any
   leg is, stale if any leg is; `fxDate` is the oldest leg; `no_fx_series`.
 
-## Planned (Phases 3–5)
+## Modules (Phase 3 — present)
 
-`valuation/` (one module per closed `ValuationStrategy`), `portfolio.ts`,
+- `valuation/` — one module per closed `ValuationStrategy`, each returning a
+  `HoldingValue` (`ok` / `carried_forward` with the native `Money`,
+  `unitValue` and `priceDate`; `stale` with `lastKnown`; `unpriced` with a
+  reason). `valueHolding(asset, lots, asOf, ctx)` in `index.ts` dispatches;
+  `ValuationContext` carries `market`, the ASSET's pack `calendar`, its
+  `windowDays` and the `series` in scope.
+  - `market-price.ts` — `quantity × latest price ≤ asOf` within the window;
+    a price in another currency is `currency_mismatch`.
+  - `nav-unit-price.ts` — the same lookup with `NAV_EXTRA_DAYS = 2` more.
+  - `accrual.ts` — `Σ_lots quantity × unitPrice × factor(openedOn, asOf)`;
+    `rate` is an effective annual rate (or the multiplier in
+    `percent_of_index`); `compounding` is the recognition granularity. The
+    support matrix (decision 13) is in the module header; undefined cells
+    throw `unsupported_convention`. `maturity` is never read (decision 14).
+    Metadata is read through `AccrualMetadataSchema = { rate }`; failure is
+    `unpriced` with `invalid_metadata`.
+  - `curve-mtm.ts` — `Σ CF × discountFactor` off `curveAt`; `bondCashFlows`
+    counts coupons back from `maturity` (each computed from maturity, never
+    chained); flows dated ≥ asOf are included with `DF(0) = 1`; past
+    maturity is `matured`; `indexation` is `indexation_not_supported`
+    (decision 7).
+- `portfolio.ts` — `valuePortfolio(input, asOf)` → the rows
+  `portfolio_snapshots` stores (decision 17): a `HoldingRow` per asset with
+  open lots whose price AND FX legs have a value, `status` the worse leg,
+  `carriedForward` whenever not built on fresh inputs; `totalBase` over
+  `ok` + `carried_forward`; `excluded` lists `stale` rows with their
+  last-known base value and `unpriced` assets with the reason. Also
+  `stalenessWindowFor(input, packId, date)` and `toBase(input, money, date,
+  packId)` — the one converter every base-currency figure goes through
+  (decision 15). `PortfolioInput.calendars` is a pack-id → calendar map the
+  caller builds: the kernel never imports the registry.
+
+## Reason codes
+
+`UnpricedReason` (closed; `staleness.ts`): `no_observation`, `series_gap`,
+`before_first_anchor`, `no_fx_series`, `no_price`,
+`indexation_not_supported`, `invalid_metadata`, `matured`.
+
+## Planned (Phases 4–5)
+
 `twr.ts`, `mwr.ts` (XIRR), `contribution.ts`, `attribution.ts`, `real.ts`,
 `golden.ts`.
 

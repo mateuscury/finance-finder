@@ -34,7 +34,21 @@ export type UnpricedReason =
   /** No price for the asset at or before the date. */
   | "no_price"
   /** `curve_mark_to_market` with `indexation` (decision 7). */
-  | "indexation_not_supported";
+  | "indexation_not_supported"
+  /** `assets.metadata` fails the pack's schema or lacks a field the strategy needs (decision 4: shown as unpriced, never a crash). */
+  | "invalid_metadata"
+  /** `curve_mark_to_market` past `maturity`: a past cash flow has no present value. */
+  | "matured";
+
+/** Status of a value that exists. Ordered: `ok` < `carried_forward` < `stale`. */
+export type ValueStatus = "ok" | "carried_forward" | "stale";
+
+const STATUS_RANK: Record<ValueStatus, number> = { ok: 0, carried_forward: 1, stale: 2 };
+
+/** The worse of two statuses — a number is only as fresh as its least fresh input. */
+export function worseOf(a: ValueStatus, b: ValueStatus): ValueStatus {
+  return STATUS_RANK[a] >= STATUS_RANK[b] ? a : b;
+}
 
 /**
  * An observation resolved as of a date. `ok` is fresh; `carried_forward`

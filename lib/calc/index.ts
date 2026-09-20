@@ -15,3 +15,5 @@ export * from "./staleness";
 export * from "./positions";
 export * from "./series";
 export * from "./fx";
+export * from "./valuation";
+export * from "./portfolio";
