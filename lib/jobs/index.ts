@@ -55,3 +55,14 @@ export async function priceThenSnapshot(ingest: IngestScope, userIds: string[], 
   const snapshotsSummary = await snapshotsJob({ kind: "users", userIds }, spentMs + (Date.now() - startedAt));
   return { ingest: ingestSummary, snapshots: snapshotsSummary };
 }
+
+/**
+ * SPEC §12.3 "Delete everything": the auth user row goes under the service
+ * role and every user-scoped table cascades. The ONE deliberately
+ * user-triggered service-role write. The action has already re-checked the
+ * password and the typed phrase; this only deletes the id it is given.
+ */
+export async function deleteUserJob(userId: string): Promise<{ ok: boolean }> {
+  const { error } = await createServiceRoleClient().auth.admin.deleteUser(userId);
+  return { ok: error === null };
+}

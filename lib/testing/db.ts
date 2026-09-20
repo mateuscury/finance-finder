@@ -107,7 +107,8 @@ export async function createThrowawayUser(admin: SupabaseClient): Promise<Throwa
     async remove() {
       if (!alive) return;
       const removed = await admin.auth.admin.deleteUser(userId);
-      if (removed.error) throw new Error(`dbtest: could not delete the throwaway user (${removed.error.message})`);
+      // A test that deleted the user itself (the "delete everything" path) has already done this.
+      if (removed.error && removed.error.status !== 404) throw new Error(`dbtest: could not delete the throwaway user (${removed.error.message})`);
       alive = false;
     },
   };

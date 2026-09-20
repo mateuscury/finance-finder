@@ -34,7 +34,7 @@ export async function verifyTotp(formData: FormData): Promise<void> {
   if (!parsed.success) redirect("/login/mfa?failed=1");
   const supabase = await createServerSupabase();
   const factors = await supabase.auth.mfa.listFactors();
-  const factor = factors.data?.totp.find((f) => f.status === "verified");
+  const factor = factors.data?.totp[0]; // `totp` lists verified factors only
   const failed = !factor || (await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data.code })).error !== null;
   redirect(failed ? "/login/mfa?failed=1" : "/");
 }

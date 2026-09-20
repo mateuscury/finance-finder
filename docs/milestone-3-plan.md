@@ -38,7 +38,7 @@ finished.
 | 3 — Snapshot invalidation, snapshot job, cron route | (this commit) | merged |
 | 4 — Asset, transaction, cash-flow and manual-price flows | (this commit) | merged |
 | 5 — CSV import | (this commit) | merged |
-| 6 — Settings: security and your data | — | not started |
+| 6 — Settings: security and your data | (this commit) | merged |
 | 7 — Documentation and gates | — | not started |
 
 ## Why the conventions below are written down first
@@ -603,6 +603,31 @@ Corrections to the prose above, found while building:
   specifies).
 - Tests: action tests; dbtests for the lock/reset path (snapshots gone,
   setting changed), pack enable, `last_export_at` stamp, delete cascades.
+
+### Grounding (2026-09-20) — status: merged
+
+1. **Export is a Route Handler**, `GET /settings/export/{json,csv}`: a
+   download needs a response with `Content-Disposition`, which a server
+   action cannot produce. It calls `requireUser()` like a page, stamps
+   `last_export_at`, and writes the CSV with `lib/csv` from the same
+   `export_backup()` payload as the JSON.
+2. **Restore acknowledges warnings by re-upload**: the first upload of a
+   file with warnings redirects with the warning codes; uploading again
+   with the checkbox ticked proceeds. No second transient table — a backup
+   file is small.
+3. **TOTP enrolment is decision 19's one client component** after all —
+   `totp-enrol.tsx` with `useActionState` — because the QR must be shown
+   between `enroll()` and `verify()` and the secret must never travel in a
+   URL. It talks only to server actions; Phase 1's "no browser Supabase
+   client" still holds and cookies stay `httpOnly`. Abandoned unverified
+   factors are cleared before a new enrolment.
+4. `deleteUserJob` in `lib/jobs` is the one deliberately user-triggered
+   service-role write (SPEC §12.3); the action re-checks the password on a
+   throwaway anon client so the session is untouched, and needs AAL2 when
+   a factor is enrolled. Refresh (AC-005.5) lives on `/assets`, where
+   "unpriced" shows, until Milestone 5's status strip.
+5. The dbtest harness's `remove()` treats a 404 as already removed, so a
+   test that deletes its own user does not fail in `afterAll`.
 
 ## Phase 7 — Documentation and gates
 
