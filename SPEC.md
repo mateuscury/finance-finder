@@ -675,13 +675,39 @@ helper in `lib/packs/http.ts` redacts before anything reaches a logger.
 canonical format — so the app's own import reads it back — and
 `finance-finder-YYYY-MM-DD.json`, a complete dump:
 `{ version: 1, exported_at, settings, assets, transactions, cash_flows,
-manual_prices }`. Money as decimal strings, as at every boundary. Each export
-stamps `user_settings.last_export_at`.
+prices }`. `prices` carries **every** price row with its `source_id`, not only
+manual ones (MILESTONES.md §2 decision 3): brapi's free plan cannot backfill
+beyond three months, so ingested history lost with the database is lost for
+good unless the backup carries it. `settings` is
+`{ base_currency, enabled_packs, locale, theme }` (decision 18). Money as
+decimal strings, as at every boundary; `user_id` is never in the file. Each
+export stamps `user_settings.last_export_at`. The database produces the file
+through `export_backup()` (security invoker, RLS-scoped); `lib/backup`
+validates it (`parseBackup`) and writes it deterministically
+(`serializeBackup`: stable row order, fixed key order, canonical decimals), so
+two exports of the same ledger are byte-identical except `exported_at`.
 
-**Release blocker:** full JSON restore and an automated export→delete→restore
-round-trip test must exist before the project is declared safe for real data.
-CSV alone cannot restore settings, fixed-income metadata, cash flows, or manual
-prices. Until then, `pnpm release:check` intentionally fails.
+**Restore.** Only into an **empty** account — no assets, transactions or cash
+flows — else refused with a fixed reason; merge is a different feature. Row
+ids and `created_at` are preserved, `user_id` is always rewritten to the
+restoring user, and an asset whose pack or instrument kind this build does
+not know, or whose metadata fails the pack schema, is restored with a warning
+and shows as unpriced (decision 4). `restore_backup(jsonb)` is one database
+transaction with `security definer` rights, because the client-side `prices`
+policy admits only manual rows; being the trust boundary it enforces
+ownership itself (decision 11): it refuses when unauthenticated, when the
+account is not empty, when an asset id already exists for any user, or when a
+transaction or price names an asset outside the restored set. The refusal
+codes are `not_authenticated`, `unsupported_version`, `account_not_empty`,
+`duplicate_asset_id`, `asset_id_conflict`, `foreign_asset_reference`.
+
+**Proof.** `lib/backup/roundtrip.dbtest.ts` (`pnpm test:db`, against a real
+Postgres) seeds the BR golden portfolio for a throwaway user, exports, deletes
+the user and checks every user table cascaded, restores into a NEW user,
+exports again and asserts equality modulo `exported_at`; then runs the kernel
+over the restored rows and matches `packs/br/fixtures/expected.json`. It also
+proves a file naming another user's asset ids is refused with nothing
+written, and that the service role can call neither function.
 
 **Backup reminder.** Supabase's free tier keeps no automated backups. Settings
 shows the last export date and the status strip (§9.2) nudges once

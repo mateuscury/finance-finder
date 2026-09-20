@@ -22,6 +22,9 @@ const requiredKernelFiles = [
   "lib/calc/fx.ts",
   "lib/calc/twr.ts",
   "lib/calc/mwr.ts",
+  "lib/backup/schema.ts",
+  "lib/backup/restore.ts",
+  "lib/backup/roundtrip.dbtest.ts",
   "app/login/page.tsx",
 ];
 for (const file of requiredKernelFiles) {
@@ -55,11 +58,6 @@ for (const pack of PACKS) {
       }
     }
   }
-}
-
-const productSpec = fs.readFileSync(path.join(root, "SPEC.md"), "utf8");
-if (productSpec.includes("**Release blocker:** full JSON restore")) {
-  blockers.push("full JSON restore is still explicitly deferred; disaster recovery is not round-trip tested");
 }
 
 for (const file of ["specs/SPEC.md", "specs/PERSONAS.md"]) {

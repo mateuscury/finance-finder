@@ -35,7 +35,7 @@ follow-up commit → record Advisory findings → next phase.
 | 3 — Valuation, staleness, portfolio builder | (this commit) | merged |
 | 4 — Performance math | (this commit) | merged |
 | 5 — Golden portfolio | (this commit) | merged |
-| 6 — Backup and restore | — | not started |
+| 6 — Backup and restore | (this commit) | merged |
 | 7 — Documentation and gates | — | not started |
 
 Each of Phases 3–7 below carries a "Grounding" note written against the
@@ -835,7 +835,7 @@ Gates as Phase 3 plus `pnpm test:packs` and `pnpm codeowners --check`.
   Definition of done. `last_export_at` stamping is a one-line server action
   in Milestone 3; the RPC takes no such side effect.
 
-### Grounding (2026-09-20) — status: not started
+### Grounding (2026-09-20) — status: merged
 
 Two corrections to the prose above, found against the harness and the
 policies as they stand:
@@ -898,8 +898,30 @@ Shape of the merge unit:
   requiring `lib/backup/schema.ts`, `lib/backup/restore.ts` and
   `lib/backup/roundtrip.dbtest.ts`.
 
-Gates as Phase 3 plus `pnpm test:db` against a freshly reset local stack
-(`supabase start -x logflare,studio,vector`, then `pnpm db:reset`).
+Gates as Phase 3 plus `pnpm test:db` against the local stack
+(`supabase start -x logflare,studio,vector`; `supabase migration up --local`
+applies a new migration without wiping local data).
+
+**Corrections found while implementing** (2026-09-20):
+
+1. **Supabase's default privileges grant `service_role` EXECUTE on every new
+   function**, so `revoke … from public, anon` alone left the service role
+   able to call both RPCs. Both are revoked from `service_role` by name, as
+   `commit_ingest_chunk` already did, and the dbtest proves it: an export or
+   a restore is always a user's own act.
+2. **`[auth.email] enable_signup = false` disabled email LOGIN, not signups.**
+   On the installed CLI (2.72) that key maps to
+   `GOTRUE_EXTERNAL_EMAIL_ENABLED`, the whole email provider; signups were
+   already refused globally by `[auth] enable_signup = false`
+   (`GOTRUE_DISABLE_SIGNUP`). The first `signIn()` from the harness failed
+   with "Email logins are disabled" — and so would the Milestone 3 login
+   screen. `supabase/config.toml` now keeps the global refusal and re-enables
+   the provider, with the reason in a comment. A Milestone 0 claim ("Local
+   Auth disables signups") was true but incomplete.
+3. `lib/testing/db.ts` gained `createThrowawayUser(admin)` (a handle with
+   `signIn()` on the anon key and `remove()`), `requireDbEnv` names
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` as a third required variable, and
+   `.env.local` must carry all three from `supabase status -o env`.
 
 ## Phase 7 — Documentation and gates
 

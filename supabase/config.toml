@@ -199,7 +199,12 @@ web3 = 30
 
 [auth.email]
 # Defense in depth with auth.enable_signup above.
-enable_signup = false
+# On this CLI version this key maps to GOTRUE_EXTERNAL_EMAIL_ENABLED — the whole
+# email PROVIDER, logins included — not to signups. Signups are already refused
+# globally by [auth] enable_signup = false (GOTRUE_DISABLE_SIGNUP); leaving this
+# false made password sign-in impossible for every user (found by the backup
+# round-trip dbtest, Milestone 2 Phase 6).
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
