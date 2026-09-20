@@ -112,7 +112,8 @@ and never looks up a price itself.
   survives.
 - `mwr.ts` — `xirr(stream)` solves `Σ CF_i (1 + r)^(−t_i) = 0`, `t_i` in
   ACT/365 years from the earliest date: Newton from 0.1 (≤ 50 iterations,
-  `|Δr| < 1e-14`), bisection over a sign change scanned in `[−0.999999, 10]`
+  `|Δr| < 1e-20`), bisection to a `1e-30` bracket over a sign change scanned
+  in `[−0.999999, 10]`
   when Newton leaves `(−0.999999, 1e6)`, meets a flat derivative or fails to
   converge. `null` with `insufficient_flows` (no negative and positive
   amount) or `no_root`. `mwr({ from, to, startValue, flows, endValue })`
@@ -135,9 +136,18 @@ and never looks up a price itself.
   `(1 + R) / (level(to) / level(from)) − 1` through `inflationLevelAt`;
   status the worse leg.
 
-## Planned (Phase 5)
+## Modules (Phase 5 — present)
 
-`golden.ts`.
+- `golden.ts` — `GoldenFixtureSchema` (the shape of a pack's
+  `fixtures/portfolio.json`), `runGolden(fixture, packs)` → valuation at
+  `asOf`, the confident total on every valuation date, which assets were
+  carried forward when, TWR, MWR and contribution — every figure a canonical
+  decimal string — and `compareGolden(actual, expected)`, which walks
+  `expected.json` (keys starting with `$` are annotations) and reports every
+  leaf outside `GOLDEN_TOLERANCE = 1e-8`. This is the ONE place the kernel
+  meets a pack manifest: the caller passes the packs in. The conformance
+  suite runs it for every pack with instruments; `expected.json` is derived
+  by the pack's checked-in script and never edited to match this output.
 
 `pnpm test:calc` runs only this directory and carries the `fast-check`
 properties the plan names for each phase.

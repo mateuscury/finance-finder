@@ -1,12 +1,33 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { MarketPack } from "../types";
+import { PACKS } from "..";
+import type { MarketPack, SeriesDescriptor } from "../types";
 
 export const PACKS_DIR = path.resolve(__dirname, "..");
 export const REPO_ROOT = path.resolve(PACKS_DIR, "..");
 
 export function packDir(pack: MarketPack): string {
   return path.join(PACKS_DIR, pack.id);
+}
+
+/** The pack and every pack it depends on, transitively (PACKS.md §11.2). */
+export function scopePacks(pack: MarketPack): MarketPack[] {
+  const found = new Map<string, MarketPack>();
+  const visit = (candidate: MarketPack) => {
+    if (found.has(candidate.id)) return;
+    found.set(candidate.id, candidate);
+    for (const dependencyId of candidate.dependencies ?? []) {
+      const dependency = PACKS.find((p) => p.id === dependencyId);
+      if (dependency) visit(dependency);
+    }
+  };
+  visit(pack);
+  return [...found.values()];
+}
+
+/** Series visible to a pack: its own plus those of its declared dependencies, by id. */
+export function seriesInScope(pack: MarketPack): Map<string, SeriesDescriptor> {
+  return new Map(scopePacks(pack).flatMap((p) => p.series.map((s) => [s.id, s] as const)));
 }
 
 export function readJson<T = unknown>(file: string): T {

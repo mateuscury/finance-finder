@@ -34,7 +34,7 @@ follow-up commit → record Advisory findings → next phase.
 | 2 — Positions, series, FX | `08a4bdc` + `4b0f276` | merged |
 | 3 — Valuation, staleness, portfolio builder | (this commit) | merged |
 | 4 — Performance math | (this commit) | merged |
-| 5 — Golden portfolio | — | not started |
+| 5 — Golden portfolio | (this commit) | merged |
 | 6 — Backup and restore | — | not started |
 | 7 — Documentation and gates | — | not started |
 
@@ -639,7 +639,10 @@ Property tests: TWR with no flows equals `V_end / V_start − 1`; a zero flow is
 a no-op; a deposit invested the same day at the same value leaves TWR
 unchanged; the chaining identity; XIRR of a single deposit and terminal value
 equals `(V/D)^(365/days) − 1` to 1e-12; XIRR is invariant to scaling every
-amount and to shifting every date; the solution satisfies `|NPV| < 1e-10`;
+amount and to shifting every date; the root lies within ±1e-12 of the
+solution (the plan first said `|NPV| < 1e-10`, which is unattainable when
+the root is within 1e-4 of −1 and |NPV′| exceeds 1e21 — see the Grounding
+note);
 contributions sum exactly to the simple return; the attribution identity holds
 exactly and `R_fx` equals the FX series return when quantity is constant.
 
@@ -662,9 +665,16 @@ performance modules never look up a price themselves.
   `−startValue` only when positive). `t_i = daysBetween(date_0, date_i) /
   365` with `date_0` the earliest date. NPV and its derivative are Decimal
   (`(1 + r).pow(−t)`); Newton from `0.1`, at most 50 iterations, stop at
-  `|Δr| < 1e-14`; bisection on a sign change found by scanning
-  `[−0.999999, 10]` when Newton leaves `(−0.999999, 1e6)`, meets a flat
-  derivative or does not converge.
+  `|Δr| < 1e-20`; bisection to a bracket of `1e-30` on a sign change found
+  by scanning `[−0.999999, 10]` when Newton leaves `(−0.999999, 1e6)`, meets
+  a flat derivative or does not converge. **Correction found while
+  implementing:** the prose said `1e-14` and the property `|NPV| < 1e-10`.
+  Property search produced streams with a 99.99% loss over four years, where
+  the root sits within 1e-4 of −1 and `|NPV′| ≈ 5e21`; the rate was correct
+  to thirty digits while the NPV residual stayed at 1e-10 under 40- and
+  80-digit evaluation alike. The absolute NPV bound is ill-posed there; the
+  stops were tightened (one extra quadratic step) and the property restated
+  scale-free: NPV changes sign across `rate ± 1e-12`.
 - `contribution.ts` — `contribution({ input, from, to, start, end, flows })`
   with `input` the `PortfolioInput` (it carries the transactions and is what
   `toBase` needs), `start`/`end` as `PortfolioValuation`s and `flows` the
@@ -723,7 +733,7 @@ blockers in `scripts/check-release-readiness.ts`. Gates as Phase 3.
 - Update `packs/br/README.md` coverage table for the two new kinds and
   `pnpm codeowners`.
 
-### Grounding (2026-09-20) — status: not started
+### Grounding (2026-09-20) — status: merged
 
 One merge unit, in this order, so the fixture is written against confirmed
 conventions and code that already exists:
@@ -754,9 +764,13 @@ conventions and code that already exists:
    except 02-19 (carried forward from 02-18); Tesouro NAV on every date.
    Lots opened 2026-01-15 (LCI) and 2026-02-02 (the rest); one extra FII
    buy 02-12, one FII `sell` 02-18, one FII `dividend` 02-12 — nine
-   transactions. Three cash flows: deposits 01-15 and 02-02 (both ≤ the
-   first valuation date, so part of `V₀`), withdrawal 02-19 (a valuation
-   date, so a start-of-day flow). `br.cdi = "0.0005"` on every business day
+   transactions. Four cash flows, not three: a deposit on each purchase day
+   (01-15, 02-02, 02-12 — the last a start-of-day flow on a valuation date)
+   and the sale's withdrawal on 02-18. Without a cash ledger an unfunded buy
+   reads as an 8% one-day gain and a withdrawal the day after a sale as a
+   spurious jump; matching flows to trades is what a user without a cash
+   ledger does, and what decision 1 is written for.
+   `br.cdi = "0.0005"` on every business day
    from 2026-01-02 through 02-27 so every factor is a finite decimal;
    `br.ipca` anchors `2026-01-31` and `2026-02-28` so every date is
    bracketed and interpolated `ok`. No FX series: every BR instrument is

@@ -28,7 +28,11 @@ const TesouroDiretoMetadata = z.object({
   purchaseRate: DecimalStringSchema.optional(),
 });
 
-/** "110% do CDI", "IPCA + 6%", or a plain prefixado rate — all via AccrualConvention. */
+/**
+ * "110% do CDI", "IPCA + 6%", or a plain prefixado rate — all via
+ * AccrualConvention. `maturity` is display and Maturities-screen data only:
+ * the kernel accrues until a sell closes the lot (MILESTONES.md decision 14).
+ */
 const PrivateCreditMetadata = z.object({
   issuer: z.string().min(1),
   /** Annual rate as a decimal string: "0.12" for 12% a.a., or the % of index: "1.10" for 110% do CDI. */
@@ -80,6 +84,35 @@ export const brInstruments: InstrumentKind[] = [
         dayCount: "BUS/252",
         compounding: "daily",
         index: { mode: "percent_of_index", seriesId: "br.cdi" },
+      },
+    },
+    metadataSchema: PrivateCreditMetadata,
+    identifier: "custom",
+    quoteCurrency: "BRL",
+  },
+  {
+    // Plain prefixado: the contracted rate IS the effective annual rate
+    // ("12% a.a."), recognised daily on BUS/252 (MILESTONES.md decisions 5, 9).
+    id: "br.cdb_prefixado",
+    label: "CDB prefixado",
+    valuation: {
+      kind: "accrual",
+      convention: { dayCount: "BUS/252", compounding: "daily" },
+    },
+    metadataSchema: PrivateCreditMetadata,
+    identifier: "custom",
+    quoteCurrency: "BRL",
+  },
+  {
+    // "IPCA + 6%": the level ratio of the índice times the spread's own factor.
+    id: "br.cdb_ipca",
+    label: "CDB IPCA+",
+    valuation: {
+      kind: "accrual",
+      convention: {
+        dayCount: "BUS/252",
+        compounding: "daily",
+        index: { mode: "index_plus_spread", seriesId: "br.ipca" },
       },
     },
     metadataSchema: PrivateCreditMetadata,

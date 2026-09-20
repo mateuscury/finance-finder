@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { PACKS } from "..";
+import { scopePacks, seriesInScope } from "./helpers";
 import { CURVE_METADATA_SAMPLE, CurveMetadataBaseSchema, MarketPackSchema } from "../schema";
 import { PACK_API_VERSION, type MarketPack } from "../types";
 
@@ -81,20 +82,6 @@ function resolvable(pack: MarketPack) {
   return { series, sources };
 }
 
-function scopePacks(pack: MarketPack): MarketPack[] {
-  const found = new Map<string, MarketPack>();
-  const visit = (candidate: MarketPack) => {
-    if (found.has(candidate.id)) return;
-    found.set(candidate.id, candidate);
-    for (const dependencyId of candidate.dependencies ?? []) {
-      const dependency = PACKS.find((p) => p.id === dependencyId);
-      if (dependency) visit(dependency);
-    }
-  };
-  visit(pack);
-  return [...found.values()];
-}
-
 describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential integrity", (_, pack) => {
   const { series, sources } = resolvable(pack);
 
@@ -111,7 +98,7 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential i
         expect(sources, `${i.id} → source '${v.sourceId}'`).toContain(v.sourceId);
       } else if (v.kind === "curve_mark_to_market") {
         expect(series, `${i.id} → series '${v.seriesId}'`).toContain(v.seriesId);
-        const s = [...scopeSeries(pack)].find((x) => x.id === v.seriesId);
+        const s = [...seriesInScope(pack).values()].find((x) => x.id === v.seriesId);
         expect(s?.kind.kind, `${i.id} discounts off '${v.seriesId}', which must be a yield_curve`).toBe(
           "yield_curve",
         );
@@ -140,10 +127,6 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential i
     }
   });
 });
-
-function scopeSeries(pack: MarketPack) {
-  return scopePacks(pack).flatMap((p) => p.series);
-}
 
 describe("curve_mark_to_market metadata constraint (PACKS.md §5)", () => {
   const curveKinds = PACKS.flatMap((p) =>

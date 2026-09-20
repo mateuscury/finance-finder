@@ -5,9 +5,9 @@
  * fixtures with NO network access, and its output is checked against the
  * kernel contract and the manifest that asked for it.
  *
- * The only remaining skips are the two Milestone 2 kernel-reproduction cases
- * and the golden-portfolio case for a pack with no instruments. A pack marked
- * `supported` is never allowed to use them: missing evidence fails.
+ * The only remaining skip is the golden-portfolio case for a pack with no
+ * instruments. A pack marked `supported` is never allowed to use it: missing
+ * evidence fails.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -15,10 +15,11 @@ import { describe, expect, it } from "vitest";
 import { PACKS } from "..";
 import { RefCoverageSchema } from "../schema";
 import type { FetchContext, FetchPoint, InstrumentKind, MarketPack, PriceSource, SeriesDescriptor } from "../types";
+import { compareGolden, GoldenFixtureSchema, runGolden } from "@/lib/calc/golden";
 import { createPackHttp, MAX_ATTEMPTS } from "@/lib/packs/http";
 import { FixtureFileSchema, findSecretLeaks, REQUIRED_FIXTURES, type FixtureCase } from "@/lib/packs/fixtures";
 import { validatePoints } from "@/lib/packs/validate";
-import { packDir, readJson } from "./helpers";
+import { packDir, readJson, seriesInScope } from "./helpers";
 
 /**
  * Replay must never reach the network. Any value here would be a bug, so the
@@ -31,20 +32,6 @@ const NO_NETWORK = (() => {
 /** A deterministic stand-in for each declared secret, so redaction matches. */
 function replayEnv(source: PriceSource): Record<string, string> {
   return Object.fromEntries((source.envVars ?? []).map((name) => [name, `fixture-${name.toLowerCase()}-value`]));
-}
-
-/** Series visible to a pack: its own plus those of its declared dependencies. */
-function seriesInScope(pack: MarketPack): Map<string, SeriesDescriptor> {
-  const out = new Map<string, SeriesDescriptor>();
-  const visit = (p: MarketPack) => {
-    for (const s of p.series) out.set(s.id, s);
-    for (const depId of p.dependencies ?? []) {
-      const dep = PACKS.find((c) => c.id === depId);
-      if (dep) visit(dep);
-    }
-  };
-  visit(pack);
-  return out;
 }
 
 /**
@@ -288,20 +275,21 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — fixtures", (_
     });
   });
 
-  it.skipIf(pack.instruments.length === 0)("ships golden portfolio fixtures (portfolio.json + expected.json)", () => {
+  // PACKS.md §11.5: the kernel must reproduce the hand-derived expectation.
+  // Every pack with instruments runs it; `global` has none and is the one skip.
+  it.skipIf(pack.instruments.length === 0)("kernel reproduces the hand-derived golden portfolio to 1e-8", () => {
     for (const f of ["portfolio.json", "expected.json"]) {
       expect(fs.existsSync(path.join(packDir(pack), "fixtures", f)), `${pack.id}/fixtures/${f} missing`).toBe(true);
     }
+    const portfolio = GoldenFixtureSchema.safeParse(readJson(path.join(packDir(pack), "fixtures", "portfolio.json")));
+    expect(portfolio.success, portfolio.success ? "" : JSON.stringify(portfolio.error.issues)).toBe(true);
+    if (!portfolio.success) return;
+    const expected = readJson<Record<string, unknown>>(path.join(packDir(pack), "fixtures", "expected.json"));
+    for (const key of ["valuation", "twr", "mwr"]) {
+      expect(expected[key], `${pack.id}/fixtures/expected.json has no ${key}`).not.toBeNull();
+    }
+    const actual = runGolden(portfolio.data, PACKS);
+    const mismatches = compareGolden(actual, expected);
+    expect(mismatches, mismatches.map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`).join("\n")).toEqual([]);
   });
-
-  const expectedFile = path.join(packDir(pack), "fixtures", "expected.json");
-  const expected = fs.existsSync(expectedFile) ? readJson<{ valuation: unknown }>(expectedFile) : null;
-  const goldenReady = expected !== null && expected.valuation !== null;
-
-  it.skipIf(!goldenReady)(
-    "kernel reproduces hand-computed valuation, TWR and MWR to 1e-8 (needs lib/calc + expected.json)",
-    () => {
-      expect.fail("not implemented: wire to lib/calc once Milestone 2 lands");
-    },
-  );
 });

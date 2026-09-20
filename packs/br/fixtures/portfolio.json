@@ -1,5 +1,438 @@
 {
-  "$comment": "PACKS.md §11.5 golden portfolio. Transactions across every BR instrument kind. Fill in when the kernel valuation path exists (Milestones 1–3); the conformance suite skips the golden test while status is draft AND expected.json is empty.",
+  "$comment": "PACKS.md §11.5 golden portfolio for packs/br. One asset per instrument kind; nine transactions including one sell and one dividend; four external cash flows (each purchase day's deposit and the sale's withdrawal — there is no cash ledger, so an unfunded buy would read as a gain); six valuation dates spanning Carnival 2026 (Sat 14 – Tue 17 Feb); the FII price is deliberately missing on 2026-02-19 to exercise carry-forward. Derived by hand in derive_expected.py into expected.json — never adjusted to match kernel output.",
   "baseCurrency": "BRL",
-  "transactions": []
+  "asOf": "2026-02-27",
+  "valuationDates": [
+    "2026-02-10",
+    "2026-02-12",
+    "2026-02-13",
+    "2026-02-18",
+    "2026-02-19",
+    "2026-02-27"
+  ],
+  "assets": [
+    {
+      "id": "fii",
+      "instrumentKind": "br.fii",
+      "identifier": "HGLG11",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "fundName": "CSHG Logística"
+      }
+    },
+    {
+      "id": "td",
+      "instrumentKind": "br.tesouro_direto",
+      "identifier": "td:tesouro-selic:2029-03-01",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "titulo": "Tesouro Selic 2029",
+        "maturity": "2029-03-01"
+      }
+    },
+    {
+      "id": "cdb",
+      "instrumentKind": "br.cdb",
+      "identifier": "cdb-banco-x-2028",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "issuer": "Banco X",
+        "rate": "1.10",
+        "maturity": "2028-02-02"
+      }
+    },
+    {
+      "id": "lci",
+      "instrumentKind": "br.lci_lca",
+      "identifier": "lci-banco-y-2027",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "issuer": "Banco Y",
+        "rate": "0.95",
+        "maturity": "2027-01-15"
+      }
+    },
+    {
+      "id": "pre",
+      "instrumentKind": "br.cdb_prefixado",
+      "identifier": "cdb-banco-z-pre-2028",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "issuer": "Banco Z",
+        "rate": "0.12",
+        "maturity": "2028-02-02"
+      }
+    },
+    {
+      "id": "ipca",
+      "instrumentKind": "br.cdb_ipca",
+      "identifier": "cdb-banco-w-ipca-2029",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "issuer": "Banco W",
+        "rate": "0.06",
+        "maturity": "2029-02-02"
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "id": "t1",
+      "assetId": "lci",
+      "tradeDate": "2026-01-15",
+      "type": "buy",
+      "quantity": "1",
+      "unitPrice": "20000",
+      "currency": "BRL",
+      "fees": "0"
+    },
+    {
+      "id": "t2",
+      "assetId": "fii",
+      "tradeDate": "2026-02-02",
+      "type": "buy",
+      "quantity": "100",
+      "unitPrice": "150",
+      "currency": "BRL",
+      "fees": "4.90"
+    },
+    {
+      "id": "t3",
+      "assetId": "td",
+      "tradeDate": "2026-02-02",
+      "type": "buy",
+      "quantity": "2",
+      "unitPrice": "15000",
+      "currency": "BRL",
+      "fees": "0"
+    },
+    {
+      "id": "t4",
+      "assetId": "cdb",
+      "tradeDate": "2026-02-02",
+      "type": "buy",
+      "quantity": "1",
+      "unitPrice": "10000",
+      "currency": "BRL",
+      "fees": "0"
+    },
+    {
+      "id": "t5",
+      "assetId": "pre",
+      "tradeDate": "2026-02-02",
+      "type": "buy",
+      "quantity": "1",
+      "unitPrice": "10000",
+      "currency": "BRL",
+      "fees": "0"
+    },
+    {
+      "id": "t6",
+      "assetId": "ipca",
+      "tradeDate": "2026-02-02",
+      "type": "buy",
+      "quantity": "1",
+      "unitPrice": "10000",
+      "currency": "BRL",
+      "fees": "0"
+    },
+    {
+      "id": "t7",
+      "assetId": "fii",
+      "tradeDate": "2026-02-12",
+      "type": "buy",
+      "quantity": "50",
+      "unitPrice": "152",
+      "currency": "BRL",
+      "fees": "2.45"
+    },
+    {
+      "id": "t8",
+      "assetId": "fii",
+      "tradeDate": "2026-02-12",
+      "type": "dividend",
+      "quantity": "0",
+      "unitPrice": "110",
+      "currency": "BRL",
+      "fees": "0"
+    },
+    {
+      "id": "t9",
+      "assetId": "fii",
+      "tradeDate": "2026-02-18",
+      "type": "sell",
+      "quantity": "-30",
+      "unitPrice": "155",
+      "currency": "BRL",
+      "fees": "1.50"
+    }
+  ],
+  "cashFlows": [
+    {
+      "id": "c1",
+      "date": "2026-01-15",
+      "amount": "20000",
+      "currency": "BRL"
+    },
+    {
+      "id": "c2",
+      "date": "2026-02-02",
+      "amount": "75004.90",
+      "currency": "BRL"
+    },
+    {
+      "id": "c3",
+      "date": "2026-02-12",
+      "amount": "7602.45",
+      "currency": "BRL"
+    },
+    {
+      "id": "c4",
+      "date": "2026-02-18",
+      "amount": "-4648.50",
+      "currency": "BRL"
+    }
+  ],
+  "prices": {
+    "HGLG11": [
+      {
+        "date": "2026-02-10",
+        "price": "151.00",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-12",
+        "price": "152.00",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-13",
+        "price": "153.50",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-18",
+        "price": "155.00",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-27",
+        "price": "156.20",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      }
+    ],
+    "td:tesouro-selic:2029-03-01": [
+      {
+        "date": "2026-02-10",
+        "price": "15010.50",
+        "currency": "BRL",
+        "sourceId": "br.tesouro_transparente"
+      },
+      {
+        "date": "2026-02-12",
+        "price": "15020.10",
+        "currency": "BRL",
+        "sourceId": "br.tesouro_transparente"
+      },
+      {
+        "date": "2026-02-13",
+        "price": "15025.00",
+        "currency": "BRL",
+        "sourceId": "br.tesouro_transparente"
+      },
+      {
+        "date": "2026-02-18",
+        "price": "15040.30",
+        "currency": "BRL",
+        "sourceId": "br.tesouro_transparente"
+      },
+      {
+        "date": "2026-02-19",
+        "price": "15045.20",
+        "currency": "BRL",
+        "sourceId": "br.tesouro_transparente"
+      },
+      {
+        "date": "2026-02-27",
+        "price": "15080.00",
+        "currency": "BRL",
+        "sourceId": "br.tesouro_transparente"
+      }
+    ]
+  },
+  "series": {
+    "br.cdi": [
+      {
+        "date": "2026-01-02",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-05",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-06",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-07",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-08",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-09",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-12",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-13",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-14",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-15",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-16",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-19",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-20",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-21",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-22",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-23",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-26",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-27",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-28",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-29",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-01-30",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-02",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-03",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-04",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-05",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-06",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-09",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-10",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-11",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-12",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-13",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-18",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-19",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-20",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-23",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-24",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-25",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-26",
+        "value": "0.0005"
+      },
+      {
+        "date": "2026-02-27",
+        "value": "0.0005"
+      }
+    ],
+    "br.ipca": [
+      {
+        "date": "2026-01-31",
+        "value": "7000.00"
+      },
+      {
+        "date": "2026-02-28",
+        "value": "7035.00"
+      }
+    ]
+  }
 }

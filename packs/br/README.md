@@ -9,6 +9,8 @@ Status: **draft**. Maintainers: @mateuscury.
 | `br.tesouro_direto` | `nav_unit_price` | Tesouro Transparente | `custom` identifier `td:<slug>:<maturity>`; metadata is `titulo` + `maturity` (+ optional display `purchaseRate`) |
 | `br.cdb` | `accrual` BUS/252 daily, `percent_of_index` CDI | — (series only) | rate stored in metadata |
 | `br.lci_lca` | `accrual` BUS/252 daily, `percent_of_index` CDI | — (series only) | tax exemption is out of scope (no fiscal reporting) |
+| `br.cdb_prefixado` | `accrual` BUS/252 daily, plain | — (series only) | `rate` is the effective annual rate ("0.12" = 12% a.a.) |
+| `br.cdb_ipca` | `accrual` BUS/252 daily, `index_plus_spread` IPCA | — (series only) | `rate` is the spread over the índice; level ratio from `br.ipca` |
 | `br.fii` | `market_price` | brapi.dev | ticker-identified |
 
 ## Series

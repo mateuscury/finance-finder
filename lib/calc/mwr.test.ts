@@ -9,6 +9,18 @@ const npv = (stream: XirrFlow[], rate: KDecimal) => {
   const origin = stream.map((f) => f.date).sort()[0];
   return stream.reduce((s, f) => s.plus(f.amount.times(ONE.plus(rate).pow(new KernelDecimal(-daysBetween(origin, f.date)).div(365)))), new KernelDecimal(0));
 };
+/**
+ * The root lies within ±ε of `rate`: NPV changes sign across the interval, or is
+ * already below 1e-10. Scale-free — an absolute |NPV| bound is unattainable when
+ * the root sits within 1e-4 of −1, where |NPV′| exceeds 1e21.
+ */
+const rootWithin = (stream: XirrFlow[], rate: KDecimal, epsilon = "1e-12") => {
+  const at = npv(stream, rate);
+  if (at.abs().lt("1e-10")) return true;
+  const lo = npv(stream, rate.minus(epsilon));
+  const hi = npv(stream, rate.plus(epsilon));
+  return lo.isNegative() !== hi.isNegative();
+};
 
 describe("xirr", () => {
   it("one deposit and a terminal value over a 365-day year is the simple growth rate", () => {
@@ -28,6 +40,20 @@ describe("xirr", () => {
     const r = xirr([flow("2026-01-01", "-1000"), flow("2027-01-01", "1")]);
     if (r.status !== "ok") throw new Error(r.reason);
     expect(r.rate.minus("-0.999").abs().lt("1e-12")).toBe(true);
+  });
+
+  it("a near-total loss (root within 1e-4 of −1, |NPV′| ~ 1e21) is still located to 1e-12", () => {
+    // Found by the property: an absolute |NPV| < 1e-10 is unattainable here, the bracket is not.
+    for (const s of [
+      [flow("2020-01-01", "-1"), flow("2022-01-29", "-270.53"), flow("2024-05-19", "0.5")],
+      [flow("2020-01-01", "-1"), flow("2023-06-01", "-224.04"), flow("2024-05-09", "0.53")],
+      [flow("2020-01-01", "-1"), flow("2023-09-11", "-230.65"), flow("2024-05-09", "0.53")],
+    ]) {
+      const r = xirr(s);
+      if (r.status !== "ok") throw new Error(r.reason);
+      expect(rootWithin(s, r.rate)).toBe(true);
+      expect(r.rate.lt("-0.9")).toBe(true);
+    }
   });
 
   it("is null with insufficient_flows without one negative and one positive amount", () => {
@@ -66,12 +92,12 @@ describe("xirr", () => {
     });
 
   // Three 40-digit solves per run: fewer runs, longer budget.
-  it("property: the solution has |NPV| < 1e-10 and is invariant to scaling amounts and shifting dates", { timeout: 30_000 }, () => {
+  it("property: the root lies within ±1e-12 of the solution, invariant to scaling amounts and shifting dates", { timeout: 60_000 }, () => {
     fc.assert(
       fc.property(stream, fc.integer({ min: 2, max: 1000 }), fc.integer({ min: -2000, max: 2000 }), (s, scale, shift) => {
         const r = xirr(s);
         if (r.status !== "ok") return; // no_root streams are legitimately null
-        expect(npv(s, r.rate).abs().lt("1e-10")).toBe(true);
+        expect(rootWithin(s, r.rate)).toBe(true);
         const scaled = xirr(s.map((f) => ({ ...f, amount: f.amount.times(scale) })));
         const shifted = xirr(s.map((f) => ({ ...f, date: addDays(f.date, shift) })));
         if (scaled.status !== "ok" || shifted.status !== "ok") throw new Error("expected ok");

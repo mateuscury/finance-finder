@@ -4,7 +4,7 @@
  *
  * `xirr` solves Σ CF_i / (1 + r)^(t_i) = 0 with `t_i = (date_i − date_0) / 365`
  * (ACT/365, Excel-compatible; `date_0` the earliest date in the stream).
- * Newton from 0.1, at most 50 iterations, stop when |Δr| < 1e-14; bisection
+ * Newton from 0.1, at most 50 iterations, stop when |Δr| < 1e-20; bisection
  * when Newton leaves (−0.999999, 1e6), meets a flat derivative or does not
  * converge, over a bracket found by scanning [−0.999999, 10] for a sign
  * change. No sign change → null with `no_root`. A stream without at least one
@@ -32,7 +32,10 @@ export type XirrResult = { status: "ok"; rate: KDecimal } | { status: "null"; re
 
 const NEWTON_START = new KernelDecimal("0.1");
 const NEWTON_MAX_ITERATIONS = 50;
-const NEWTON_TOLERANCE = new KernelDecimal("1e-14");
+// The plan said 1e-14. A near-total loss puts the root where |NPV′| ~ 1e15, and
+// a 1e-14 step still left a 1e-10 NPV residual — violating the plan's own
+// |NPV| < 1e-10 property. Quadratic convergence makes 1e-20 one extra step.
+const NEWTON_TOLERANCE = new KernelDecimal("1e-20");
 const LOWER_BOUND = new KernelDecimal("-0.999999");
 const UPPER_BOUND = new KernelDecimal("1e6");
 const FLAT_DERIVATIVE = new KernelDecimal("1e-30");
@@ -40,7 +43,10 @@ const BISECTION_GRID = ["-0.999999", "-0.99", "-0.9", "-0.75", "-0.5", "-0.25", 
   (s) => new KernelDecimal(s),
 );
 const BISECTION_MAX_ITERATIONS = 300;
-const BISECTION_TOLERANCE = new KernelDecimal("1e-16");
+// Near r = −1 the NPV is steep (|f′| ~ 1e15 for a near-total loss over a few
+// years), so the bracket must close far tighter than the 1e-10 NPV property:
+// 1e-30 is ~103 halvings from the widest bracket and inside precision 40.
+const BISECTION_TOLERANCE = new KernelDecimal("1e-30");
 
 interface Timed {
   amount: KDecimal;
