@@ -18,6 +18,32 @@ It does **not** make either pack `supported`, add screens or login, wire the
 snapshot cron, or make the product safe for real data. `pnpm release:check`
 stays red on login, draft packs and `specs/` placeholders only.
 
+## Progress
+
+Updated 2026-09-20 after Phase 2's spec-fidelity follow-up (`4b0f276`). Each
+phase is one merge unit and runs the same loop: state the plan and the
+acceptance criteria it serves → build → gates (`pnpm typecheck && pnpm lint &&
+pnpm test`, plus `pnpm test:db` when the database is touched) →
+`/qa-spec-fidelity` and `/qa-code-quality` → fix Must/Should findings in a
+follow-up commit → record Advisory findings → next phase.
+
+| Phase | Merge unit | Status |
+|---|---|---|
+| 0 — Baseline, harness, decisions | `5b58484`, `8c34239`, `c78e760` | merged |
+| 1 — Money, dates, calendar, kernel types | `31fe537` + `0f6a056` | merged |
+| 2 — Positions, series, FX | `08a4bdc` + `4b0f276` | merged |
+| 3 — Valuation, staleness, portfolio builder | — | in progress |
+| 4 — Performance math | — | not started |
+| 5 — Golden portfolio | — | not started |
+| 6 — Backup and restore | — | not started |
+| 7 — Documentation and gates | — | not started |
+
+Each of Phases 3–7 below carries a "Grounding" note written against the
+merged tree: the real signatures the phase builds on, the drift found between
+this plan's prose and the code, and what is still open. When the code's
+behaviour is implied by a phase's goal but the prose lags, amend the note and
+the prose — never bend the code to the wording.
+
 ## Why the conventions below are written down first
 
 `PACKS.md` §11.5 requires `expected.json` to be stated independently of the
@@ -312,6 +338,62 @@ with rationale, as Milestone 1 did.
     alongside, rather than including a last-known value with a flag. This is
     SPEC §11 taken literally and is the number the snapshot builder writes.
 
+## Decisions to confirm before Phases 3–6 (proposed 2026-09-20)
+
+> **Confirmed 2026-09-20** with the plan's approval for execution and
+> recorded in `MILESTONES.md` §2 as decisions 13–18; this section is kept as
+> the reasoning that was in front of the maintainer.
+
+Found while grounding Phases 3–7 against the merged tree. None changes the BR
+golden numbers — every BR accrual is `daily` and every BR asset is BRL — so
+all six are contract, not **numbers**.
+
+13. **Accrual support matrix.** `daily` is the only granularity that reads
+    `dayCount`: plain and `index_plus_spread` use `yearFraction`;
+    `percent_of_index` uses `compoundRate`, which already refuses `30/360`
+    and `rate_annual` on `ACT/360`, and requires the convention's `dayCount`
+    to equal the index series' own. `monthly` and `annual` are anniversary
+    arithmetic over `completedMonths` and do not consult `dayCount`.
+    `percent_of_index` with `monthly`/`annual`, or with a descriptor that is
+    not `rate_daily`/`rate_annual`; and `index_plus_spread` with a
+    descriptor that is not `inflation_index`/`index_level` — all throw
+    `unsupported_convention`. Rationale: the closed union is implemented
+    whole, and every undefined cell is an explicit throw, not a silent guess.
+14. **Accrual never reads `maturity`.** A lot accrues until a `sell` closes
+    it. The ledger, not the metadata, says whether the money is still
+    invested; a matured CDB with no recorded redemption is missing data,
+    which the Maturities screen surfaces in Milestone 5. Freezing at
+    maturity would hide that gap behind a plausible number. The kernel reads
+    accrual metadata through its own `{ rate }` schema; a failure is
+    `unpriced` with `invalid_metadata`, never a throw.
+15. **Contribution and attribution convert with the FX series, never with
+    `transactions.fx_rate`.** Each transaction's cash amount is converted
+    with `resolveFx` at its trade date under the asset's window; the row's
+    `fx_rate` stays display-only, as `types.ts` already says. A missing rate
+    makes that asset's contribution `null` with `no_fx_series` and marks the
+    total partial. One FX source for every number a screen shows.
+16. **TWR and MWR take flows already in base currency.** `twr.ts` and
+    `mwr.ts` receive `{ date, amount }`; the caller (the golden runner now,
+    the snapshot route in Milestone 3) converts a non-base flow with the
+    same resolver at the flow's date. Flows dated on or before the first
+    valuation date are part of `V₀`; flows after the last valuation date are
+    outside the window and reported, not silently dropped.
+17. **Portfolio builder output.** `holdings` carries every asset with open
+    lots and a price leg that is `ok`, `carried_forward` or `stale`, with
+    `status` the worse of the price and FX legs and `carriedForward` true if
+    either leg is; `unpriced` assets have no row and appear only in
+    `excluded` with their reason; `totalBase` sums `ok` + `carried_forward`;
+    `excluded` lists `stale` rows (with their last-known base value) and the
+    `unpriced` assets. A fully sold asset produces nothing. This is exactly
+    what `portfolio_snapshots` stores plus the two nullable date columns
+    decision 6 schedules.
+18. **Backup `settings` is `{ base_currency, enabled_packs, locale, theme }`.**
+    `last_export_at` is not exported: it is stamped by the Milestone 3 server
+    action on the restoring account's own first export, and carrying it
+    would make the round-trip test compare a value restore cannot honestly
+    reproduce. `assets.updated_at` IS exported and restored alongside
+    `created_at`, so two exports of the same data stay byte-identical.
+
 ## Definition of done
 
 - `lib/calc/` contains `decimal.ts`, `money.ts`, `types.ts`, `dates.ts`,
@@ -464,6 +546,91 @@ two-coupon bond against a flat curve where the closed form is known, NAV window
 versus market window at the boundary, and a portfolio whose one stale holding
 is excluded from the total and listed.
 
+### Grounding (2026-09-20) — status: in progress
+
+Already in the tree from Phase 2, so this phase does not add them:
+`staleness.ts` (`classify`, `Observed<T>`, `observed`, `unpriced`,
+`hasValue`, the closed `UnpricedReason` set); `lotsAt` → `readonly Lot[]`
+with `openedOn`, `quantity`, `unitPrice` as `KDecimal`; `compoundRate(market,
+seriesId, kind, calendar, from, to, multiplier)`; `inflationLevelAt`,
+`levelAt`, `curveAt`, `discountFactor`; `resolveFx(market, descriptors,
+native, base, asOf, windowDays)`; `yearFraction(calendar, dayCount, from,
+to)`, `completedMonths`, `addMonths`, `stalenessWindowDays(calendar, year)`;
+`Money.of`. Drafted at the start of this phase: `valuation/result.ts`
+(`ValuationContext { market, calendar, windowDays, series }`, `HoldingValue`,
+`findSeries`), `valuation/market-price.ts` (`valueAtLatestPrice`,
+`valueMarketPrice`), `valuation/nav-unit-price.ts` (`NAV_EXTRA_DAYS = 2`) and
+the `invalid_metadata` reason.
+
+Drift from the prose above, resolved in favour of the code: strategy
+functions take `(asset, quantity | lots, asOf, ctx)` rather than
+`(asset, lots, market, date, ctx)` — `market` lives inside `ctx`, and only
+`accrual` needs lots. `windowDays` is precomputed per pack by the caller as
+`stalenessWindowDays(calendar, yearOf(asOf))`, once per valuation run rather
+than once per holding.
+
+Remaining work, in order:
+
+1. `valuation/accrual.ts` — `valueAccrual(asset, lots, asOf, ctx)`. Metadata
+   is read through a kernel-owned `AccrualMetadataSchema = z.object({ rate:
+   DecimalStringSchema })` (`zod` and `@/packs/schema` are permitted
+   imports); failure → `unpriced("invalid_metadata")`. Per lot `quantity ×
+   unitPrice × factor(openedOn, asOf)`, summed; `unitValue` = native ÷
+   Σ quantity so `price_native` has a value to store. Factor by mode and
+   `compounding` per decision 13:
+   - plain, `daily`: `ONE.plus(rate).pow(yearFraction(ctx.calendar,
+     dayCount, openedOn, asOf))`; `priceDate = asOf`, status `ok` — nothing
+     was observed, the number is fresh by construction.
+   - plain, `monthly` / `annual`: `ONE.plus(rate).pow(completedMonths(
+     openedOn, asOf) / 12)`, the month count floored to a multiple of 12 for
+     `annual`.
+   - `percent_of_index`: `compoundRate(ctx.market, seriesId, kind,
+     ctx.calendar, openedOn, asOf, rate)` with `rate` as the multiplier;
+     `series_gap` → the whole holding is `unpriced("series_gap")` (one
+     series covers every lot); `priceDate = asOf`. Requires `daily` and a
+     `rate_daily`/`rate_annual` descriptor, else `unsupported_convention`.
+   - `index_plus_spread`: level at `openedOn` and at `asOf` via
+     `inflationLevelAt` (or `levelAt` for `index_level`); status is the
+     worse leg; `priceDate` is the `asOf` leg's `observedOn`; ratio ×
+     `(1 + rate)^τ`. A `stale` level → `stale` with `lastKnown`.
+   `maturity` is never read (decision 14).
+2. `valuation/curve-mtm.ts` — `valueCurveMtm(asset, quantity, asOf, ctx)`.
+   Kernel-owned `CurveBondMetadataSchema` mirrors PACKS §5 exactly
+   (`maturity`, `coupon: { rate, frequency: 1|2|4|12 } | null`,
+   `indexation: { seriesId } | null`). `indexation !== null` →
+   `unpriced("indexation_not_supported")` (decision 7). `maturity < asOf` →
+   `unpriced("matured")`, a new kernel reason: `discountFactor` rejects a
+   negative tenor and a past flow has no present value; on the maturity day
+   itself the bond is worth par plus its final coupon (`DF(0) = 1`).
+   Schedule: coupon dates `addMonths(maturity, −k·12/frequency)` for `k ≥ 0`
+   while `≥ asOf`, each `rate/frequency` per unit; principal `1` at
+   maturity; `tenorDays =
+   daysBetween(asOf, cashFlowDate)`; unit value `Σ CF × discountFactor(curve,
+   tenorDays)` with `curveAt(ctx.market, strategy.seriesId, asOf,
+   ctx.windowDays)`; status and `priceDate` from the curve observation.
+3. `valuation/index.ts` — `valueHolding(asset, lots, asOf, ctx): HoldingValue`
+   dispatching on `asset.instrumentKind.valuation.kind`; Σ lot quantity for
+   the three non-accrual strategies. Callers never pass empty lots.
+4. `portfolio.ts` — `PortfolioInput { baseCurrency, assets, transactions,
+   market, calendars: ReadonlyMap<packId, MarketCalendar>, series }` (the
+   kernel cannot import the registry; the caller builds the map) and
+   `valuePortfolio(input, asOf): PortfolioValuation` per decision 17. Per
+   asset: `lotsAt` (skip when empty) → `valueHolding` → `resolveFx` under
+   the ASSET's window → one row whose `status` is the worse of the two legs
+   and whose `carriedForward` is true if either leg is; `totalBase` over
+   `ok` + `carried_forward`; `excluded` lists `stale` (with the row's
+   last-known base value) and `unpriced` (with the reason). Also export
+   `toBase(input, money, date)` — the one converter Phase 4's contribution
+   and attribution reuse (decision 15).
+5. `index.ts` re-exports `valuation/` and `portfolio`; `lib/calc/README.md`
+   moves the four strategies and the builder from "Planned" to present.
+
+Tests: the suites this phase already names, plus worst-of-legs status, a
+zero-quantity asset producing no row, `invalid_metadata` never throwing, and
+`matured`. Gates: `pnpm test:calc`, `pnpm lint`, `pnpm typecheck`,
+`pnpm test`, then `/qa-spec-fidelity` and `/qa-code-quality`; no database is
+touched.
+
 ## Phase 4 — Performance math
 
 - `twr.ts`, `mwr.ts`, `contribution.ts`, `attribution.ts`, `real.ts`.
@@ -475,6 +642,53 @@ equals `(V/D)^(365/days) − 1` to 1e-12; XIRR is invariant to scaling every
 amount and to shifting every date; the solution satisfies `|NPV| < 1e-10`;
 contributions sum exactly to the simple return; the attribution identity holds
 exactly and `R_fx` equals the FX series return when quantity is constant.
+
+### Grounding (2026-09-20) — status: not started
+
+Everything here consumes Phase 3's `PortfolioValuation` and `toBase`; the
+performance modules never look up a price themselves.
+
+- `twr.ts` — `twr(valuations: { date, value }[], flows: { date, amount }[])`
+  over decimal strings already in base currency (decision 16) →
+  `{ twr: KDecimal | null, from, to, subPeriods, skipped, ignored }`. Each
+  sub-period records `{ from, to, startValue, flow, endValue, return }`; a
+  skipped one `{ from, to, reason: "non_positive_start" }`. Flows dated ≤
+  the first valuation date belong to `V₀`; flows after the last valuation
+  date go to `ignored`. `twr` is `null` only when no sub-period survives.
+- `mwr.ts` — `xirr(stream: { date, amount: KDecimal }[])` →
+  `{ status: "ok", rate } | { status: "null", reason: "insufficient_flows"
+  | "no_root" }`, and `mwr({ from, to, startValue, flows, endValue })`,
+  which builds the stream as the prose above says (deposits negated,
+  `−startValue` only when positive). `t_i = daysBetween(date_0, date_i) /
+  365` with `date_0` the earliest date. NPV and its derivative are Decimal
+  (`(1 + r).pow(−t)`); Newton from `0.1`, at most 50 iterations, stop at
+  `|Δr| < 1e-14`; bisection on a sign change found by scanning
+  `[−0.999999, 10]` when Newton leaves `(−0.999999, 1e6)`, meets a flat
+  derivative or does not converge.
+- `contribution.ts` — `contribution({ from, to, start, end, transactions,
+  flows, toBase })` with `start`/`end` as `PortfolioValuation`s and `flows`
+  the base-currency external flows in `(from, to]`. Per asset,
+  `netInvested` is rebuilt in base by converting each transaction's cash
+  amount with `toBase` at its trade date (decision 15): expose the
+  per-transaction breakdown `investedFlows(transactions, from, to)` from
+  `positions.ts` and make `netInvested` sum it, so the two cannot drift.
+  `D ≤ 0` → every contribution `null` with `zero_start_value`; an asset
+  whose value at either end is `stale`/`unpriced`, or a transaction with no
+  FX, → that asset `null` with the reason and the total marked partial.
+- `attribution.ts` — `attribution(input: PortfolioInput, assetId, from, to)`
+  splits at the asset's own transaction dates inside `(from, to)`, values
+  the holding at every boundary with `valueHolding` + `resolveFx`, chains
+  `R_native` and `R_base`, and returns `R_fx` as the residual. A
+  same-currency asset returns `R_fx = 0` exactly. Any boundary that is
+  `stale`/`unpriced` → `null` with the reason.
+- `real.ts` — `realReturn(nominal, market, deflatorSeriesId, interpolation,
+  from, to)` → `Observed<KDecimal>`; `π` from `inflationLevelAt` at both
+  ends, status the worse leg.
+
+Property tests are the ones this phase lists; add: `xirr` over a stream with
+no negative amount is `insufficient_flows`; `twr` over a single valuation is
+`null` with an empty chain. This phase clears the `twr.ts` / `mwr.ts`
+blockers in `scripts/check-release-readiness.ts`. Gates as Phase 3.
 
 ## Phase 5 — Golden portfolio
 
@@ -503,6 +717,64 @@ exactly and `R_fx` equals the FX series return when quantity is constant.
   suite ends at one skip.
 - Update `packs/br/README.md` coverage table for the two new kinds and
   `pnpm codeowners`.
+
+### Grounding (2026-09-20) — status: not started
+
+One merge unit, in this order, so the fixture is written against confirmed
+conventions and code that already exists:
+
+1. Data-only pack change (decision 5): add `br.cdb_prefixado` (`accrual`,
+   `BUS/252`, `daily`, no `index`) and `br.cdb_ipca` (`accrual`, `BUS/252`,
+   `daily`, `index_plus_spread` on `br.ipca`) to `packs/br/instruments.ts`,
+   both with `PrivateCreditMetadata`, `custom` identifiers, `BRL`. Add both
+   rows to the Coverage table in `packs/br/README.md` (the hygiene test
+   checks the headings; the table is the contributor contract).
+   `pnpm codeowners --check` stays green — maintainers are unchanged.
+2. `lib/calc/golden.ts` — `GoldenFixtureSchema` (zod; the shape listed
+   above, every money field `DecimalStringSchema`) and `runGolden(fixture,
+   packs: readonly MarketPack[]): GoldenResult`. The kernel may import the
+   `MarketPack` TYPE; the registry is passed in by the caller (the
+   conformance test passes `PACKS`). The runner resolves each asset's
+   `instrumentKind` by id across the fixture's packs and their
+   `dependencies`, maps `prices` from identifier to asset id, builds
+   `MarketData`, the calendar map and the series list, then runs
+   `valuePortfolio` on every `valuationDates` entry, `twr` and `mwr` over
+   the confident totals and `cashFlows`, and `contribution` over
+   `[first, asOf]`. Every output is a canonical decimal string via
+   `toDecimalString`.
+3. Fixture contents (proposal; the derivation script is the authority once
+   written): `asOf = "2026-02-27"`; `valuationDates` 02-10, 02-12, 02-13,
+   02-18, 02-19, 02-27 (Carnival closes Sat 14 – Tue 17; 13 → 18 spans the
+   four-day closure). Six assets, one per kind. FII prices on every date
+   except 02-19 (carried forward from 02-18); Tesouro NAV on every date.
+   Lots opened 2026-01-15 (LCI) and 2026-02-02 (the rest); one extra FII
+   buy 02-12, one FII `sell` 02-18, one FII `dividend` 02-12 — nine
+   transactions. Three cash flows: deposits 01-15 and 02-02 (both ≤ the
+   first valuation date, so part of `V₀`), withdrawal 02-19 (a valuation
+   date, so a start-of-day flow). `br.cdi = "0.0005"` on every business day
+   from 2026-01-02 through 02-27 so every factor is a finite decimal;
+   `br.ipca` anchors `2026-01-31` and `2026-02-28` so every date is
+   bracketed and interpolated `ok`. No FX series: every BR instrument is
+   BRL, so FX is exercised by the property tests here and by the Milestone
+   4 canary's golden.
+4. `packs/br/fixtures/derive_expected.py` (decision 12): standard-library
+   `decimal` at `prec = 50`; weekends by `date.weekday()`; the closed days
+   it uses are a LITERAL list taken from the published ANBIMA calendar
+   (2026-02-16, 2026-02-17 for this fixture), never derived from
+   `packs/br/calendar.ts`; XIRR by its own bisection, never Newton, so the
+   two solvers are independent. Writes `expected.json` with `asOf`,
+   `valuation` (total and per asset, native and base, `carriedForward`),
+   `twr`, `mwr`, `contribution` and `$derivation` (business-day counts,
+   each accrual factor, each sub-period return, the XIRR stream). Re-run by
+   hand; never edit the JSON.
+5. `packs/conformance/fixtures.test.ts`: replace `expect.fail` with
+   `runGolden(portfolio, PACKS)` compared to `expected.json` field by field
+   under `|a − b| ≤ 1e-8` computed in Decimal — never `toBeCloseTo`, which
+   is float. The `goldenReady` guard stays; the suite ends at exactly one
+   skip (`global`, no instruments). The three golden blockers in
+   `scripts/check-release-readiness.ts` clear on their own.
+
+Gates as Phase 3 plus `pnpm test:packs` and `pnpm codeowners --check`.
 
 ## Phase 6 — Backup and restore
 
@@ -544,6 +816,72 @@ exactly and `R_fx` equals the FX series return when quantity is constant.
   Definition of done. `last_export_at` stamping is a one-line server action
   in Milestone 3; the RPC takes no such side effect.
 
+### Grounding (2026-09-20) — status: not started
+
+Two corrections to the prose above, found against the harness and the
+policies as they stand:
+
+- **Neither RPC can be exercised by the service role.** `restore_backup`
+  takes ownership from `auth.uid()`, which is `null` for the service role,
+  and `export_backup` is scoped by RLS, which the service role bypasses.
+  `lib/testing/db.ts` therefore keeps the throwaway password it generates
+  and exposes `signIn()` → a client on the anon key authenticated as that
+  user; `requireDbEnv` grows a third variable for the anon key and names it
+  in the failure message like the other two. Seeding still uses the service
+  role, because it must preserve ids.
+- **The empty-account check must look at `cash_flows` as well as
+  `assets`.** Transactions and prices hang off assets; cash flows do not.
+  And a restored asset id that already exists for ANY user is refused with
+  a fixed reason (`asset_id_conflict`) before the insert, so the
+  all-or-nothing rollback never surfaces as a raw primary-key error.
+
+Shape of the merge unit:
+
+- `lib/backup/schema.ts` — `BackupSchema` v1 with `settings` per decision
+  18; `parseBackup` refuses any other `version` with `unsupported_version`.
+- `lib/backup/serialize.ts` — key order fixed by the schema; rows sorted
+  assets by `id`, transactions by `(trade_date, id)`, cash flows by `(date,
+  id)`, prices by `(asset_id, date)`; decimals canonicalised with
+  `toDecimalString(parseDecimal(x))` from `lib/calc` (this directory is
+  application code and may import the kernel).
+- `lib/backup/restore.ts` — the pure planner: the RPC's preconditions as a
+  pre-flight with the same fixed reasons; warnings for unknown `pack_id` /
+  `instrument_kind` and metadata failing the pack schema, resolved against
+  a `MarketPack[]` the caller passes in.
+- Forward migration `<timestamp>_backup_rpcs.sql`: `export_backup()`
+  security invoker, returning `jsonb` with every `numeric` as `::text` and
+  rows ordered as above, so two database exports are already identical;
+  `restore_backup(payload jsonb)` security definer, `set search_path = ''`,
+  every table `public.`-qualified, `revoke all … from public, anon,
+  authenticated; grant execute … to authenticated` — the header
+  `commit_ingest_chunk` uses, with the reason the mode differs stated in
+  the comment (decision 11). Inserts in order `user_settings` (upsert),
+  `assets`, `transactions`, `cash_flows`, `prices`, casting back with
+  `::numeric`; refusals raise fixed messages `restore_refused:
+  account_not_empty | asset_id_conflict | foreign_asset_reference`.
+- `lib/backup/roundtrip.dbtest.ts` — seed the golden portfolio under the
+  service role with ids preserved → `signIn()` → `export_backup` → delete
+  the auth user and assert every user-scoped table (including
+  `user_settings`) is empty for that id → create a NEW user (a new uid: the
+  `user_id` rewrite is the thing under test) → `restore_backup` →
+  `export_backup` → deep-equal modulo `exported_at`. Then feed the export
+  itself — already text, already the kernel's row shapes — to
+  `valuePortfolio` and compare with `expected.json`. That export IS the
+  text-cast read path: Milestone 3 reads money the same way (a jsonb RPC or
+  `::text` in `select`), never through PostgREST's numeric-as-number.
+  Refusals in the same file: a non-empty account, and a file naming a
+  second throwaway user's asset id; assert nothing was written in either.
+- Property test in `lib/backup/schema.test.ts`: `parseBackup(serialize(x))`
+  deep-equals `x` over `fast-check` ledgers.
+- Amend root `SPEC.md` §12.3 (`manual_prices` → `prices` with `source_id`;
+  the "Release blocker" paragraph becomes the description of the restore
+  path and its test) and switch `scripts/check-release-readiness.ts` to
+  requiring `lib/backup/schema.ts`, `lib/backup/restore.ts` and
+  `lib/backup/roundtrip.dbtest.ts`.
+
+Gates as Phase 3 plus `pnpm test:db` against a freshly reset local stack
+(`supabase start -x logflare,studio,vector`, then `pnpm db:reset`).
+
 ## Phase 7 — Documentation and gates
 
 - Rewrite `lib/calc/README.md` from "planned" to the module map, the
@@ -555,6 +893,26 @@ exactly and `R_fx` equals the FX series return when quantity is constant.
   pnpm codeowners --check`, then
   `pnpm exec tsx scripts/check-release-readiness.ts` and compare the blocker
   list with the Definition of done before running `pnpm release:check`.
+
+### Grounding (2026-09-20) — status: not started
+
+- `lib/calc/README.md`: the "Planned (Phases 3–5)" section becomes module
+  entries for `valuation/`, `portfolio.ts`, `twr.ts`, `mwr.ts`,
+  `contribution.ts`, `attribution.ts`, `real.ts`, `golden.ts`; add the full
+  reason-code list (`UnpricedReason` plus the Phase 3 additions
+  `invalid_metadata` and `matured`) and the accrual support matrix
+  (decision 13).
+- `MILESTONES.md` §2: mark complete and add a "Contract corrections found
+  while implementing" list as §1 has (decisions 13–18 are already recorded).
+- `CLAUDE.md` "Current state", `README.md` "Status", `specs/SPEC.md` (tick
+  every AC in US-001 and US-002, set both statuses, add a change-log row),
+  and the "Progress" table at the top of this plan.
+- Gates, in this order: `pnpm typecheck && pnpm lint && pnpm test && pnpm
+  test:db && pnpm codeowners --check`, then
+  `pnpm exec tsx scripts/check-release-readiness.ts` — the blocker list
+  must be exactly `app/login/page.tsx`, the two draft packs and
+  `specs/PERSONAS.md` — then `pnpm release:check` end to end, including
+  `pnpm build`.
 
 ## Suggested merge sequence for a solo maintainer
 

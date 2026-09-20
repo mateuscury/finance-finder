@@ -1,8 +1,9 @@
 import { PACKS } from "@/packs";
 
 /**
- * Placeholder home. The ten real screens are specified in SPEC.md (not yet in
- * the repo). This page only proves the pack registry resolves at build time.
+ * Placeholder home. The ten real screens are specified in SPEC.md §9 and
+ * arrive in Milestone 5. This page only proves the pack registry resolves at
+ * build time.
  */
 export default function Home() {
   return (

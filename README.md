@@ -40,7 +40,10 @@ conformance suite in `packs/conformance/`. `pnpm test:packs` is the gate.
 
 ## Status
 
-Scaffold. Packs `br` and `global` are draft. Kernel math not yet implemented.
+Milestone 1 (trusted ingestion) is complete; Milestone 2 (financial kernel
+and recovery) is in progress — positions, series kinds and FX exist;
+valuation, TWR/MWR and backup/restore do not. Packs `br` and `global` are
+draft. Status of record: `MILESTONES.md`.
 
 **Do not enter real portfolio data yet.** Normal CI validates development work,
 including explicitly skipped draft-pack tests. `pnpm release:check` is the

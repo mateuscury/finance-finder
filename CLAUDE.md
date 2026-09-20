@@ -100,22 +100,29 @@ pnpm db:start / db:reset # local Supabase (Docker)
 5. `fixtures/portfolio.json` + hand-computed `fixtures/expected.json` (the real gate).
 6. `README.md` with Coverage, Sources, Quirks. `pnpm test:packs` green. `pnpm codeowners`.
 
-## Current state (2026-09-06)
+## Current state (2026-09-20)
 
-Milestone 1 (trusted ingestion) is implemented; `packs/br` and `packs/global`
-remain `draft`. All five registered sources are real adapters — `global.bcb_ptax`
-(Olinda CSV), `br.bcb_sgs` (CDI/SELIC), `br.ibge_sidra` (IPCA número-índice),
-`br.brapi` (FII spot/historical + `^BVSP`/`IFIX.SA`) and
-`br.tesouro_transparente` (`PU Base Manha`, ODbL) — each with recorded
-success / empty / 5xx / 429 fixtures that replay offline. `lib/packs` now holds
-`http.ts`, `redact.ts`, `fixtures.ts`, `validate.ts`, `activate.ts`, `ingest.ts`
-and `store.ts`; `PACK_API_VERSION` is 3 (`ctx.signal` + `remainingMs()`, no
-`ctx.log`, structured `RefCoverage` carrying an explicit `unavailableBefore`).
-`initial_schema_hardening`, `ingest_watermarks` and the atomic
-`commit_ingest_chunk` RPC all ship as forward migrations — the initial migration
-is applied and therefore frozen, and must never be edited in place. `GET /api/cron/prices` returns a redacted run
-summary. `pnpm test:packs` reports 3 skips (down from 13).
+Milestone 1 (trusted ingestion) is complete; Milestone 2 (financial kernel
+and recovery) is in progress. `packs/br` and `packs/global` remain `draft`.
 
-`lib/calc` is still an empty README, so `pnpm release:check` remains red.
-Specified but unbuilt: the financial kernel, the real screens, login, snapshots,
-and tested export/restore.
+From Milestone 1: five real adapters — `global.bcb_ptax` (Olinda CSV),
+`br.bcb_sgs` (CDI/SELIC), `br.ibge_sidra` (IPCA número-índice), `br.brapi`
+(FII spot/historical + `^BVSP`/`IFIX.SA`), `br.tesouro_transparente`
+(`PU Base Manha`, ODbL) — each with recorded success / empty / 5xx / 429
+fixtures that replay offline; `lib/packs` (`http`, `redact`, `fixtures`,
+`validate`, `activate`, `ingest`, `store`); `PACK_API_VERSION` 3; forward
+migrations `initial_schema_hardening`, `ingest_watermarks` and the atomic
+`commit_ingest_chunk` RPC. The initial migration is applied and therefore
+frozen — never edit it in place. `GET /api/cron/prices` returns a redacted
+run summary.
+
+From Milestone 2, Phases 0–2 are merged (`docs/milestone-2-plan.md` keeps the
+per-phase table): the `*.dbtest.ts` tier (`pnpm test:db`, fails without the
+stack), kernel lint bans, and in `lib/calc/` decimal, money, dates, calendar,
+kernel input types + `MarketData`, staleness, FIFO positions, one function per
+series kind, and FX resolution — pure and property-tested. Phases 3–7
+(valuation strategies + portfolio builder; TWR/MWR/contribution/attribution/
+real; the BR golden fixture; backup/restore RPCs + round-trip dbtest; docs)
+are not built. `pnpm release:check` is red on `twr.ts`, `mwr.ts`, the golden
+results, restore, login, the draft packs and `specs/PERSONAS.md` — run it
+rather than trusting this paragraph.

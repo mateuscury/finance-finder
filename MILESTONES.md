@@ -114,7 +114,7 @@ full so the reasoning survives the people who made it.
    file, one manifest entry, no schema, and `series_points` is keyed by
    series id, not source id. Bring it back with the series that justifies it.
 
-## 2. Financial kernel and recovery
+## 2. Financial kernel and recovery — in progress
 
 - Implement decimal money, positions, valuation, FX, TWR, MWR, contribution,
   attribution, and staleness behavior with property tests.
@@ -122,7 +122,8 @@ full so the reasoning survives the people who made it.
 - Implement complete JSON export and restore plus an automated
   export→delete→restore equivalence test.
 
-Implementation plan: `docs/milestone-2-plan.md`.
+Implementation plan: `docs/milestone-2-plan.md`; its "Progress" table is the
+per-phase status of record (Phases 0–2 merged 2026-09-20).
 
 ### Decisions taken 2026-09-20 (before implementation)
 
@@ -217,6 +218,60 @@ is never adjusted afterwards to match kernel output.
     spreadsheet; a mismatch between the script and `lib/calc` is a bug in
     one of the two, resolved by rederiving by hand, never by editing the
     fixture to match.
+
+### Decisions taken 2026-09-20 (grounding Phases 3–7 against the merged tree)
+
+Found while writing the per-phase grounding notes in
+`docs/milestone-2-plan.md`; confirmed by the maintainer when the plan was
+approved for execution. None changes the BR golden numbers — every BR
+accrual is `daily` and every BR asset is BRL — so all six are contract.
+
+13. **Accrual support matrix.** `daily` is the only granularity that reads
+    `dayCount`: plain and `index_plus_spread` use `yearFraction`;
+    `percent_of_index` uses `compoundRate`, which already refuses `30/360`
+    and `rate_annual` on `ACT/360`, and requires the convention's `dayCount`
+    to equal the index series' own. `monthly` and `annual` are anniversary
+    arithmetic over `completedMonths` and do not consult `dayCount`.
+    `percent_of_index` with `monthly`/`annual`, or with a descriptor that is
+    not `rate_daily`/`rate_annual`; and `index_plus_spread` with a
+    descriptor that is not `inflation_index`/`index_level` — all throw
+    `unsupported_convention`. The closed union is implemented whole, and
+    every undefined cell is an explicit throw, not a silent guess.
+14. **Accrual never reads `maturity`.** A lot accrues until a `sell` closes
+    it. The ledger, not the metadata, says whether the money is still
+    invested; a matured CDB with no recorded redemption is missing data,
+    which the Maturities screen surfaces in Milestone 5. Freezing at
+    maturity would hide that gap behind a plausible number. The kernel reads
+    accrual metadata through its own `{ rate }` schema; a failure is
+    `unpriced` with `invalid_metadata`, never a throw.
+15. **Contribution and attribution convert with the FX series, never with
+    `transactions.fx_rate`.** Each transaction's cash amount is converted
+    with `resolveFx` at its trade date under the asset's window; the row's
+    `fx_rate` stays display-only. A missing rate makes that asset's
+    contribution `null` with `no_fx_series` and marks the total partial.
+    One FX source for every number a screen shows.
+16. **TWR and MWR take flows already in base currency.** `twr.ts` and
+    `mwr.ts` receive `{ date, amount }`; the caller (the golden runner now,
+    the snapshot route in Milestone 3) converts a non-base flow with the
+    same resolver at the flow's date. Flows dated on or before the first
+    valuation date are part of `V₀`; flows after the last valuation date are
+    outside the window and reported, not silently dropped.
+17. **Portfolio builder output.** `holdings` carries every asset with open
+    lots whose price AND FX legs each have a value (`ok`, `carried_forward`
+    or `stale`), with `status` the worse of the two legs and
+    `carriedForward` true whenever the row was not built on fresh inputs;
+    an asset with an `unpriced` leg has no row and appears only in
+    `excluded` with the reason; `totalBase` sums `ok` + `carried_forward`;
+    `excluded` also lists `stale` rows with their last-known base value. A
+    fully sold asset produces nothing. This is exactly what
+    `portfolio_snapshots` stores plus the two nullable date columns
+    decision 6 schedules.
+18. **Backup `settings` is `{ base_currency, enabled_packs, locale, theme }`.**
+    `last_export_at` is not exported: it is stamped by the Milestone 3 server
+    action on the restoring account's own first export, and carrying it
+    would make the round-trip test compare a value restore cannot honestly
+    reproduce. `assets.updated_at` IS exported and restored alongside
+    `created_at`, so two exports of the same data stay byte-identical.
 
 ## 3. Authenticated ledger
 

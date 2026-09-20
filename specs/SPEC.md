@@ -105,7 +105,7 @@ Then:  twr is defined from the first positive valuation with the skipped
 ```
 
 **Priority**: Must Have
-**Status**: In Progress (Phase 0 done 2026-09-20; Phases 1–5 pending)
+**Status**: In Progress (Phases 0–2 merged 2026-09-20; Phases 3–5 pending)
 
 ---
 
@@ -241,3 +241,4 @@ How we know this works:
 |------|--------|--------|
 | 2026-09-05 | Initial spec | Project kickoff |
 | 2026-09-20 | Vision, constraints, US-001 and US-002 filled | Milestone 2 Phase 0 step 6 (`docs/milestone-2-plan.md`) |
+| 2026-09-20 | US-001 status: Phases 0–2 merged | Stale-doc correction alongside the Phase 3–7 grounding in the plan |
