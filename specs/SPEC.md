@@ -43,43 +43,43 @@ mappings valued correctly (PACKS.md §11.5)
 **Acceptance Criteria** (`docs/milestone-2-plan.md` "Definition of done";
 conventions in its "Why the conventions below are written down first"
 section; decisions in `MILESTONES.md` §2):
-- [ ] AC-001.1: `lib/calc/` contains `decimal.ts`, `money.ts`, `types.ts`,
+- [x] AC-001.1: `lib/calc/` contains `decimal.ts`, `money.ts`, `types.ts`,
       `dates.ts`, `calendar.ts`, `positions.ts`, `fx.ts`, `staleness.ts`,
       `series/` (one module per closed `SeriesKind`), `valuation/` (one
       module per closed `ValuationStrategy`), `portfolio.ts`, `twr.ts`,
       `mwr.ts`, `contribution.ts`, `attribution.ts`, `real.ts`, `golden.ts`,
       `errors.ts`, `index.ts`. `scripts/check-release-readiness.ts` no longer
       lists a missing kernel file.
-- [ ] AC-001.2: All kernel arithmetic uses the kernel-private `Decimal` clone
+- [x] AC-001.2: All kernel arithmetic uses the kernel-private `Decimal` clone
       (precision 40, `ROUND_HALF_EVEN`); values enter as decimal strings
       matching `DecimalStringSchema` and leave as canonical decimal strings.
       `pnpm lint` fails on any `@supabase/*`, `next/*`, `@/lib/packs`,
       `@/lib/supabase`, specific-pack import, `parseFloat`, `Number(` or
       `Math.*` inside `lib/calc/` source.
-- [ ] AC-001.3: Every module has unit tests; every property named in the plan
+- [x] AC-001.3: Every module has unit tests; every property named in the plan
       (Phases 1–4) has a `fast-check` property test. `pnpm test:calc` runs
       without `--passWithNoTests`.
-- [ ] AC-001.4: Valuation returns a discriminated result — `ok`,
+- [x] AC-001.4: Valuation returns a discriminated result — `ok`,
       `carried_forward`, `stale` (with last known value and date) or
       `unpriced` (with a fixed reason code) — never `NaN`, never a number
       built on missing data. Confident totals exclude stale and unpriced
       holdings and list them alongside (decision 10; root SPEC §11).
-- [ ] AC-001.5: TWR uses start-of-day cash flows (decision 1); zero-start
+- [x] AC-001.5: TWR uses start-of-day cash flows (decision 1); zero-start
       sub-periods are skipped and reported and MWR is `null` with a reason
       when the flow stream has no negative amount (decision 2); accrual
       `compounding` is the recognition granularity of an effective annual
       rate (decision 9).
-- [ ] AC-001.6: `packs/br/fixtures/portfolio.json` covers every BR instrument
+- [x] AC-001.6: `packs/br/fixtures/portfolio.json` covers every BR instrument
       kind including `br.cdb_prefixado` and `br.cdb_ipca` (decision 5), and
       `expected.json` states valuation, TWR, MWR and contribution with a
       `$derivation` block of intermediate factors computed OUTSIDE the
       kernel. `expected.json` is never edited to match kernel output.
-- [ ] AC-001.7: `packs/conformance/fixtures.test.ts` contains no
+- [x] AC-001.7: `packs/conformance/fixtures.test.ts` contains no
       `expect.fail`; the kernel-reproduction test runs for every pack with
       instruments and matches to an absolute tolerance of `1e-8`.
       `pnpm test:packs` reports exactly 1 skip (the instrument-less `global`
       pack).
-- [ ] AC-001.8: `curve_mark_to_market` with `indexation` returns `unpriced`
+- [x] AC-001.8: `curve_mark_to_market` with `indexation` returns `unpriced`
       with reason `indexation_not_supported` (decision 7); the nominal path
       is property-tested against a synthetic curve.
 
@@ -106,7 +106,7 @@ Then:  twr is defined from the first positive valuation with the skipped
 ```
 
 **Priority**: Must Have
-**Status**: In Progress (Phases 0–2 merged 2026-09-20; Phases 3–5 pending)
+**Status**: Done (2026-09-20)
 
 ---
 
@@ -120,43 +120,44 @@ recoverable event and not the end of my portfolio history (root SPEC §12.3)
 
 **Acceptance Criteria** (`docs/milestone-2-plan.md` Phase 6; decisions 3, 4
 and 8 in `MILESTONES.md` §2):
-- [ ] AC-002.1: `lib/backup/` holds a versioned zod `BackupSchema` (v1:
+- [x] AC-002.1: `lib/backup/` holds a versioned zod `BackupSchema` (v1:
       `version`, `exported_at`, `settings`, `assets`, `transactions`,
       `cash_flows`, `prices`), a deterministic serializer (stable row order,
       fixed key order, canonical decimals — two exports of the same data are
       byte-identical except `exported_at`), a parser that rejects unknown
       versions with a fixed reason, and a pure restore planner.
-- [ ] AC-002.2: The export carries EVERY `prices` row with its `source_id`,
+- [x] AC-002.2: The export carries EVERY `prices` row with its `source_id`,
       not only manual ones (decision 3). It never carries `series_points` or
       `portfolio_snapshots`.
-- [ ] AC-002.3: Restore refuses a non-empty account (any asset, transaction,
+- [x] AC-002.3: Restore refuses a non-empty account (any asset, transaction,
       cash flow or price) with a fixed reason; preserves row ids and
       `created_at`; always rewrites `user_id` to the restoring user; warns
       but restores on unknown `pack_id` / `instrument_kind` or metadata that
       fails the pack schema; and is all-or-nothing in one database
       transaction (decision 4).
-- [ ] AC-002.4: Forward migrations add `export_backup()` and
+- [x] AC-002.4: Forward migrations add `export_backup()` and
       `restore_backup(jsonb)` with an explicit `search_path`, execute revoked
       from `public`/`anon` and granted to `authenticated`; every `numeric` is
       cast to text on the way out and back on the way in, so no value passes
       through a float. Neither touches `series_points`, `ingest_*` or
       `portfolio_snapshots`.
-- [ ] AC-002.5: The restore path enforces ownership itself: a file cannot
+- [x] AC-002.5: The restore path enforces ownership itself: a file cannot
       write a transaction or price against an asset id outside the restored
       set, and cannot write rows for another user.
-- [ ] AC-002.6: `lib/backup/roundtrip.dbtest.ts` seeds the golden portfolio
+- [x] AC-002.6: `lib/backup/roundtrip.dbtest.ts` seeds the golden portfolio
       for a throwaway user, exports, deletes the auth user and verifies
       cascades emptied every user table, recreates the user, restores,
       exports again, and asserts deep equality modulo `exported_at`; then
       runs `valuePortfolio` over the restored rows and matches
       `expected.json`.
-- [ ] AC-002.7: A `fast-check` property proves `parseBackup(serialize(x))`
-      deep-equals `x` over generated ledgers.
-- [ ] AC-002.8: Root `SPEC.md` §12.3 no longer contains the "Release blocker"
+- [x] AC-002.7: A `fast-check` property proves `parseBackup(serialize(x))`
+      deep-equals the canonical form of `x` (sorted rows, canonical
+      decimals) over generated ledgers.
+- [x] AC-002.8: Root `SPEC.md` §12.3 no longer contains the "Release blocker"
       paragraph; it describes the restore path and its test.
       `scripts/check-release-readiness.ts` requires `lib/backup/` and the
       round-trip `dbtest` instead of grepping that sentence.
-- [ ] AC-002.9: `pnpm test:db` runs every `*.dbtest.ts` against the local
+- [x] AC-002.9: `pnpm test:db` runs every `*.dbtest.ts` against the local
       Supabase stack and fails — never skips — when the stack or its
       environment variables are absent (decision 8). `pnpm test` excludes
       the tier; `pnpm release:check` requires it.
@@ -182,7 +183,7 @@ Then:  it refuses and writes nothing
 ```
 
 **Priority**: Must Have
-**Status**: Not Started
+**Status**: Done (2026-09-20)
 
 ---
 
@@ -243,3 +244,4 @@ How we know this works:
 | 2026-09-05 | Initial spec | Project kickoff |
 | 2026-09-20 | Vision, constraints, US-001 and US-002 filled | Milestone 2 Phase 0 step 6 (`docs/milestone-2-plan.md`) |
 | 2026-09-20 | US-001 status: Phases 0–2 merged | Stale-doc correction alongside the Phase 3–7 grounding in the plan |
+| 2026-09-20 | US-001 and US-002 done; every AC ticked; AC-002.7 restated as canonical-form equality; scenario 1 has four flows | Milestone 2 Phases 3–7 delivered (`docs/milestone-2-plan.md`) |

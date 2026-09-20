@@ -114,16 +114,58 @@ full so the reasoning survives the people who made it.
    file, one manifest entry, no schema, and `series_points` is keyed by
    series id, not source id. Bring it back with the series that justifies it.
 
-## 2. Financial kernel and recovery — in progress
+## 2. Financial kernel and recovery — complete (2026-09-20)
 
-- Implement decimal money, positions, valuation, FX, TWR, MWR, contribution,
-  attribution, and staleness behavior with property tests.
-- Fill every golden portfolio and make the kernel reproduce it to `1e-8`.
-- Implement complete JSON export and restore plus an automated
-  export→delete→restore equivalence test.
+- `lib/calc/` is the pure financial kernel: decimal money, dates and
+  calendars, FIFO positions, one function per series kind, FX resolution,
+  one module per valuation strategy, the portfolio builder, TWR, MWR (XIRR),
+  contribution, attribution and real returns — every module hand-tested and
+  every property the plan names proven with `fast-check`.
+- `packs/br` covers all six BR instrument kinds (two added: `br.cdb_prefixado`,
+  `br.cdb_ipca`). Its golden portfolio is derived independently by
+  `packs/br/fixtures/derive_expected.py` and reproduced by the kernel to
+  `1e-8`; `pnpm test:packs` reports exactly 1 skip (`global`, no instruments).
+- Backup v1 exports every price row with its provenance and restores
+  all-or-nothing into an empty account through `export_backup()` /
+  `restore_backup(jsonb)`; `lib/backup/roundtrip.dbtest.ts` proves
+  export→delete→restore→export equivalence against a real Postgres and that
+  the kernel reproduces the golden portfolio from the restored rows.
+- `pnpm release:check` is red only on `app/login/page.tsx`, the two draft
+  packs and `specs/PERSONAS.md` — exactly the plan's definition of done.
 
-Implementation plan: `docs/milestone-2-plan.md`; its "Progress" table is the
-per-phase status of record (Phases 0–2 merged 2026-09-20).
+Implementation plan: `docs/milestone-2-plan.md` (Progress table and
+per-phase Grounding notes).
+
+### Contract corrections found while implementing
+
+1. **The XIRR property "|NPV| < 1e-10" was ill-posed.** Property search
+   produced streams with a 99.99% loss over four years, where the root sits
+   within 1e-4 of −1 and |NPV′| exceeds 1e21: the rate was correct to thirty
+   digits while the residual stayed at 1e-10 under 40- and 80-digit
+   evaluation alike. Newton's stop was tightened to 1e-20 and bisection's
+   bracket to 1e-30 (one extra quadratic step), and the property is now
+   scale-free — NPV changes sign across `rate ± 1e-12`. Three found streams
+   are pinned as regression cases.
+2. **`[auth.email] enable_signup = false` had disabled email LOGIN, not just
+   signups.** On the installed CLI (2.72) the key maps to
+   `GOTRUE_EXTERNAL_EMAIL_ENABLED`, the whole email provider; signups were
+   already refused by `[auth] enable_signup = false`. The first `signIn()`
+   in the round-trip test failed with "Email logins are disabled" — and so
+   would the Milestone 3 login screen. The provider is re-enabled with the
+   reason in `supabase/config.toml`; the §0 claim "Local Auth disables
+   signups" was true but incomplete.
+3. **Supabase's default privileges grant `service_role` EXECUTE on every new
+   function**, so `revoke … from public, anon` alone left the service role
+   able to call both backup RPCs. Both revoke it by name, as
+   `commit_ingest_chunk` already did; the dbtest proves it.
+4. **The golden portfolio has four cash flows, not three.** Without a cash
+   ledger an unfunded buy reads as an 8% one-day gain and a withdrawal the
+   day after a sale as a spurious jump; a deposit on each purchase day and
+   the sale's withdrawal is what a user without a cash ledger records and
+   what decision 1 is written for.
+5. **`percent_of_index` requires the convention's `dayCount` to equal the
+   index series' own** (decision 13 as recorded). The prose had left the
+   two free to disagree, which would have meant guessing which one governs.
 
 ### Decisions taken 2026-09-20 (before implementation)
 

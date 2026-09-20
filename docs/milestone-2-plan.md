@@ -36,7 +36,7 @@ follow-up commit → record Advisory findings → next phase.
 | 4 — Performance math | (this commit) | merged |
 | 5 — Golden portfolio | (this commit) | merged |
 | 6 — Backup and restore | (this commit) | merged |
-| 7 — Documentation and gates | — | not started |
+| 7 — Documentation and gates | (this commit) | merged |
 
 Each of Phases 3–7 below carries a "Grounding" note written against the
 merged tree: the real signatures the phase builds on, the drift found between
@@ -935,7 +935,7 @@ applies a new migration without wiping local data).
   `pnpm exec tsx scripts/check-release-readiness.ts` and compare the blocker
   list with the Definition of done before running `pnpm release:check`.
 
-### Grounding (2026-09-20) — status: not started
+### Grounding (2026-09-20) — status: merged
 
 - `lib/calc/README.md`: the "Planned (Phases 3–5)" section becomes module
   entries for `valuation/`, `portfolio.ts`, `twr.ts`, `mwr.ts`,

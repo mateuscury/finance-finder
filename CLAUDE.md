@@ -102,8 +102,8 @@ pnpm db:start / db:reset # local Supabase (Docker)
 
 ## Current state (2026-09-20)
 
-Milestone 1 (trusted ingestion) is complete; Milestone 2 (financial kernel
-and recovery) is in progress. `packs/br` and `packs/global` remain `draft`.
+Milestones 1 (trusted ingestion) and 2 (financial kernel and recovery) are
+complete; `packs/br` and `packs/global` remain `draft`.
 
 From Milestone 1: five real adapters — `global.bcb_ptax` (Olinda CSV),
 `br.bcb_sgs` (CDI/SELIC), `br.ibge_sidra` (IPCA número-índice), `br.brapi`
@@ -112,17 +112,28 @@ From Milestone 1: five real adapters — `global.bcb_ptax` (Olinda CSV),
 fixtures that replay offline; `lib/packs` (`http`, `redact`, `fixtures`,
 `validate`, `activate`, `ingest`, `store`); `PACK_API_VERSION` 3; forward
 migrations `initial_schema_hardening`, `ingest_watermarks` and the atomic
-`commit_ingest_chunk` RPC. The initial migration is applied and therefore
-frozen — never edit it in place. `GET /api/cron/prices` returns a redacted
-run summary.
+`commit_ingest_chunk` RPC. `GET /api/cron/prices` returns a redacted run
+summary.
 
-From Milestone 2, Phases 0–2 are merged (`docs/milestone-2-plan.md` keeps the
-per-phase table): the `*.dbtest.ts` tier (`pnpm test:db`, fails without the
-stack), kernel lint bans, and in `lib/calc/` decimal, money, dates, calendar,
-kernel input types + `MarketData`, staleness, FIFO positions, one function per
-series kind, and FX resolution — pure and property-tested. Phases 3–7
-(valuation strategies + portfolio builder; TWR/MWR/contribution/attribution/
-real; the BR golden fixture; backup/restore RPCs + round-trip dbtest; docs)
-are not built. `pnpm release:check` is red on `twr.ts`, `mwr.ts`, the golden
-results, restore, login, the draft packs and `specs/PERSONAS.md` — run it
-rather than trusting this paragraph.
+From Milestone 2: `lib/calc/` is the whole pure kernel (module map in its
+README): decimal/money/dates/calendar, FIFO positions, one function per
+series kind, FX, one module per valuation strategy, the portfolio builder,
+TWR, MWR, contribution, attribution, real returns, and `golden.ts`.
+`packs/br` has six instrument kinds; its golden portfolio is derived
+independently by `packs/br/fixtures/derive_expected.py` and reproduced to
+`1e-8` — `pnpm test:packs` ends at exactly 1 skip. `lib/backup` +
+`export_backup()` / `restore_backup(jsonb)` (forward migration
+`backup_rpcs`) round-trip a ledger through a real Postgres in
+`lib/backup/roundtrip.dbtest.ts`. `pnpm test:db` needs
+`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` (`supabase status -o env`)
+and applies new migrations with `supabase migration up --local`. Every
+kernel convention and the eighteen decisions live in
+`docs/milestone-2-plan.md` and `MILESTONES.md` §2. Local Auth: keep
+`[auth.email] enable_signup = true` — on this CLI it is the email PROVIDER,
+and signups are refused by `[auth] enable_signup = false`.
+
+`pnpm release:check` is red only on `app/login/page.tsx`, the two draft
+packs and `specs/PERSONAS.md`. Not built: the snapshot cron route
+(Milestone 3, decision 6), login, the ledger flows, the UK canary, the ten
+screens.
