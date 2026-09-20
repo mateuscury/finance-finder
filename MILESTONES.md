@@ -326,8 +326,56 @@ accrual is `daily` and every BR asset is BRL — so all six are contract.
   decision 6): snapshots are rebuilt from a marker and never left stale by a
   history-changing write.
 
-Implementation plan: `docs/milestone-3-plan.md` (conventions, thirteen
-decisions to confirm before code, phases 0–7 and merge order).
+Implementation plan: `docs/milestone-3-plan.md` (conventions, phases 0–7
+and merge order).
+
+### Decisions taken 2026-09-20 (before implementation)
+
+Confirmed on the plan's recommendation; numbered on from Milestone 2's 18.
+Each changes a checked-in contract, a schema, or a behaviour a screen will
+depend on. Rationale in full in the plan's "Decisions to confirm" section.
+
+19. **Milestone 3 pages are functional and unstyled.** Server-component
+    pages with native forms and server actions; no design tokens; the MFA
+    enrolment widget is the only client component. Milestone 5 applies
+    SPEC §10 to all ten screens at once. A flow with no form is untestable
+    end to end and unusable by a person.
+20. **Snapshot invalidation is a database trigger.** `AFTER` row triggers on
+    `transactions` and `prices`, and on `user_settings.base_currency`,
+    delete the user's snapshots from the touched date forward. Every write
+    path — including the nightly price cron and `restore_backup`, which
+    this milestone does not write — is covered without remembering.
+21. **The snapshot calendar is the union of the user's enabled packs'
+    business days.** One row per asset per such day.
+22. **`portfolio_snapshots` gains `price_date`, `fx_date` and `status`**
+    (`ok | carried_forward | stale`; amends decision 6). A reader that
+    forgets to re-derive staleness would show a stale value as confident.
+23. **The CSV parser and writer are hand-written** (RFC 4180, property
+    tested). The only new dependency is `@supabase/ssr` 0.12.7, with
+    `@supabase/supabase-js` moved to 2.116.0.
+24. **The CSV column mapping lives in `user_settings.csv_column_map jsonb`**
+    and is not part of the backup.
+25. **Cash flows are entered in the base currency only.** `cash_flows.
+    currency` stays for a multi-currency ledger later; the kernel already
+    converts at the flow date.
+26. **Base currency locks at the first transaction; the reset is one
+    explicit action** (`confirmReset: true`), after which the decision 20
+    trigger drops every snapshot and the next run rebuilds history.
+27. **Asset identity is immutable once it has a transaction; an asset with
+    transactions cannot be deleted** (`asset_has_transactions`). `name` and
+    `metadata` stay editable.
+28. **Draft packs may be enabled, with a banner.** `unmaintained` is
+    refused. Both in-repo packs are draft until Milestone 5.
+29. **After-response chains through `after()`:** enabling a pack runs
+    `runIngest({ kind: "new_packs" })`; creating an asset runs
+    `runIngest({ kind: "assets" })` then `runSnapshots({ kind: "users" })`;
+    Refresh runs `unpriced` + snapshots. All under the service role in
+    `lib/jobs`, with a scope derived through the user's RLS client.
+30. **Server-action routes declare `maxDuration = 60`**; after-response
+    jobs receive `ingestBudgetMs()` minus the time the action spent.
+31. **No browser end-to-end runner this milestone.** Pure-module unit
+    tests, the `dbtest` tier (RLS, triggers, RPCs, sign-in, AAL, TOTP with
+    an RFC 6238 generator in the test) and `next build` are the proof.
 
 ## 4. Second-pack canary
 

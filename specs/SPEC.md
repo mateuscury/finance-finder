@@ -6,7 +6,7 @@
 > the design document that owns its behaviour, and the QA gates in
 > `.claude/CLAUDE.md` check implementations against the acceptance criteria
 > below.
-> Last updated: 2026-09-20
+> Last updated: 2026-09-20 (Milestone 3 stories)
 
 ## Product Vision
 
@@ -187,6 +187,318 @@ Then:  it refuses and writes nothing
 
 ---
 
+### US-003: Sign in as the owner
+
+**As a** the owner
+**I want** to sign in with my email and password, be challenged for my TOTP
+code whenever I have enrolled one, and sign out of this device or of every
+device
+**So that** my portfolio is reachable only by me, and a mailbox or a stolen
+password alone is not enough to open it (root SPEC §9.6)
+
+**Acceptance Criteria** (`docs/milestone-3-plan.md` "Identity and sessions";
+decisions 19, 31):
+- [ ] AC-003.1: Sessions are cookie-based through `@supabase/ssr`
+      (`lib/supabase/server.ts`, `httpOnly`, `Secure` outside development,
+      `SameSite=Lax`). `proxy.ts` refreshes the session on every matched
+      request and redirects an unauthenticated request for a data route to
+      `/login`, optimistically; it never decides authorization.
+- [ ] AC-003.2: `lib/auth/session.ts` `requireUser()` establishes identity
+      with `getUser()` — never `getSession()`, which `pnpm lint` bans
+      project-wide — and is called first by every page under `app/(app)/`
+      and every server action.
+- [ ] AC-003.3: `app/login/page.tsx` is email + password, has no signup
+      link, and one line says the account is created with
+      `pnpm bootstrap:user`. A wrong password, an unknown email and a
+      disabled account produce one identical result ("email or password
+      incorrect"); the action never branches on the error kind.
+- [ ] AC-003.4: When the user has a verified TOTP factor, an AAL1 session
+      is redirected to `/login/mfa` by `requireUser()` before any data
+      page or action runs; a correct code raises the session to AAL2.
+      Unenrolled users stay at AAL1 with no challenge.
+- [ ] AC-003.5: Sign out (`scope: "local"`) is in the nav; "sign out
+      everywhere" (`scope: "global"`) is in Settings.
+- [ ] AC-003.6: Password change is in Settings and requires an AAL2
+      session when a factor is enrolled; password reset goes through
+      Supabase's reset email with a fixed "if that address has an account,
+      an email was sent" message and completes on `/login/reset`.
+- [ ] AC-003.7: `lib/auth/auth.dbtest.ts` proves against the local stack:
+      sign-in succeeds; wrong password and unknown email return
+      byte-identical results; enrolling a TOTP factor and verifying a code
+      from an RFC 6238 generator written in the test raises
+      `getAuthenticatorAssuranceLevel()` to `aal2`.
+
+**Test Scenarios**:
+```
+Given: the owner has no TOTP factor
+When:  they sign in with the right password
+Then:  they land on / and requireUser() returns their id
+
+Given: the owner has a verified TOTP factor
+When:  they sign in with the right password and open /assets
+Then:  they are redirected to /login/mfa; after a valid code /assets renders
+
+Given: an unknown email or a wrong password
+When:  the login action runs
+Then:  the response body and status are identical in both cases
+```
+
+**Priority**: Must Have
+**Status**: Not Started
+
+---
+
+### US-004: Keep the ledger
+
+**As a** the owner
+**I want** to create, edit and delete my assets, transactions and cash
+flows through validated forms, with mistakes rejected field by field
+**So that** the ledger the kernel computes from is mine alone, internally
+consistent, and never silently re-priced (root SPEC §2, §9 screens 6–8, §11)
+
+**Acceptance Criteria** (`docs/milestone-3-plan.md` "Writes"; decisions 19,
+25, 26, 27):
+- [ ] AC-004.1: `lib/ledger/schemas.ts` (zod) validates every form in
+      decimal strings and mirrors the database checks: quantity sign by
+      type, `unit_price > 0`, `fees ≥ 0`, ISO 4217 currency, real dates.
+      `parseFloat` / `Number(` are banned in `lib/ledger` by lint.
+- [ ] AC-004.2: Every action returns `{ ok: true, … } | { ok: false,
+      reason, fields? }` with a closed reason set; a Supabase error message
+      never reaches the browser.
+- [ ] AC-004.3: Asset create/edit validates `metadata` against the pack's
+      `metadataSchema` and the identifier per `IdentifierSpec`; `pack_id`,
+      `instrument_kind`, `identifier` and `native_currency` are immutable
+      once the asset has a transaction, and delete refuses with
+      `asset_has_transactions` (decision 27).
+- [ ] AC-004.4: Transactions carry `trade_date`, `type`, signed
+      `quantity`, `unit_price`, `currency`, `fees`, optional `note`;
+      editing or deleting one recomputes everything downstream (the
+      decision 20 trigger, US-006).
+- [ ] AC-004.5: Cash flows are entered in the base currency only
+      (decision 25); a zero amount is refused.
+- [ ] AC-004.6: The base currency locks at the first transaction:
+      `changeBaseCurrency` refuses with `base_locked` unless
+      `confirmReset: true`, which changes it and drops every snapshot
+      (decision 26).
+- [ ] AC-004.7: A dbtest proves a second user cannot read, reference or
+      mutate the first user's rows (RLS and the composite FKs), and that
+      the pages `/assets`, `/transactions`, `/cash-flows` list only the
+      signed-in user's rows.
+
+**Test Scenarios**:
+```
+Given: an asset with one transaction
+When:  the owner edits its identifier
+Then:  the action returns { ok: false, reason: "asset_identity_locked" }
+
+Given: a transaction form with type sell and quantity 10
+When:  submitted
+Then:  the action returns a field error on quantity before any database call
+
+Given: user B knows user A's asset id
+When:  B submits a transaction for it
+Then:  the action returns not_found and no row is written
+```
+
+**Priority**: Must Have
+**Status**: Not Started
+
+---
+
+### US-005: Price what I hold
+
+**As a** the owner
+**I want** a new asset to be priced automatically, to enter a price by hand
+when a source cannot, and to retry everything unpriced at once
+**So that** I see a number without waiting for the nightly cron, and a
+number I typed is never overwritten by a source (root SPEC §9.4, §2 prices)
+
+**Acceptance Criteria** (`docs/milestone-3-plan.md` "Keys and clients";
+decisions 29, 30):
+- [ ] AC-005.1: Creating an asset commits the row first; only then does
+      the action schedule `runIngest({ kind: "assets", assetIds })` through
+      `after()` under the service role in `lib/jobs`, followed by
+      `runSnapshots({ kind: "users" })`. A fetch failure is never a form
+      error.
+- [ ] AC-005.2: The service-role client is constructed only in
+      `app/api/cron/**` and `lib/jobs/**`; `pnpm lint` fails on any other
+      import of `@/lib/supabase/service`.
+- [ ] AC-005.3: The asset list shows, per asset, the latest price with its
+      `source_id` and date, or *unpriced* with the source's
+      `ingest_cursors.last_error` when there is one.
+- [ ] AC-005.4: A manual price form on the asset writes
+      `prices.source_id = 'manual'`; `commit_ingest_chunk` never overwrites
+      it (already proven in `store.dbtest.ts`).
+- [ ] AC-005.5: Refresh runs `runIngest({ kind: "unpriced" })` then
+      snapshots for the user, after the response, within the route budget.
+- [ ] AC-005.6: Server-action routes export `maxDuration = 60`; the
+      after-response jobs receive the remaining budget.
+
+**Test Scenarios**:
+```
+Given: an asset created with a source whose env var is absent
+When:  the after-response ingest runs
+Then:  the asset row shows unpriced with missing_env:<VAR>, and the create
+       action had already returned ok
+
+Given: a manual price for today
+When:  the nightly cron ingests the same date
+Then:  the manual row stands (manual_protected = 1)
+```
+
+**Priority**: Must Have
+**Status**: Not Started
+
+---
+
+### US-006: Snapshots follow the ledger
+
+**As a** the owner
+**I want** daily valuations to be built from my ledger by a resumable job
+and rebuilt whenever I change history
+**So that** every chart and return is a pure function of what I recorded
+and never a stale cache (root SPEC §8, §11; Milestone 2 decision 6)
+
+**Acceptance Criteria** (`docs/milestone-3-plan.md` "The snapshot
+invariant" and "The snapshot job"; decisions 20, 21, 22):
+- [ ] AC-006.1: A forward migration adds `price_date`, `fx_date` and
+      `status` to `portfolio_snapshots` and the `invalidate_snapshots`
+      trigger family on `transactions`, `prices` and
+      `user_settings.base_currency`.
+- [ ] AC-006.2: A dbtest proves each trigger deletes exactly the user's
+      snapshots from the touched date forward (all of them for a base
+      currency change) and nothing of another user's.
+- [ ] AC-006.3: `lib/jobs/snapshots.ts` `runSnapshots` builds per user
+      from `max(snapshot date) + 1` (or the earliest trade date), over the
+      union of the enabled packs' business days, one day at a time, each
+      day one atomic upsert of `valuePortfolio(...).holdings`, and stops
+      cleanly when the budget is exhausted so the next trigger resumes.
+- [ ] AC-006.4: Every kernel-bound read casts numerics to text
+      (`lib/ledger/rows.ts`); no value passes through a JS number.
+- [ ] AC-006.5: `GET /api/cron/snapshots` replaces the 501 stub, is
+      authorised by `lib/cron/auth.ts`, runs all users and returns counts
+      only; `budget.test.ts` enforces its `maxDuration` literal.
+- [ ] AC-006.6: A dbtest runs the job over the BR golden portfolio and the
+      per-date totals equal `expected.json`'s `valuations`; the missing
+      FII price on 2026-02-19 yields `status = 'carried_forward'` and
+      `price_date = '2026-02-18'`.
+
+**Test Scenarios**:
+```
+Given: snapshots exist through 2026-02-27 and a transaction is inserted
+       dated 2026-02-12
+When:  the insert commits
+Then:  snapshots from 2026-02-12 forward are gone; earlier ones remain
+
+Given: a budget that allows two days of building
+When:  runSnapshots runs twice
+Then:  the second run continues from the first run's last day + 1
+```
+
+**Priority**: Must Have
+**Status**: Not Started
+
+---
+
+### US-007: Import my history
+
+**As a** the owner
+**I want** to upload a CSV of my past transactions, map its columns once,
+review every row before anything is written, and commit all or nothing
+**So that** years of history enter the ledger without hand entry and
+without a half-imported file corrupting my figures (root SPEC §9.1)
+
+**Acceptance Criteria** (`docs/milestone-3-plan.md` "CSV import";
+decisions 23, 24):
+- [ ] AC-007.1: `lib/csv/parse.ts` and `write.ts` implement RFC 4180
+      (quoted fields, doubled quotes, CRLF, BOM) with no dependency; a
+      `fast-check` property proves `parse(write(rows)) = rows`.
+- [ ] AC-007.2: The canonical columns are SPEC §9.1's; a header map is
+      applied first, saved to `user_settings.csv_column_map`, and reused;
+      unknown columns are ignored; a missing required column is a
+      file-level error.
+- [ ] AC-007.3: The dry run writes nothing and shows per row: parsed
+      values, validation errors, the resolved asset or *unresolved*, and
+      *duplicate* when `(asset_id, trade_date, type, quantity,
+      unit_price)` matches an existing transaction.
+- [ ] AC-007.4: Unresolved identifiers are created inline from the
+      preview through the asset action (pack and kind from the CSV,
+      metadata prompted per the pack schema); import never invents an
+      asset.
+- [ ] AC-007.5: Commit re-validates and refuses if the preview hash
+      differs, any row has an error, or any identifier is unresolved;
+      duplicates are skipped unless force-included; the insert is one bulk
+      statement. Import writes `transactions` only.
+- [ ] AC-007.6: Re-importing the same file is a no-op — a property test
+      over generated ledgers and a dbtest.
+- [ ] AC-007.7: `README.md` documents the format, and the JSON export's
+      companion `transactions-YYYY-MM-DD.csv` is written by `lib/csv` so
+      the app's own export imports as a no-op.
+
+**Test Scenarios**:
+```
+Given: a CSV whose row 7 has quantity "abc"
+When:  commit is attempted
+Then:  nothing is written and row 7 is listed with a field error
+
+Given: the same CSV imported twice
+When:  the second commit runs
+Then:  every row is a duplicate and zero transactions are inserted
+```
+
+**Priority**: Must Have
+**Status**: Not Started
+
+---
+
+### US-008: Own my data
+
+**As a** the owner
+**I want** Settings to let me export and restore my ledger, delete
+everything, enable packs, and set theme and locale
+**So that** losing the host is recoverable and the instance is mine to
+configure and to wipe (root SPEC §12.3, §9.6; PACKS §12)
+
+**Acceptance Criteria** (`docs/milestone-3-plan.md` Phase 6; decisions 26,
+28, 29):
+- [ ] AC-008.1: Export produces `finance-finder-YYYY-MM-DD.json` through
+      `export_backup()` + `serializeBackup` and `transactions-YYYY-MM-DD.csv`
+      through `lib/csv`, and stamps `user_settings.last_export_at`.
+- [ ] AC-008.2: Restore parses with `parseBackup`, shows `planRestore`'s
+      warnings, and calls `restore_backup`; a non-empty account is refused
+      with the fixed reason.
+- [ ] AC-008.3: Delete everything requires the phrase typed and a fresh
+      password check, then deletes the `auth.users` row through `lib/jobs`
+      under the service role; every user table cascades; the user is
+      redirected to `/login`.
+- [ ] AC-008.4: Enabled packs are chosen from the registry with each
+      pack's status shown; draft packs are allowed with a banner,
+      `unmaintained` refused; enabling a pack runs `runIngest({ kind:
+      "new_packs" })` after the response.
+- [ ] AC-008.5: Base currency, theme and locale are editable; the base
+      currency lock and reset behave as US-004 AC-004.6.
+- [ ] AC-008.6: Security: change password, enrol / remove TOTP (QR +
+      confirm code; removal needs AAL2), sign out everywhere.
+- [ ] AC-008.7: `app/login/page.tsx` exists and `pnpm release:check` is red
+      only on the two draft packs and `specs/PERSONAS.md`.
+
+**Test Scenarios**:
+```
+Given: an account with three assets
+When:  the owner exports
+Then:  the JSON parses with parseBackup, last_export_at is set, and the CSV
+       imports back as a no-op
+
+Given: the owner types the phrase and the right password
+When:  delete everything runs
+Then:  the auth user is gone, every user table has zero rows for that id
+```
+
+**Priority**: Must Have
+**Status**: Not Started
+
+---
+
 ## Technical Constraints
 
 From `CLAUDE.md` non-negotiables and the root `SPEC.md` §12; these apply to
@@ -217,11 +529,12 @@ Explicitly NOT building (ARCHITECTURE §2; `docs/milestone-2-plan.md`
 - Tax or fiscal reporting of any kind — ever.
 - Broker integrations, order execution, or any write to an external account.
 - Analytics, telemetry, or error-reporting services.
-- In Milestone 2 specifically: screens, server actions, login, CSV export
-  (belongs with CSV import in Milestone 3), the snapshot cron route and its
-  invalidation triggers (Milestone 3), the UK pack and
-  `curve_mark_to_market` indexation (Milestone 4), promoting any pack to
-  `supported`, and any schema change beyond the two backup RPCs.
+- In Milestone 3 specifically: the design system, the analysis screens,
+  the status strip, the first-run card, privacy mode, empty-state copy and
+  an accessibility pass (Milestone 5); OAuth, a signup route, email-link
+  MFA recovery; foreign-currency cash flows, broker-specific or multi-file
+  import, assets in bulk; the UK pack; deriving `fx_rate` on transactions;
+  a browser end-to-end runner.
 
 ## Success Metrics
 
@@ -233,7 +546,11 @@ How we know this works:
 | Kernel purity | 0 banned imports or float calls in `lib/calc/` | `pnpm lint` |
 | Property coverage | Every property named in plan Phases 1–4 has a `fast-check` test | `pnpm test:calc` without `--passWithNoTests` |
 | Recovery | export→delete→restore→export deep-equal modulo `exported_at` | `pnpm test:db` |
-| Release gate | `release:check` red only on login, draft packs, `PERSONAS.md` | `pnpm release:check` |
+| Release gate (M2) | `release:check` red only on login, draft packs, `PERSONAS.md` | `pnpm release:check` |
+| Trust boundaries (M3) | 0 `getSession` calls; 0 service-role imports outside cron/jobs | `pnpm lint` |
+| Snapshot invariant (M3) | every history-changing write drops snapshots from its date forward | `pnpm test:db` trigger family |
+| Import idempotence (M3) | re-importing a file inserts 0 rows | `fast-check` + `pnpm test:db` |
+| Release gate (M3) | `release:check` red only on draft packs, `PERSONAS.md` | `pnpm release:check` |
 
 ---
 
@@ -245,3 +562,4 @@ How we know this works:
 | 2026-09-20 | Vision, constraints, US-001 and US-002 filled | Milestone 2 Phase 0 step 6 (`docs/milestone-2-plan.md`) |
 | 2026-09-20 | US-001 status: Phases 0–2 merged | Stale-doc correction alongside the Phase 3–7 grounding in the plan |
 | 2026-09-20 | US-001 and US-002 done; every AC ticked; AC-002.7 restated as canonical-form equality; scenario 1 has four flows | Milestone 2 Phases 3–7 delivered (`docs/milestone-2-plan.md`) |
+| 2026-09-20 | US-003 to US-008 added; out-of-scope and metrics extended for Milestone 3 | Milestone 3 Phase 0 step 5 (`docs/milestone-3-plan.md`) |

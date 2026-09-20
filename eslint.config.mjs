@@ -34,9 +34,55 @@ const kernelPackPatterns = [
   },
 ];
 
+// docs/milestone-3-plan.md "Identity and sessions" / "Keys and clients": the
+// boundary rules the ledger and auth layers are built under.
+const floatBans = [
+  {
+    selector: "CallExpression[callee.name='parseFloat']",
+    message: "Values are decimal strings, never a float. Parse with zod DecimalStringSchema and hand strings to lib/calc.",
+  },
+  {
+    selector: "CallExpression[callee.name='Number']",
+    message: "Values are decimal strings, never a float. Parse with zod DecimalStringSchema and hand strings to lib/calc.",
+  },
+];
+const noGetSession = {
+  selector: "CallExpression[callee.property.name='getSession']",
+  message: "Identity comes from getUser(), verified against Auth. getSession() trusts the cookie unverified (SPEC §9.6).",
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    // SPEC §9.6: never establish identity from an unverified cookie.
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: { "no-restricted-syntax": ["error", noGetSession] },
+  },
+  {
+    // ARCHITECTURE §4.3: the service role never reaches a user-facing path.
+    // It is constructed in the two cron routes and in lib/jobs runners only;
+    // a server action may invoke a runner with a scope it derived through the
+    // user's own RLS client, never build the client itself.
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["app/api/cron/**", "lib/jobs/**", "lib/supabase/service.ts", "lib/testing/**", "**/*.dbtest.ts", "scripts/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [{ name: "@/lib/supabase/service", message: "Service-role clients are built only in app/api/cron/** and lib/jobs/** (ARCHITECTURE §4.3)." }],
+          patterns: [{ group: ["**/lib/supabase/service"], message: "Service-role clients are built only in app/api/cron/** and lib/jobs/** (ARCHITECTURE §4.3)." }],
+        },
+      ],
+    },
+  },
+  {
+    // Ledger, import, CSV and job code carry values as decimal strings from the
+    // form to the kernel; the same float ban as lib/calc applies.
+    files: ["lib/ledger/**/*.ts", "lib/csv/**/*.ts", "lib/import/**/*.ts", "lib/jobs/**/*.ts", "lib/backup/**/*.ts"],
+    ignores: ["**/*.test.ts", "**/*.dbtest.ts"],
+    rules: { "no-restricted-syntax": ["error", noGetSession, ...floatBans] },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

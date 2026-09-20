@@ -32,7 +32,7 @@ finished.
 
 | Phase | Merge unit | Status |
 |---|---|---|
-| 0 — Baseline, decisions, stories, dependencies | — | not started |
+| 0 — Baseline, decisions, stories, dependencies | (this commit) | merged |
 | 1 — Sessions and login | — | not started |
 | 2 — Data access layer and ledger reads | — | not started |
 | 3 — Snapshot invalidation, snapshot job, cron route | — | not started |

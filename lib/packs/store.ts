@@ -2,9 +2,10 @@
  * Supabase-backed `IngestStore` (plan §3.1, §3.3).
  *
  * The scheduler talks to the narrow interface in ingest.ts; this is the only
- * place that knows about PostgREST. Every collection read is PAGINATED with
- * `.range()`: PostgREST caps a response at `api.max_rows` (1,000 by default),
- * and treating that cap as a total silently drops every row past it.
+ * place that knows about PostgREST. Every collection read is PAGINATED through
+ * `lib/supabase/paginate.ts`: PostgREST caps a response at `api.max_rows`
+ * (1,000 by default), and treating that cap as a total silently drops every
+ * row past it.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -17,24 +18,7 @@ import type {
   WatermarkRow,
 } from "./ingest";
 import type { IsoDate } from "@/packs/types";
-
-const PAGE = 500;
-
-/** Read an entire table page by page; never assume one request is the whole set. */
-async function readAll<T>(
-  // PostgREST builders are thenable but are not Promises, so the parameter is
-  // typed as PromiseLike rather than Promise.
-  fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-): Promise<T[]> {
-  const out: T[] = [];
-  for (let offset = 0; ; offset += PAGE) {
-    const { data, error } = await fetchPage(offset, offset + PAGE - 1);
-    if (error) throw new Error(`store: ${error.message}`);
-    const rows = data ?? [];
-    out.push(...rows);
-    if (rows.length < PAGE) return out;
-  }
-}
+import { PAGE_SIZE as PAGE, readAll } from "@/lib/supabase/paginate";
 
 export function createIngestStore(client: SupabaseClient): IngestStore {
   return {
