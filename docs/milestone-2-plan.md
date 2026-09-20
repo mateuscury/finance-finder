@@ -474,8 +474,9 @@ exactly and `R_fx` equals the FX series return when quantity is constant.
 - `expected.json`: `asOf`, `valuation` (total and per asset, native and
   base), `twr`, `mwr`, `contribution`, `carriedForward`, and `$derivation`
   listing business-day counts, every accrual factor, each sub-period return
-  and the XIRR stream. Derive outside the kernel (spreadsheet or Python
-  `decimal`); never copy kernel output into it.
+  and the XIRR stream. Derived by the checked-in
+  `packs/br/fixtures/derive_expected.py` (standard-library `decimal` only,
+  MILESTONES.md §2 decision 12); never copy kernel output into it.
 - Replace `expect.fail` in `fixtures.test.ts` with the real comparison;
   condition the reproduction test on `pack.instruments.length > 0` so the
   suite ends at one skip.
@@ -494,20 +495,28 @@ exactly and `R_fx` equals the FX series return when quantity is constant.
 - `lib/backup/restore.ts`: pure planner — preconditions (empty account,
   version), warnings (unknown kinds, metadata failing the pack schema), and
   the row set with `user_id` rewritten.
-- Forward migration `export_backup()` and `restore_backup(jsonb)`:
-  `security invoker` so RLS scopes both to the caller, explicit
-  `search_path`, execute revoked from `public`/`anon` and granted to
-  `authenticated` (and usable by the service role in tests). `export_backup`
-  builds jsonb with every `numeric` cast to text; `restore_backup` inserts in
-  dependency order inside one transaction, casts back with `::numeric`, and
-  refuses a non-empty account. Neither touches `series_points`,
-  `ingest_*` or `portfolio_snapshots`.
+- Forward migration `export_backup()` and `restore_backup(jsonb)`, both with
+  an explicit `search_path`, execute revoked from `public`/`anon` and granted
+  to `authenticated` (and usable by the service role in tests).
+  `export_backup` is `security invoker` (RLS scopes it to the caller) and
+  builds jsonb with every `numeric` cast to text. `restore_backup` is
+  **`security definer`** (MILESTONES.md §2 decision 11): the `prices` insert
+  policy admits only `source_id = 'manual'` from a client, so an invoker
+  function could not restore the ingested rows decision 3 exports. Being the
+  trust boundary, its body must itself (a) refuse a non-empty account,
+  (b) verify every transaction, cash flow and price references an asset in
+  the restored set, and (c) write `auth.uid()` as every row's `user_id`. It
+  inserts in dependency order inside one transaction and casts back with
+  `::numeric`. Neither function touches `series_points`, `ingest_*` or
+  `portfolio_snapshots`.
 - `lib/backup/roundtrip.dbtest.ts`: seed the golden portfolio for a throwaway
   user through the service role → `export_backup` → delete the auth user and
   verify cascades emptied every user table → recreate the user →
   `restore_backup` → `export_backup` → deep-equal modulo `exported_at`; then
   run `valuePortfolio` over the restored rows and compare with
-  `expected.json`.
+  `expected.json`. Two refusal cases in the same file: a non-empty account,
+  and a file whose price rows name an asset id owned by a second throwaway
+  user (nothing written in either).
 - Property test: `parseBackup(serialize(x))` deep-equals `x` over
   `fast-check`-generated ledgers.
 - Amend SPEC §12.3 and `scripts/check-release-readiness.ts` as in the

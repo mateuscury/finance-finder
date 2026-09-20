@@ -196,6 +196,27 @@ is never adjusted afterwards to match kernel output.
     report them alongside with their last-known values, rather than folding a
     last-known value into the total with a flag. This is SPEC §11 taken
     literally and is the number the snapshot builder writes.
+11. **`restore_backup` is `security definer` and enforces ownership itself**
+    (amendment, 2026-09-20, found while reviewing the plan against the
+    schema). Decision 3 exports every `prices` row, but the insert policy
+    from `initial_schema_hardening` admits only `source_id = 'manual'` from a
+    client, so a `security invoker` restore would either fail wholesale or
+    drop exactly the ingested history decision 3 preserves. The function
+    therefore runs as definer with `search_path` pinned, execute revoked
+    from `public`/`anon` and granted to `authenticated` only, and — because
+    it is now the trust boundary — checks in its own body that the account
+    is empty, that every transaction, cash flow and price references an
+    asset **in the restored set**, and that every row's `user_id` is
+    `auth.uid()`. The dbtest tier proves a file naming another user's asset
+    id is refused. `export_backup` stays `security invoker`.
+12. **The golden derivation is checked in** (amendment, 2026-09-20).
+    `packs/br/fixtures/derive_expected.py` (Python standard library
+    `decimal` only, no third-party imports) regenerates `expected.json` from
+    `portfolio.json` and the conventions in the plan. Independence from the
+    kernel is then auditable and re-runnable rather than a claim about a
+    spreadsheet; a mismatch between the script and `lib/calc` is a bug in
+    one of the two, resolved by rederiving by hand, never by editing the
+    fixture to match.
 
 ## 3. Authenticated ledger
 
