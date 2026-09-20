@@ -11,3 +11,7 @@ export { Money, assertCurrency } from "./money";
 export * from "./dates";
 export * from "./calendar";
 export * from "./types";
+export * from "./staleness";
+export * from "./positions";
+export * from "./series";
+export * from "./fx";

@@ -29,13 +29,37 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
   lookup with binary-search "latest at or before".
 - `index.ts` — public surface.
 
-## Planned (Phases 2–5)
+## Modules (Phase 2 — present)
 
-`positions.ts` (FIFO lots), `series/` (one function per closed
-`SeriesKind`), `fx.ts` (direct, inverted, USD triangulation, carry-forward),
-`staleness.ts`, `valuation/` (one module per closed `ValuationStrategy`),
-`portfolio.ts`, `twr.ts`, `mwr.ts` (XIRR), `contribution.ts`,
-`attribution.ts`, `real.ts`, `golden.ts`.
+- `staleness.ts` — `classify(observedOn, asOf, windowDays)` → fresh /
+  carried_forward / stale, and the shared `Observed<T>` result shape with the
+  closed `UnpricedReason` set. Pulled forward from Phase 3 because Phase 2's
+  carry-forward property needs it.
+- `positions.ts` — `sortLedger` (`(tradeDate, rank, id)`, rank
+  `buy < dividend = interest = fee < sell`), `groupByAsset`, `lotsAt` (FIFO,
+  `oversell` throws), `quantityAt`, `netInvested` over `(from, to]`.
+- `series/` — one function per closed `SeriesKind`; every result is a
+  status-carrying union, never `NaN`:
+  - `rate.ts` — `compoundRate` for `rate_daily` (Π(1 + m·rᵈ)) and
+    `rate_annual` (Π(1 + m·rᵈ)^(1/N)); a missing day is `series_gap`, rates
+    are never carried forward; `30/360` and `rate_annual` on `ACT/360` are
+    `unsupported_convention`.
+  - `index-level.ts` — `levelAt`, `indexReturn` (worse leg's status wins).
+  - `inflation.ts` — `inflationLevelAt`: `none` steps, `linear_daily`
+    interpolates on calendar days; `before_first_anchor`; flat for 62 days
+    after the last anchor, then stale.
+  - `fx-rate.ts` — `fxRateAt`.
+  - `yield-curve.ts` — `curveAt`, `rateAtTenor` (linear, flat beyond the
+    ends), `discountFactor = (1 + r)^(−t/365)`.
+- `fx.ts` — `resolveFx`: same currency → 1; direct multiplies, inverted
+  divides; else USD triangulation (`derived: true`); carried forward if any
+  leg is, stale if any leg is; `fxDate` is the oldest leg; `no_fx_series`.
+
+## Planned (Phases 3–5)
+
+`valuation/` (one module per closed `ValuationStrategy`), `portfolio.ts`,
+`twr.ts`, `mwr.ts` (XIRR), `contribution.ts`, `attribution.ts`, `real.ts`,
+`golden.ts`.
 
 `pnpm test:calc` runs only this directory and carries the `fast-check`
 properties the plan names for each phase.
