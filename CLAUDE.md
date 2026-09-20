@@ -61,6 +61,7 @@ pnpm lint                # ESLint; bans fetch/axios/lib imports inside packs/
 pnpm test                # all vitest
 pnpm test:calc           # lib/calc only — the suite that catches financial bugs
 pnpm test:packs          # conformance suite only
+pnpm test:db             # *.dbtest.ts against local Supabase; FAILS (never skips) without the stack
 pnpm codeowners          # regenerate .github/CODEOWNERS from manifests
 pnpm db:start / db:reset # local Supabase (Docker)
 ```
