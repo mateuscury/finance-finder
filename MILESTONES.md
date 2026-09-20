@@ -322,6 +322,12 @@ accrual is `daily` and every BR asset is BRL — so all six are contract.
 - Implement asset, transaction, cash-flow, manual-price, and dry-run CSV flows.
 - Paginate every PostgREST collection beyond the configured 1,000-row cap;
   aggregate server-side where raw rows are unnecessary.
+- Ship the snapshot cron route and the snapshot invariant (Milestone 2
+  decision 6): snapshots are rebuilt from a marker and never left stale by a
+  history-changing write.
+
+Implementation plan: `docs/milestone-3-plan.md` (conventions, thirteen
+decisions to confirm before code, phases 0–7 and merge order).
 
 ## 4. Second-pack canary
 
