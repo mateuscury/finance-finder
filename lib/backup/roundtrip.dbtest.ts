@@ -12,15 +12,13 @@
  * and signed in, because the service role bypasses the RLS and `auth.uid()`
  * the two RPCs are built on.
  */
-import fs from "node:fs";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { compareGolden, GoldenFixtureSchema, runGolden, type GoldenFixture } from "@/lib/calc/golden";
 import { canonicalBackup, parseBackup, type Backup } from "@/lib/backup";
 import { assertStackReachable, createDbTestClient, createThrowawayUser, type ThrowawayUserHandle } from "@/lib/testing/db";
+import { loadGoldenFixture, seedGoldenPortfolio } from "@/lib/testing/golden";
 
 const admin = createDbTestClient();
 const users: ThrowawayUserHandle[] = [];
@@ -36,68 +34,7 @@ afterAll(async () => {
   for (const u of users) await u.remove();
 });
 
-const readJson = <T,>(rel: string): T => JSON.parse(fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8")) as T;
-const fixture = GoldenFixtureSchema.parse(readJson("packs/br/fixtures/portfolio.json"));
-const expected = readJson<Record<string, unknown>>("packs/br/fixtures/expected.json");
-
-async function mustInsert(client: SupabaseClient, table: string, rows: Record<string, unknown>[]): Promise<void> {
-  const { error } = await client.from(table).insert(rows);
-  if (error) throw new Error(`dbtest: seeding ${table} failed (${error.message})`);
-}
-
-/** The golden portfolio as one user's rows, ids preserved. Returns golden asset id → uuid. */
-async function seedGolden(userId: string): Promise<Map<string, string>> {
-  const ids = new Map(fixture.assets.map((a) => [a.id, randomUUID()] as const));
-  const { error } = await admin
-    .from("user_settings")
-    .upsert({ user_id: userId, base_currency: fixture.baseCurrency, enabled_packs: ["br"], locale: "pt-BR", theme: "system" });
-  if (error) throw new Error(`dbtest: seeding user_settings failed (${error.message})`);
-  await mustInsert(
-    admin,
-    "assets",
-    fixture.assets.map((a) => ({
-      id: ids.get(a.id),
-      user_id: userId,
-      pack_id: a.instrumentKind.slice(0, a.instrumentKind.indexOf(".")),
-      instrument_kind: a.instrumentKind,
-      identifier: a.identifier,
-      name: a.identifier,
-      native_currency: a.nativeCurrency,
-      metadata: a.metadata,
-    })),
-  );
-  await mustInsert(
-    admin,
-    "transactions",
-    fixture.transactions.map((t) => ({
-      id: randomUUID(),
-      user_id: userId,
-      asset_id: ids.get(t.assetId),
-      trade_date: t.tradeDate,
-      type: t.type,
-      quantity: t.quantity,
-      unit_price: t.unitPrice,
-      currency: t.currency,
-      fees: t.fees,
-      fx_rate: t.fxRate,
-      note: null,
-    })),
-  );
-  await mustInsert(
-    admin,
-    "cash_flows",
-    fixture.cashFlows.map((f) => ({ id: randomUUID(), user_id: userId, date: f.date, amount: f.amount, currency: f.currency, note: null })),
-  );
-  const byIdentifier = new Map(fixture.assets.map((a) => [a.identifier, ids.get(a.id)!] as const));
-  await mustInsert(
-    admin,
-    "prices",
-    Object.entries(fixture.prices).flatMap(([identifier, rows]) =>
-      rows.map((r) => ({ asset_id: byIdentifier.get(identifier), date: r.date, price: r.price, currency: r.currency, source_id: r.sourceId })),
-    ),
-  );
-  return ids;
-}
+const { fixture, expected } = loadGoldenFixture();
 
 async function exportBackup(client: SupabaseClient): Promise<Backup> {
   const { data, error } = await client.rpc("export_backup");
@@ -160,8 +97,7 @@ const modulo = (b: Backup) => ({ ...canonicalBackup(b), exported_at: "" });
 describe("export → delete → restore → export", () => {
   it("is equivalent modulo exported_at, and the kernel reproduces the golden portfolio from the restored rows", async () => {
     const first = await newUser();
-    const uuidOf = await seedGolden(first.userId);
-    const goldenIdOf = new Map([...uuidOf].map(([golden, uuid]) => [uuid, golden] as const));
+    const { uuidOf, goldenIdOf } = await seedGoldenPortfolio(admin, first.userId, fixture);
 
     const exportA = await exportBackup(await first.signIn());
     expect(exportA.assets).toHaveLength(6);
@@ -203,7 +139,7 @@ describe("export → delete → restore → export", () => {
 
   it("refuses a file that names another user's asset ids, and writes nothing", async () => {
     const owner = await newUser();
-    const uuidOf = await seedGolden(owner.userId);
+    const { uuidOf } = await seedGoldenPortfolio(admin, owner.userId, fixture);
     const theirs = await exportBackup(await owner.signIn());
 
     const intruder = await newUser();

@@ -34,7 +34,7 @@ finished.
 |---|---|---|
 | 0 — Baseline, decisions, stories, dependencies | (this commit) | merged |
 | 1 — Sessions and login | (this commit) | merged |
-| 2 — Data access layer and ledger reads | — | not started |
+| 2 — Data access layer and ledger reads | (this commit) | merged |
 | 3 — Snapshot invalidation, snapshot job, cron route | — | not started |
 | 4 — Asset, transaction, cash-flow and manual-price flows | — | not started |
 | 5 — CSV import | — | not started |
@@ -453,6 +453,29 @@ Corrections to the prose above, found while building:
   portfolio for a throwaway user, reads it back through `readLedger` as
   that user (RLS), and reproduces `expected.json` through `runGolden` — the
   same proof the backup round trip gives, now through the live read path.
+
+### Grounding (2026-09-20) — status: merged
+
+1. **A Phase 2 migration, `ledger_reads`.** "Latest price per asset" is a
+   `DISTINCT ON`, which PostgREST cannot express; reading every price row to
+   reduce in the app would be the row dump the plan forbids. A view
+   `asset_latest_prices WITH (security_invoker = true)` runs under the
+   caller's RLS and casts `price::text`. SPEC §9.4's "unpriced — source:
+   reason" needs `ingest_cursors.last_error` readable, so SELECT (only) is
+   granted to `authenticated`; the initial migration's write revoke stands.
+   Phase 3's migration is therefore a second file, not three sections of one.
+2. **Every paginated read orders by its key before `.range()`.** An
+   unordered offset page can overlap or skip between requests; the plan
+   said "filters before range" and should have said "and an order".
+   `lib/packs/store.ts` (Milestone 1) pages without an order — a follow-up,
+   not this phase.
+3. **`assetsUnpriced` is not a Phase 2 count.** Its only consumer is the
+   Milestone 5 status strip and first-run card; `listAssets` already
+   carries per-row unpriced state. It lands with that consumer.
+4. `readLedger` reads series from the earliest trade date less 62 days
+   (`SERIES_LOOKBACK_DAYS`, two monthly inflation prints) so an
+   `index_plus_spread` lot's opening level is bracketed; the snapshot job
+   narrows the window further (Phase 3).
 
 ## Phase 3 — Snapshot invalidation, snapshot job, cron route
 
