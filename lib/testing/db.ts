@@ -69,6 +69,8 @@ function throwawayPassword(): string {
 
 export interface ThrowawayUserHandle {
   readonly userId: string;
+  /** The RFC 2606 address the user was created with, for sign-in comparisons. */
+  readonly email: string;
   /**
    * A client on the ANON key signed in as this user — the only way to exercise
    * an RPC that reads `auth.uid()` or relies on RLS, both of which the service
@@ -93,6 +95,7 @@ export async function createThrowawayUser(admin: SupabaseClient): Promise<Throwa
   const userId = data.user.id;
   return {
     userId,
+    email,
     async signIn() {
       const client = createClient(url, anonKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

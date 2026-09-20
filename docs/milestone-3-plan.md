@@ -33,7 +33,7 @@ finished.
 | Phase | Merge unit | Status |
 |---|---|---|
 | 0 — Baseline, decisions, stories, dependencies | (this commit) | merged |
-| 1 — Sessions and login | — | not started |
+| 1 — Sessions and login | (this commit) | merged |
 | 2 — Data access layer and ledger reads | — | not started |
 | 3 — Snapshot invalidation, snapshot job, cron route | — | not started |
 | 4 — Asset, transaction, cash-flow and manual-price flows | — | not started |
@@ -397,6 +397,31 @@ as "Decisions taken", with rationale, numbered on from Milestone 2's 18.
 - `lib/supabase/server.ts` (`createServerSupabase()` over `cookies()`),
   `lib/supabase/browser.ts`, `proxy.ts` with a matcher excluding
   `/_next`, `/api/cron` and static files.
+
+### Grounding (2026-09-20) — status: merged
+
+Corrections to the prose above, found while building:
+
+1. **There is no browser client.** `mfa.enroll()` returns the QR as a data
+   URI, so enrolment is a server action that renders it; `challenge` and
+   `verify` are server actions too. Nothing in the browser ever talks to
+   Supabase, which is what lets the session cookie be `httpOnly` as SPEC
+   §9.6 requires — a browser client could not have read it. Decision 19's
+   "one client component" exception is therefore unused.
+2. **Password reset needs three things the plan did not name**:
+   `NEXT_PUBLIC_SITE_URL` (the reset link's origin comes from configuration,
+   never the Host header, which an attacker can set), a landing route
+   `app/auth/callback/route.ts` that exchanges Supabase's one-time code for
+   a session and continues only to a same-origin path, and
+   `http://127.0.0.1:3000/**` in `supabase/config.toml`
+   `additional_redirect_urls` so the local Auth accepts the callback.
+3. The access decision is a pure module, `lib/auth/access.ts`
+   (`resolveAccess`, `redirectFor`, `isPublicPath`), shared by the proxy and
+   the DAL so the two can never disagree; `session.ts` adds only `cache`
+   and `redirect`.
+4. AC-003.5's "sign out everywhere" and AC-003.6's password change land in
+   Phase 6 with the other Settings security actions, as the phase list
+   already says.
 - `lib/auth/session.ts`: `requireUser()`, `requireAal2()` (used by
   unenrol and password change), `currentAal()`.
 - `app/login/page.tsx` + `actions.ts` (`signIn`), `app/login/mfa/page.tsx`
