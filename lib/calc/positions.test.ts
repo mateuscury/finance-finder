@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { isKernelError } from "./errors";
-import { groupByAsset, lotsAt, netInvested, quantityAt, sortLedger } from "./positions";
+import { lotsAt, netInvested, quantityAt, sortLedger } from "./positions";
 import type { LedgerTransaction, TransactionType } from "./types";
 import { addDays } from "./dates";
 
@@ -33,16 +33,13 @@ describe("ordering", () => {
     expect(lotsAt([sell, buy], "2026-03-02")).toEqual([]);
   });
 
-  it("groups by asset in processing order without mutating the input", () => {
+  it("sortLedger does not mutate the input", () => {
     const rows = [
-      txn({ assetId: "b", type: "buy", quantity: "1", unitPrice: "1", tradeDate: "2026-02-01" }),
-      txn({ assetId: "a", type: "buy", quantity: "1", unitPrice: "1", tradeDate: "2026-03-01" }),
-      txn({ assetId: "a", type: "buy", quantity: "1", unitPrice: "1", tradeDate: "2026-01-01" }),
+      txn({ type: "buy", quantity: "1", unitPrice: "1", tradeDate: "2026-03-01" }),
+      txn({ type: "buy", quantity: "1", unitPrice: "1", tradeDate: "2026-01-01" }),
     ];
     const snapshot = rows.map((r) => r.id);
-    const groups = groupByAsset(rows);
-    expect([...groups.keys()].sort()).toEqual(["a", "b"]);
-    expect(groups.get("a")?.map((t) => t.tradeDate)).toEqual(["2026-01-01", "2026-03-01"]);
+    expect(sortLedger(rows).map((t) => t.tradeDate)).toEqual(["2026-01-01", "2026-03-01"]);
     expect(rows.map((r) => r.id)).toEqual(snapshot);
   });
 });

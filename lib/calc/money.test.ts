@@ -43,6 +43,12 @@ describe("Money", () => {
     expect(a.equals(b)).toBe(false);
   });
 
+  it("Money.of wraps a kernel Decimal without re-parsing", () => {
+    expect(Money.of(new KernelDecimal("1.50"), "BRL").toString()).toBe("1.5");
+    expect(Money.of(new KernelDecimal(1).div(3), "BRL").amount.toFixed()).toBe("0." + "3".repeat(40));
+    expect(() => Money.of(new KernelDecimal(1), "brl")).toThrow();
+  });
+
   it("scales by a Decimal or a decimal string", () => {
     expect(brl("10").scale("1.5").toString()).toBe("15");
     expect(brl("10").scale(new KernelDecimal("0.1")).toString()).toBe("1");

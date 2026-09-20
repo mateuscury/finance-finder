@@ -87,8 +87,12 @@ arithmetic where the spec leaves it open.
 - Transactions are processed in `(trade_date, type rank, id)` order with rank
   `buy < dividend = interest = fee < sell`, so a same-day round trip never
   oversells.
-- `buy` opens a lot `{ openedOn, quantity, unitPrice, currency, fees }`;
-  `sell` consumes lots **FIFO**; `dividend`, `interest`, `fee` touch no lot.
+- `buy` opens a lot `{ openedOn, quantity, unitPrice, currency,
+  transactionId }`; `sell` consumes lots **FIFO**; `dividend`, `interest`,
+  `fee` touch no lot. A lot carries no fees: no valuation or contribution
+  formula reads them from a lot (accrual is `quantity × unitPrice × factor`;
+  contribution takes fees from the transactions via `netInvested`), and a
+  partially consumed lot would have no defined fee share.
   A sell that exceeds the open quantity throws `oversell` with the asset id
   and date; the kernel never carries a negative position.
 - `quantityAt(asset, date)` is the sum of open lot quantities. Lots are kept
@@ -426,8 +430,12 @@ BR 2026 Carnival correctly; `stalenessWindowDays(brCalendar, 2026) === 5`.
 - `positions.ts`: `lotsAt`, `quantityAt`, `netInvested`, the ordering rule,
   FIFO consumption and the `oversell` error.
 - `series/`: `rate.ts` (`rate_daily`, `rate_annual`), `index-level.ts`,
-  `inflation.ts`, `fx-rate.ts`, `yield-curve.ts`, `index.ts` dispatching on
-  `SeriesKind`. Each returns a status-carrying result, never `NaN`.
+  `inflation.ts`, `fx-rate.ts`, `yield-curve.ts`, and `index.ts` re-exporting
+  one function per kind with a kind → function table. There is no generic
+  dispatcher: each kind's function has its own signature, and a consumer
+  already knows which query it needs, so it dispatches on
+  `descriptor.kind.kind` at the call site. Each function returns a
+  status-carrying result, never `NaN`.
 - `fx.ts`: `resolveFx` with direct, inverted, triangulated and stale paths.
 
 Property tests: positions are independent of input order; FIFO leaves

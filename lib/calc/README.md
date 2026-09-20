@@ -14,7 +14,7 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
 - `errors.ts` — `KernelError` with the closed `KernelErrorCode` set. Errors
   are contract violations; missing or stale data is a result status, never
   an error. Messages carry ids and dates, never values.
-- `money.ts` — immutable `Money` (`amount: KernelDecimal`, `currency`);
+- `money.ts` — immutable `Money` (`amount: KernelDecimal`, `currency`); `parse` from a decimal string, `of` from a kernel Decimal;
   `add`/`sub`/`compare` throw `currency_mismatch` across currencies; `scale`
   by a Decimal is the only multiplication.
 - `dates.ts` — ISO "YYYY-MM-DD" arithmetic in UTC: `addDays`,
@@ -36,8 +36,8 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
   closed `UnpricedReason` set. Pulled forward from Phase 3 because Phase 2's
   carry-forward property needs it.
 - `positions.ts` — `sortLedger` (`(tradeDate, rank, id)`, rank
-  `buy < dividend = interest = fee < sell`), `groupByAsset`, `lotsAt` (FIFO,
-  `oversell` throws), `quantityAt`, `netInvested` over `(from, to]`.
+  `buy < dividend = interest = fee < sell`), `lotsAt` (FIFO,
+  `oversell` throws), `quantityAt`, `netInvested` over `(from, to]`. (`groupByAsset` arrives with `portfolio.ts`.)
 - `series/` — one function per closed `SeriesKind`; every result is a
   status-carrying union, never `NaN`:
   - `rate.ts` — `compoundRate` for `rate_daily` (Π(1 + m·rᵈ)) and

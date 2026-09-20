@@ -60,17 +60,6 @@ export function sortLedger(transactions: readonly LedgerTransaction[]): LedgerTr
   return [...transactions].sort(compareTransactions);
 }
 
-/** Rows grouped by asset, each group in processing order. */
-export function groupByAsset(transactions: readonly LedgerTransaction[]): Map<string, LedgerTransaction[]> {
-  const out = new Map<string, LedgerTransaction[]>();
-  for (const t of sortLedger(transactions)) {
-    const rows = out.get(t.assetId);
-    if (rows) rows.push(t);
-    else out.set(t.assetId, [t]);
-  }
-  return out;
-}
-
 /**
  * Open lots of ONE asset as of `date` (transactions dated ≤ `date`), FIFO
  * order. `transactions` may be in any order and must all share an asset id.
@@ -152,7 +141,7 @@ export function netInvested(
         break;
     }
     // Money.add enforces the currency: a row in another currency throws.
-    total = total.add(Money.parse(amount.toFixed(), t.currency));
+    total = total.add(Money.of(amount, t.currency));
   }
   return total;
 }
