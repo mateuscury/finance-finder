@@ -16,15 +16,12 @@ describe("cron budget", () => {
     expect(CRON_MAX_DURATION_SECONDS).toBeLessThanOrEqual(300);
   });
 
-  it("matches the maxDuration literal the price route actually exports", () => {
+  it.each(["prices", "snapshots"])("matches the maxDuration literal the %s route actually exports", (name) => {
     // Next.js route segment config must be a literal, so the route cannot
     // import CRON_MAX_DURATION_SECONDS. This guard is what keeps them in sync.
-    const route = fs.readFileSync(
-      path.resolve(__dirname, "../../app/api/cron/prices/route.ts"),
-      "utf8",
-    );
+    const route = fs.readFileSync(path.resolve(__dirname, `../../app/api/cron/${name}/route.ts`), "utf8");
     const m = /export const maxDuration = (\d+)/.exec(route);
-    expect(m, "app/api/cron/prices/route.ts must export a literal maxDuration").not.toBeNull();
+    expect(m, `app/api/cron/${name}/route.ts must export a literal maxDuration`).not.toBeNull();
     expect(Number(m![1])).toBe(CRON_MAX_DURATION_SECONDS);
   });
 });

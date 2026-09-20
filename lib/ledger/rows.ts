@@ -134,27 +134,66 @@ export interface LedgerRead {
   packs: MarketPack[];
 }
 
-async function readSettings(client: SupabaseClient): Promise<SettingsRow> {
-  const { data, error } = await client.from("user_settings").select(SETTINGS_SELECT).maybeSingle();
+async function readSettings(client: SupabaseClient, userId?: string): Promise<SettingsRow> {
+  let q = client.from("user_settings").select(SETTINGS_SELECT);
+  if (userId) q = q.eq("user_id", userId);
+  const { data, error } = await q.maybeSingle();
   if (error) throw new Error(`ledger: settings (${error.code ?? "unknown"})`);
   // A bootstrapped account always has a row; a restored one may not yet.
   return (data as SettingsRow | null) ?? { base_currency: "BRL", enabled_packs: [], locale: "pt-BR", theme: "system", last_export_at: null };
 }
 
+export interface ReadLedgerOptions {
+  /**
+   * Only for a SERVICE-ROLE client, which RLS does not scope: every user
+   * table is filtered by this id and prices by the user's asset ids. With
+   * the user's own client the database already filters and this is not set.
+   */
+  userId?: string;
+  /** Series are read from here on; nothing caps the end — ingestion never writes a future point. */
+  seriesFrom?: IsoDate;
+}
+
+/** Prices have no user_id; under the service role they are read by the user's asset ids, in chunks. */
+async function readPrices(client: SupabaseClient, assetIds: string[] | null): Promise<PriceObservation[]> {
+  if (assetIds === null) {
+    return (await readAll<PriceDbRow>((from, to) => client.from("prices").select(PRICE_SELECT).order("asset_id").order("date").range(from, to))).map(toPrice);
+  }
+  const out: PriceObservation[] = [];
+  for (let i = 0; i < assetIds.length; i += 100) {
+    const chunk = assetIds.slice(i, i + 100);
+    const rows = await readAll<PriceDbRow>((from, to) => client.from("prices").select(PRICE_SELECT).in("asset_id", chunk).order("asset_id").order("date").range(from, to));
+    out.push(...rows.map(toPrice));
+  }
+  return out;
+}
+
 /**
- * Everything the kernel needs about the signed-in user, as text rows.
- * `seriesFrom` narrows the series read; by default it is the earliest trade
- * date less the lookback, which is what a full valuation needs.
+ * Everything the kernel needs about one user, as text rows. `seriesFrom`
+ * narrows the series read; by default it is the earliest trade date less
+ * the lookback, which is what a full valuation needs.
  */
-export async function readLedger(client: SupabaseClient, registry: readonly MarketPack[], options: { seriesFrom?: IsoDate; seriesTo?: IsoDate } = {}): Promise<LedgerRead> {
-  const settings = await readSettings(client);
-  const assetRows = await readAll<AssetDbRow>((from, to) => client.from("assets").select(ASSET_SELECT).order("id").range(from, to));
+export async function readLedger(client: SupabaseClient, registry: readonly MarketPack[], options: ReadLedgerOptions = {}): Promise<LedgerRead> {
+  const { userId } = options;
+  const settings = await readSettings(client, userId);
+  const assetRows = await readAll<AssetDbRow>((from, to) => {
+    const q = client.from("assets").select(ASSET_SELECT);
+    return (userId ? q.eq("user_id", userId) : q).order("id").range(from, to);
+  });
   const { assets, unresolved } = resolveAssets(assetRows, registry);
   const transactions = (
-    await readAll<TransactionDbRow>((from, to) => client.from("transactions").select(TRANSACTION_SELECT).order("trade_date").order("id").range(from, to))
+    await readAll<TransactionDbRow>((from, to) => {
+      const q = client.from("transactions").select(TRANSACTION_SELECT);
+      return (userId ? q.eq("user_id", userId) : q).order("trade_date").order("id").range(from, to);
+    })
   ).map(toTransaction);
-  const cashFlows = (await readAll<CashFlowDbRow>((from, to) => client.from("cash_flows").select(CASH_FLOW_SELECT).order("date").order("id").range(from, to))).map(toCashFlow);
-  const prices = (await readAll<PriceDbRow>((from, to) => client.from("prices").select(PRICE_SELECT).order("asset_id").order("date").range(from, to))).map(toPrice);
+  const cashFlows = (
+    await readAll<CashFlowDbRow>((from, to) => {
+      const q = client.from("cash_flows").select(CASH_FLOW_SELECT);
+      return (userId ? q.eq("user_id", userId) : q).order("date").order("id").range(from, to);
+    })
+  ).map(toCashFlow);
+  const prices = await readPrices(client, userId ? assetRows.map((a) => a.id) : null);
 
   const packIds = new Set([...(settings.enabled_packs ?? []), ...assets.map((a) => a.packId)]);
   const packs = resolveActivation(registry, [...packIds]).packs;
@@ -164,11 +203,9 @@ export async function readLedger(client: SupabaseClient, registry: readonly Mark
   let series: SeriesObservation[] = [];
   if (seriesIds.length > 0 && seriesFrom !== null) {
     series = (
-      await readAll<SeriesDbRow>((from, to) => {
-        let q = client.from("series_points").select(SERIES_SELECT).in("series_id", seriesIds).gte("date", seriesFrom);
-        if (options.seriesTo) q = q.lte("date", options.seriesTo);
-        return q.order("series_id").order("date").order("tenor_days").range(from, to);
-      })
+      await readAll<SeriesDbRow>((from, to) =>
+        client.from("series_points").select(SERIES_SELECT).in("series_id", seriesIds).gte("date", seriesFrom).order("series_id").order("date").order("tenor_days").range(from, to),
+      )
     ).map(toSeries);
   }
 

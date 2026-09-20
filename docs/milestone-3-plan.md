@@ -35,7 +35,7 @@ finished.
 | 0 — Baseline, decisions, stories, dependencies | (this commit) | merged |
 | 1 — Sessions and login | (this commit) | merged |
 | 2 — Data access layer and ledger reads | (this commit) | merged |
-| 3 — Snapshot invalidation, snapshot job, cron route | — | not started |
+| 3 — Snapshot invalidation, snapshot job, cron route | (this commit) | merged |
 | 4 — Asset, transaction, cash-flow and manual-price flows | — | not started |
 | 5 — CSV import | — | not started |
 | 6 — Settings: security and your data | — | not started |
@@ -497,6 +497,28 @@ Corrections to the prose above, found while building:
   rows from the touched date forward and nothing of another user's), and
   the job over the golden portfolio producing per-date totals equal to
   `expected.json`'s `valuations`.
+
+### Grounding (2026-09-20) — status: merged
+
+1. **The series read has no end cap.** The prose said
+   `[marker − 62 days, today]`; capped at today, the job's 02-10 total was
+   off by exactly the un-interpolated IPCA because the golden fixture's
+   02-28 anchor fell outside the window. Ingestion never writes a point
+   dated after today, so the cap changed nothing in production and only
+   made the job disagree with the golden runner on identical data. The
+   window is `[marker − 62 days, ∞)`.
+2. **Decision 21's "enabled packs" means holdable packs.** `global` is
+   activated as `br`'s dependency and has a 7-day calendar; a literal union
+   would make every day a trading day. `tradingCalendars` takes the packs
+   with instruments — enabled or held — and the unit test pins Saturday and
+   Carnival as non-trading days.
+3. `runSnapshots` takes no `registry`: the store owns it (it resolves kinds
+   when it reads a ledger). The after-response wrappers live in
+   `lib/jobs/index.ts` (`ingestJob`, `snapshotsJob`, `priceThenSnapshot`,
+   `remainingBudgetMs`), not a separate `ingest.ts`.
+4. The user universe for the cron scope is `user_settings`: a user without
+   a settings row has no base currency to value in. `earliestTradeDate`
+   and `lastSnapshotDate` are two `limit(1)` reads per user, not a scan.
 
 ## Phase 4 — Asset, transaction, cash-flow and manual-price flows
 
