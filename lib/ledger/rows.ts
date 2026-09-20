@@ -31,6 +31,8 @@ export interface SettingsRow {
   locale: string;
   theme: "system" | "light" | "dark";
   last_export_at: string | null;
+  /** The CSV header map chosen once (decision 24); shape validated by `normalizeColumnMap`. */
+  csv_column_map: unknown;
 }
 export interface AssetDbRow {
   id: string;
@@ -77,7 +79,7 @@ export const CASH_FLOW_SELECT = "id,date,amount::text,currency";
 export const PRICE_SELECT = "asset_id,date,price::text,currency,source_id";
 export const SERIES_SELECT = "series_id,date,value::text,tenor_days";
 export const ASSET_SELECT = "id,pack_id,instrument_kind,identifier,name,native_currency,metadata";
-export const SETTINGS_SELECT = "base_currency,enabled_packs,locale,theme,last_export_at";
+export const SETTINGS_SELECT = "base_currency,enabled_packs,locale,theme,last_export_at,csv_column_map";
 
 // --- Row mappers: snake_case text rows → kernel input rows ---------------------
 
@@ -141,7 +143,7 @@ export async function readSettings(client: SupabaseClient, userId?: string): Pro
   const { data, error } = await q.maybeSingle();
   if (error) throw new Error(`ledger: settings (${error.code ?? "unknown"})`);
   // A bootstrapped account always has a row; a restored one may not yet.
-  return (data as SettingsRow | null) ?? { base_currency: "BRL", enabled_packs: [], locale: "pt-BR", theme: "system", last_export_at: null };
+  return (data as SettingsRow | null) ?? { base_currency: "BRL", enabled_packs: [], locale: "pt-BR", theme: "system", last_export_at: null, csv_column_map: null };
 }
 
 export interface ReadLedgerOptions {

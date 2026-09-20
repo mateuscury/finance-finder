@@ -4,7 +4,7 @@ import { Notice } from "@/app/(app)/_components/notice";
 import { requireUser } from "@/lib/auth/session";
 import { listAssets } from "@/lib/ledger/queries";
 import { AssetForm } from "./_form";
-import { createAssetAction, deleteAssetAction, deleteManualPriceAction, setManualPriceAction } from "./actions";
+import { createAssetThen, deleteAssetAction, deleteManualPriceAction, setManualPriceAction } from "./actions";
 
 // The create action schedules the price-then-snapshot chain after the response (decision 30).
 export const maxDuration = 60;
@@ -79,7 +79,7 @@ export default async function AssetsPage({ searchParams }: PageProps<"/assets">)
         </table>
       )}
       <h2>Add an asset</h2>
-      <AssetForm action={createAssetAction} submitLabel="Add asset" />
+      <AssetForm action={createAssetThen.bind(null, "/assets")} submitLabel="Add asset" />
     </main>
   );
 }

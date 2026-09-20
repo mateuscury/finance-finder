@@ -14,7 +14,7 @@ function goldenRead(): LedgerRead {
   const kindOf = (id: string) => brPack.instruments.find((k) => k.id === id)!;
   const identifierToId = new Map(fixture.assets.map((a) => [a.identifier, a.id] as const));
   return {
-    settings: { base_currency: "BRL", enabled_packs: ["br"], locale: "pt-BR", theme: "system", last_export_at: null },
+    settings: { base_currency: "BRL", enabled_packs: ["br"], locale: "pt-BR", theme: "system", last_export_at: null, csv_column_map: null },
     assets: fixture.assets.map((a) => ({ id: a.id, packId: "br", instrumentKind: kindOf(a.instrumentKind), identifier: a.identifier, nativeCurrency: a.nativeCurrency, metadata: a.metadata })),
     unresolved: [],
     transactions: fixture.transactions,

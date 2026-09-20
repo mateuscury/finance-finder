@@ -20,6 +20,11 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
     <main>
       <h1>Transactions</h1>
       <Notice searchParams={params} />
+      {typeof params.imported === "string" ? (
+        <p role="status">
+          Imported {params.imported} transactions{typeof params.skipped === "string" && params.skipped !== "0" ? `, skipped ${params.skipped} duplicates` : ""}.
+        </p>
+      ) : null}
       {result.total === 0 ? (
         <p>
           No transactions yet. Add one below, or <Link href="/transactions/import">import a CSV</Link>.

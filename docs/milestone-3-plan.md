@@ -37,7 +37,7 @@ finished.
 | 2 — Data access layer and ledger reads | (this commit) | merged |
 | 3 — Snapshot invalidation, snapshot job, cron route | (this commit) | merged |
 | 4 — Asset, transaction, cash-flow and manual-price flows | (this commit) | merged |
-| 5 — CSV import | — | not started |
+| 5 — CSV import | (this commit) | merged |
 | 6 — Settings: security and your data | — | not started |
 | 7 — Documentation and gates | — | not started |
 
@@ -568,6 +568,25 @@ Corrections to the prose above, found while building:
   forced); dbtest: commit is one statement (a constraint failure on row N
   writes nothing), re-import is a no-op, the after-response chain prices
   the assets the preview created.
+
+### Grounding (2026-09-20) — status: merged
+
+1. **A transient `csv_imports` table** (one row per user, RLS, 4 MB cap;
+   migration `csv_imports`). The upload and the commit are two requests and
+   the commit must re-run the dry run on the SAME bytes the preview showed;
+   without a client component the bytes need a server-side home between
+   them. Replaced by each upload, deleted on commit or discard; not user
+   data, not in the backup. The preview hash is over the parsed values, so
+   creating an unresolved asset from the preview does not invalidate it.
+2. `createAssetAction` became `createAssetThen(returnTo, formData)` so the
+   import preview creates unresolved identifiers through the very same
+   action — and the same after-response fetch (SPEC §9.4).
+3. The dry run and the commit share `app/(app)/transactions/import/load.ts`
+   (`loadDryRun`): the stored upload, its parse, the saved map, the user's
+   assets and transactions as text, the run. The dbtest drives that module
+   directly, which is the whole action minus Next's request context.
+4. AC-007.7's export action lands in Phase 6 with the rest of "your data";
+   `writeCsv` and the no-op re-import of a written export are proven here.
 
 ## Phase 6 — Settings: security and your data
 

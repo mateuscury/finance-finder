@@ -19,7 +19,12 @@ import { formValues, metadataFromForm, outcomeQuery } from "@/app/(app)/_lib/for
 
 const ASSET_FIELDS = ["pack_id", "instrument_kind", "identifier", "name", "native_currency"] as const;
 
-export async function createAssetAction(formData: FormData): Promise<void> {
+/**
+ * Creates an asset and returns to `returnTo` — the assets page, or the CSV
+ * import preview, which creates unresolved identifiers the same way and
+ * with the same scoped fetch (SPEC §9.4).
+ */
+export async function createAssetThen(returnTo: "/assets" | "/transactions/import", formData: FormData): Promise<void> {
   const started = Date.now();
   const { client, identity } = await requireUser();
   const metadata = metadataFromForm(formData);
@@ -31,7 +36,7 @@ export async function createAssetAction(formData: FormData): Promise<void> {
     revalidatePath("/assets");
     revalidatePath("/");
   }
-  redirect(`/assets${outcomeQuery(result)}`);
+  redirect(`${returnTo}${outcomeQuery(result)}`);
 }
 
 export async function updateAssetAction(assetId: string, formData: FormData): Promise<void> {

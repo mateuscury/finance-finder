@@ -52,6 +52,32 @@ separate production-data gate and intentionally fails until all adapters,
 financial golden tests, authentication screens, and full backup restore are
 implemented. Draft packs are never enabled for new users.
 
+## Importing transactions from CSV
+
+Manual entry is the fallback; a file you upload is the bulk path in (the app
+never holds a broker credential). One canonical format, header row required,
+column order irrelevant, unknown columns ignored:
+
+```
+date,type,pack,instrument_kind,identifier,quantity,unit_price,currency,fees,note
+2024-03-14,buy,br,br.fii,HGLG11,100,162.40,BRL,2.50,
+2024-06-28,dividend,br,br.fii,HGLG11,0,132.00,BRL,0,June distribution
+```
+
+- `date` is `YYYY-MM-DD`; `type` is `buy`, `sell`, `dividend`, `interest` or
+  `fee`; `quantity` is signed (buy positive, sell negative, `0` for the cash
+  types, where `unit_price` is the cash amount); `fees` defaults to `0`.
+- Values are read as text straight into decimal arithmetic — never as
+  floating point — so write them exactly as your statement shows them.
+- Your broker's headers can be mapped onto these once; the mapping is
+  remembered.
+- The upload is a dry run: every row is validated, unknown identifiers are
+  listed for you to create from the preview, and rows already in your ledger
+  are flagged as duplicates and skipped unless you include them. Nothing is
+  written until you commit, and the commit is all or nothing.
+- The app's own export (`transactions-YYYY-MM-DD.csv`) is in this format, so
+  re-importing it is a no-op.
+
 ## Licence
 
 [GNU AGPL-3.0](./LICENSE). Self-hosting for yourself carries no obligation;
