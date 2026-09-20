@@ -224,6 +224,10 @@ construction and equals the pure FX return whenever quantity is constant.
 
 ## Decisions to confirm before implementation
 
+> **Confirmed 2026-09-20**, all ten on the recommendation below. The record
+> of authority is `MILESTONES.md` §2 "Decisions taken"; this section is kept
+> as the reasoning that was in front of the maintainer when choosing.
+
 Each item changes a checked-in contract or the golden numbers. Items marked
 **numbers** change `expected.json`; the rest change scope or schema. Once
 confirmed they are recorded under `MILESTONES.md` §2 as "Decisions taken",
