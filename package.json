@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:calc": "vitest run lib/calc --passWithNoTests",
+    "test:calc": "vitest run lib/calc",
     "test:packs": "vitest run packs",
     "test:db": "vitest run --config vitest.db.config.mts",
     "codeowners": "tsx scripts/generate-codeowners.ts",
