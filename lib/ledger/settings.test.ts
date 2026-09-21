@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import type { MarketPack } from "@/packs/types";
-import { fakeClient } from "./fake-client";
+import { fakeClient } from "@/lib/testing/fake-client";
 import { setEnabledPacks, stampExport, updatePreferences } from "./settings";
 
 const U = "11111111-1111-4111-8111-111111111111";

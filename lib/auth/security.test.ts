@@ -61,6 +61,12 @@ describe("security", () => {
     expect(a.calls).toEqual(["listFactors", "unenroll", "enroll"]);
   });
 
+  it("enrolTotp refuses a second enrolment while a verified factor exists (one factor per owner, D-22)", async () => {
+    const a = fakeAuth([{ id: "current", factor_type: "totp", status: "verified" }]);
+    expect(await enrolTotp(a.client)).toEqual({ ok: false, reason: "factor_exists" });
+    expect(a.calls).toEqual(["listFactors"]);
+  });
+
   it("confirmTotp needs a six-digit code; unenrolTotp needs a verified factor", async () => {
     const none = fakeAuth([]);
     expect(await confirmTotp(none.client, { factorId: "f", code: "12" })).toEqual({

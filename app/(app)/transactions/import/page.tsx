@@ -4,6 +4,7 @@ import { AssetForm } from "@/app/(app)/assets/_form";
 import { createAssetThen } from "@/app/(app)/assets/actions";
 import { requireUser } from "@/lib/auth/session";
 import { CANONICAL_COLUMNS, REQUIRED_COLUMNS } from "@/lib/import";
+import { currentCopy, type ImportOutcome } from "@/lib/copy/server";
 import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 import { commitImportAction, discardImportAction, saveMappingAction, uploadCsvAction } from "./actions";
 import { loadDryRun } from "./load";
@@ -11,21 +12,10 @@ import { loadDryRun } from "./load";
 // The commit schedules the snapshot rebuild after the response (decision 30).
 export const maxDuration = 60;
 
-const COPY: Record<string, string> = {
-  no_file: "Choose a CSV file first.",
-  too_large: "That file is larger than the 4 MB the import accepts.",
-  write_failed: "The upload was not saved.",
-  preview_changed: "The file changed since this preview was shown. Review the preview again and commit.",
-  rows_have_errors: "Some rows have errors. Nothing was written — fix the file and upload it again.",
-  unresolved_identifiers: "Some identifiers are not among your assets. Create them from the preview, then commit.",
-  nothing_to_import: "Every row is a duplicate. Nothing was written.",
-  not_found: "A row named an asset that is not yours. Nothing was written.",
-  invalid_input: "The database refused a row. Nothing was written.",
-};
-
 /** SPEC §9.1: upload → map columns → dry run → create unresolved assets inline → commit all or nothing. */
 export default async function ImportPage({ searchParams }: PageProps<"/transactions/import">) {
   const { client } = await requireUser();
+  const copy = await currentCopy();
   const params = await searchParams;
   const error = typeof params.error === "string" ? params.error : null;
   const loaded = await loadDryRun(client, PACKS);
@@ -35,7 +25,7 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
       <p>
         <Link href="/transactions">Back to transactions</Link>
       </p>
-      {error ? <p role="alert">{COPY[error] ?? COPY.write_failed}</p> : null}
+      {error ? <p role="alert">{copy.import[error as ImportOutcome] ?? copy.import.write_failed}</p> : null}
       {params.saved ? <p role="status">Column mapping saved.</p> : null}
 
       {loaded.kind === "none" ? (

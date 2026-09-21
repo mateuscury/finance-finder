@@ -25,5 +25,5 @@ keys refuse anything a check missed.
 - CSV lives in `lib/csv` (RFC 4180 reader/writer) and `lib/import` (column
   map, dry run, commit planner); backups in `lib/backup`.
 
-`fake-client.ts` is a test-only PostgREST builder so every reason code is
+`lib/testing/fake-client.ts` is a test-only PostgREST builder so every reason code is
 unit-tested; `*.dbtest.ts` prove RLS, identity, locks and provenance live.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
-import { fakeClient } from "./fake-client";
+import { fakeClient } from "@/lib/testing/fake-client";
 import { readLedger, resolveAssets, toCashFlow, toPrice, toSeries, toTransaction } from "./rows";
 
 describe("row mappers keep money as the text PostgREST returned", () => {

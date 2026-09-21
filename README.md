@@ -102,10 +102,11 @@ values. Nothing else goes anywhere: no analytics, no telemetry, no
 error-reporting service, fonts served from your own origin. Full detail in
 [`SPEC.md`](./SPEC.md) §12.
 
-The target product has one owner account created from the CLI, disabled public
-signups, and optional TOTP. Export, tested full restore, backup reminders, and
-confirmed deletion are release-gated features described in `SPEC.md`; they are
-not present in this scaffold yet.
+One owner account created from the CLI, disabled public signups, optional
+TOTP. Export (JSON + CSV), restore into an empty account, and type-to-confirm
+deletion live in Settings and are proven against a real database by
+`pnpm test:db` (`lib/backup/roundtrip.dbtest.ts`). The backup reminder in
+the status strip arrives with the designed screens (Milestone 4).
 
 ## Disclaimer
 

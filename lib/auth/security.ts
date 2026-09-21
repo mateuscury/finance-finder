@@ -7,7 +7,14 @@ import type { Db } from "@/lib/supabase/types";
 import { z } from "zod";
 
 export type SecurityReason =
-  "invalid_input" | "aal2_required" | "wrong_password" | "auth_failed" | "no_factor" | "code_rejected";
+  | "invalid_input"
+  | "aal2_required"
+  | "wrong_password"
+  | "auth_failed"
+  | "no_factor"
+  | "code_rejected"
+  /** One factor per owner (Milestone 4 D-22): a second enrolment is refused while one is verified. */
+  | "factor_exists";
 export type SecurityResult<T = undefined> = { ok: true; value: T } | { ok: false; reason: SecurityReason };
 
 const NewPassword = z
@@ -29,9 +36,16 @@ export interface Enrolment {
   secret: string;
 }
 
-/** Starts enrolment: the factor exists as `unverified` until `confirmTotp`. Stale unverified factors are cleared first. */
+/**
+ * Starts enrolment: the factor exists as `unverified` until `confirmTotp`.
+ * Stale unverified factors are cleared first. ONE verified factor per owner
+ * (Milestone 4 D-22): Auth would accept up to ten, but the challenge in
+ * `app/login/actions.ts` reads the first, so a second would never be asked
+ * for — it is refused here instead of silently ignored.
+ */
 export async function enrolTotp(client: Db): Promise<SecurityResult<Enrolment>> {
   const factors = await client.auth.mfa.listFactors();
+  if ((factors.data?.totp ?? []).length > 0) return { ok: false, reason: "factor_exists" };
   // `totp` lists verified factors only; unverified leftovers of an abandoned enrolment are in `all`.
   for (const f of factors.data?.all ?? [])
     if (f.factor_type === "totp" && f.status === "unverified") await client.auth.mfa.unenroll({ factorId: f.id });

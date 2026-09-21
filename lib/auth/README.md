@@ -20,3 +20,12 @@ The trust rules (docs/milestone-3-plan.md "Identity and sessions"):
   enrolment) calls server actions, so the session cookie is `httpOnly`.
 - `auth.dbtest.ts` proves sign-in, uniform failure and TOTP → AAL2 against
   the local Auth with an RFC 6238 generator written in the test.
+
+## One factor per owner
+
+Supabase Auth permits up to ten verified TOTP factors; this app keeps
+exactly one. The challenge (`verifyTotp` in `app/login/actions.ts`) reads
+the first verified factor, so a second would never be asked for —
+`enrolTotp` therefore refuses with `factor_exists` while one is verified,
+and removal (`unenrolTotp`, AAL2) is the way to replace it. Abandoned
+unverified enrolments are cleared on the next attempt.

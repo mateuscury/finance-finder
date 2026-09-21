@@ -1,0 +1,61 @@
+import type { Copy } from "./types";
+
+/** English. Where root SPEC.md quotes a line, this is that line. */
+export const en: Copy = {
+  saved: "Saved.",
+  checkFields: ({ fields }) => ` Check: ${fields}.`,
+  reasons: {
+    invalid_input: "Some fields were not accepted.",
+    not_found: "That row does not exist.",
+    unknown_kind: "That instrument kind is not registered in this build.",
+    invalid_metadata: "The metadata does not match what this instrument kind needs.",
+    duplicate_asset: "You already have an asset with that identity.",
+    asset_identity_locked: "This asset has transactions; its identity cannot change. Name and metadata can.",
+    asset_has_transactions: "This asset has transactions and cannot be deleted.",
+    base_locked:
+      "The base currency is locked by your first transaction. Confirm the reset to change it and rebuild history.",
+    write_failed: "The change was not saved.",
+  },
+  security: {
+    aal2_required: "Confirm your second factor first: sign out and back in with your authenticator code.",
+    invalid_input: "The passwords did not match or were too short (12+ characters).",
+    wrong_password: "That password was not accepted.",
+    auth_failed: "Auth refused the change.",
+    no_factor: "There is no authenticator to remove.",
+    code_rejected: "That code was not accepted. Try the next one.",
+    factor_exists: "An authenticator is already enrolled. Remove it before enrolling another.",
+  },
+  restore: {
+    done: "Restored.",
+    no_file: "Choose a backup file first.",
+    invalid_backup: "That file is not a Finance Finder backup.",
+    unsupported_version: "That backup was written by a newer version of this app.",
+    duplicate_asset_id: "The file lists the same asset twice.",
+    foreign_asset_reference: "The file references an asset it does not contain.",
+    account_not_empty:
+      "Restore only works into an empty account. Delete everything first, or restore into a fresh instance.",
+    asset_id_conflict: "An asset id in the file already exists.",
+    invalid_rows:
+      "The file has a row the database refuses (a negative price, an unknown type). Fix the export and retry.",
+    not_authenticated: "Sign in again and retry.",
+    write_failed: "The restore was refused.",
+    warnings: ({ count, codes }) =>
+      `The file has ${count} item(s) this build cannot price (${codes}); they restore as unpriced. Upload again with the box ticked to proceed.`,
+  },
+  delete: {
+    phrase: "Type the phrase exactly, and enter your password.",
+    password: "That password was not accepted.",
+    failed: "The account could not be deleted.",
+  },
+  import: {
+    no_file: "Choose a CSV file first.",
+    too_large: "That file is larger than the 4 MB the import accepts.",
+    write_failed: "The upload was not saved.",
+    preview_changed: "The file changed since this preview was shown. Review the preview again and commit.",
+    rows_have_errors: "Some rows have errors. Nothing was written — fix the file and upload it again.",
+    unresolved_identifiers: "Some identifiers are not among your assets. Create them from the preview, then commit.",
+    nothing_to_import: "Every row is a duplicate. Nothing was written.",
+    not_found: "A row named an asset that is not yours. Nothing was written.",
+    invalid_input: "The database refused a row. Nothing was written.",
+  },
+};

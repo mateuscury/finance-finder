@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PACKS } from "@/packs";
 import { Notice } from "@/app/(app)/_components/notice";
 import { requireUser } from "@/lib/auth/session";
+import { copyFor, type DeleteOutcome, type RestoreOutcome } from "@/lib/copy";
 import { readSettings } from "@/lib/ledger/rows";
 import {
   changeBaseCurrencyAction,
@@ -13,44 +14,18 @@ import {
   unenrolTotpAction,
   updatePreferencesAction,
 } from "./actions";
+import type { SecurityReason } from "@/lib/auth/security";
 import { TotpEnrol } from "./totp-enrol";
 
 // Pack enable schedules a series backfill after the response (decision 30).
 export const maxDuration = 60;
-
-const SECURITY_COPY: Record<string, string> = {
-  aal2_required: "Confirm your second factor first: sign out and back in with your authenticator code.",
-  invalid_input: "The passwords did not match or were too short (12+ characters).",
-  auth_failed: "Auth refused the change.",
-  no_factor: "There is no authenticator to remove.",
-  code_rejected: "That code was not accepted. Try the next one.",
-};
-const RESTORE_COPY: Record<string, string> = {
-  done: "Restored.",
-  no_file: "Choose a backup file first.",
-  invalid_backup: "That file is not a Finance Finder backup.",
-  unsupported_version: "That backup was written by a newer version of this app.",
-  duplicate_asset_id: "The file lists the same asset twice.",
-  foreign_asset_reference: "The file references an asset it does not contain.",
-  account_not_empty:
-    "Restore only works into an empty account. Delete everything first, or restore into a fresh instance.",
-  asset_id_conflict: "An asset id in the file already exists.",
-  invalid_rows:
-    "The file has a row the database refuses (a negative price, an unknown type). Fix the export and retry.",
-  not_authenticated: "Sign in again and retry.",
-  write_failed: "The restore was refused.",
-};
-const DELETE_COPY: Record<string, string> = {
-  phrase: "Type the phrase exactly, and enter your password.",
-  password: "That password was not accepted.",
-  failed: "The account could not be deleted.",
-};
 
 /** Settings (SPEC §9 screen 9): base currency, packs, theme/locale; security; your data. Design arrives in Milestone 5. */
 export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   const { client, identity } = await requireUser();
   const params = await searchParams;
   const settings = await readSettings(client);
+  const copy = copyFor(settings.locale);
   const factors = await client.auth.mfa.listFactors();
   const enrolled = (factors.data?.totp ?? []).length > 0;
   const enabled = new Set(settings.enabled_packs ?? []);
@@ -62,7 +37,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
     <main>
       <h1>Settings</h1>
       <Notice searchParams={params} />
-      {security ? <p role="alert">{SECURITY_COPY[security] ?? SECURITY_COPY.auth_failed}</p> : null}
+      {security ? (
+        <p role="alert">{copy.security[security as SecurityReason | "factor_exists"] ?? copy.security.auth_failed}</p>
+      ) : null}
 
       <h2>Portfolio</h2>
       <form action={changeBaseCurrencyAction}>
@@ -163,8 +140,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
       {restore ? (
         <p role={restore === "done" ? "status" : "alert"}>
           {restore === "warnings"
-            ? `The file has ${String(params.count)} item(s) this build cannot price (${String(params.codes)}); they restore as unpriced. Upload again with the box ticked to proceed.`
-            : (RESTORE_COPY[restore] ?? RESTORE_COPY.write_failed)}
+            ? copy.restore.warnings({ count: parseInt(String(params.count), 10) || 0, codes: String(params.codes) })
+            : (copy.restore[restore as RestoreOutcome] ?? copy.restore.write_failed)}
         </p>
       ) : null}
       <form action={restoreBackupAction}>
@@ -176,7 +153,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
         <button type="submit">Restore into this (empty) account</button>
       </form>
       <h3>Delete everything</h3>
-      {del ? <p role="alert">{DELETE_COPY[del] ?? DELETE_COPY.failed}</p> : null}
+      {del ? <p role="alert">{copy.delete[del as DeleteOutcome] ?? copy.delete.failed}</p> : null}
       <form action={deleteEverythingAction}>
         <p>
           Type <code>delete everything</code> and your password. The account and every row cascade; market data stays.

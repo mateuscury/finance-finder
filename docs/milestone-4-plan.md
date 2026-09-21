@@ -172,7 +172,7 @@ _unpriced_ — never a zero, never a confident number off missing data. One
 - Deployment is the maintainer's accounts: Vercel (the two crons in
   `vercel.json`, `maxDuration` 60 without Fluid compute — `lib/cron/
 budget.ts`) and a hosted Supabase project (`supabase db push` applies the
-  nine migrations; the dashboard mirrors `config.toml`'s auth settings —
+  every migration; the dashboard mirrors `config.toml`'s auth settings —
   signups off, 12-char passwords, TOTP on, the email provider on, the site
   URL and the callback redirect). `docs/DEPLOY.md` is the runbook;
   `.env.example` is complete; nothing is pasted by hand.

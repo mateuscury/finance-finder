@@ -649,12 +649,12 @@ The promise, stated plainly so nobody infers a stronger one:
 
 ### 12.1 What leaves an instance
 
-| Leaves to                                                          | Carries                                                               | Never carries                                              |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Pack sources (brapi, BCB SGS, Tesouro Transparente, AwesomeAPI, …) | ticker / series codes, the source's API token, the project user-agent | quantities, prices paid, values, currency totals, identity |
-| Vercel                                                             | the app, its logs, env vars (including the service-role key)          | —                                                          |
-| Supabase                                                           | everything, at rest + TLS                                             | —                                                          |
-| Anyone else                                                        | **nothing**                                                           | —                                                          |
+| Leaves to                                                                    | Carries                                                               | Never carries                                              |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Pack sources (brapi, BCB SGS, IBGE SIDRA, Tesouro Transparente, BCB PTAX, …) | ticker / series codes, the source's API token, the project user-agent | quantities, prices paid, values, currency totals, identity |
+| Vercel                                                                       | the app, its logs, env vars (including the service-role key)          | —                                                          |
+| Supabase                                                                     | everything, at rest + TLS                                             | —                                                          |
+| Anyone else                                                                  | **nothing**                                                           | —                                                          |
 
 Sources therefore learn _what_ a self-hoster holds, never _how much_. That is
 disclosed in `README.md` and in Settings. A source whose terms would let it

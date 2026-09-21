@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { createAsset, deleteAsset, normalizeIdentifier, prepareAsset, updateAsset } from "./assets";
 import { createCashFlow } from "./cashFlows";
-import { fakeClient } from "./fake-client";
+import { fakeClient } from "@/lib/testing/fake-client";
 import { setManualPrice } from "./prices";
 import { reasonFor } from "./result";
 import { changeBaseCurrency } from "./settings";
