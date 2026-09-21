@@ -24,7 +24,8 @@ vi.mock("@/lib/packs/ingest", () => ({ runIngest: (...args: unknown[]) => runIng
 const { GET, maxDuration } = await import("./route");
 
 const SECRET = "x".repeat(48);
-const authorized = () => new Request("https://app.test/api/cron/prices", { headers: { authorization: `Bearer ${SECRET}` } });
+const authorized = () =>
+  new Request("https://app.test/api/cron/prices", { headers: { authorization: `Bearer ${SECRET}` } });
 
 beforeEach(() => {
   created.serviceClients = 0;
@@ -100,7 +101,19 @@ describe("GET /api/cron/prices", () => {
       activatedPacks: ["br"],
       activationWarnings: 1,
       sources: [
-        { sourceId: "br.brapi", status: "error", statusCodes: [503], attempts: 3, durationMs: 5, accepted: 0, rejected: 0, written: 0, manualProtected: 0, warnings: 2, errorCode: "adapter_threw" },
+        {
+          sourceId: "br.brapi",
+          status: "error",
+          statusCodes: [503],
+          attempts: 3,
+          durationMs: 5,
+          accepted: 0,
+          rejected: 0,
+          written: 0,
+          manualProtected: 0,
+          warnings: 2,
+          errorCode: "adapter_threw",
+        },
       ],
     });
     const res = await GET(authorized());

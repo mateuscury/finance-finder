@@ -7,7 +7,12 @@ import { parseDecimal, type KDecimal } from "../decimal";
 import { observed, unpriced, type Observed } from "../staleness";
 import type { MarketData } from "../types";
 
-export function observeScalar(market: MarketData, seriesId: string, asOf: IsoDate, windowDays: number): Observed<KDecimal> {
+export function observeScalar(
+  market: MarketData,
+  seriesId: string,
+  asOf: IsoDate,
+  windowDays: number,
+): Observed<KDecimal> {
   const point = market.latestScalarAtOrBefore(seriesId, asOf);
   if (!point) return unpriced("no_observation");
   return observed(parseDecimal(point.value, `${seriesId} value`), point.date, asOf, windowDays);

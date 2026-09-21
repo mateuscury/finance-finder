@@ -15,12 +15,20 @@ describe("realReturn", () => {
   });
 
   it("takes the worse leg's status and propagates unpriced", () => {
-    expect(realReturn(new KernelDecimal("0.1"), market, IPCA, "2026-01-31", "2026-03-20")).toMatchObject({ status: "carried_forward", observedOn: "2026-02-28" });
+    expect(realReturn(new KernelDecimal("0.1"), market, IPCA, "2026-01-31", "2026-03-20")).toMatchObject({
+      status: "carried_forward",
+      observedOn: "2026-02-28",
+    });
     expect(realReturn(new KernelDecimal("0.1"), market, IPCA, "2026-01-31", "2026-06-01").status).toBe("stale");
-    expect(realReturn(new KernelDecimal("0.1"), market, IPCA, "2026-01-01", "2026-02-28")).toEqual({ status: "unpriced", reason: "before_first_anchor" });
+    expect(realReturn(new KernelDecimal("0.1"), market, IPCA, "2026-01-01", "2026-02-28")).toEqual({
+      status: "unpriced",
+      reason: "before_first_anchor",
+    });
   });
 
   it("refuses a series that is not an inflation index", () => {
-    expect(() => realReturn(new KernelDecimal("0.1"), market, CDI, "2026-01-31", "2026-02-28")).toThrow(/unsupported_convention/);
+    expect(() => realReturn(new KernelDecimal("0.1"), market, CDI, "2026-01-31", "2026-02-28")).toThrow(
+      /unsupported_convention/,
+    );
   });
 });

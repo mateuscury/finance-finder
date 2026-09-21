@@ -79,7 +79,10 @@ describe("bcb-ptax adapter", () => {
   });
 
   it("skips malformed rows, counts them, and keeps the window uncertified only when the header is wrong", async () => {
-    const r = await fetchBcbPtax(req, ctx(200, [HEADER, '"nope","nope",2026-09-01 13:00:00', '"5,10","5,11",bad-date'].join("\n")));
+    const r = await fetchBcbPtax(
+      req,
+      ctx(200, [HEADER, '"nope","nope",2026-09-01 13:00:00', '"5,10","5,11",bad-date'].join("\n")),
+    );
     expect(r.points).toEqual([]);
     expect(r.warnings.some((w) => /skipped 2 unparsable/.test(w))).toBe(true);
   });
@@ -97,7 +100,10 @@ describe("bcb-ptax adapter", () => {
   });
 
   it("drops rows outside the requested window", async () => {
-    const r = await fetchBcbPtax(req, ctx(200, [HEADER, '"5,00","5,01",2026-08-28 13:00:00', '"5,00","5,02",2026-09-01 13:00:00'].join("\n")));
+    const r = await fetchBcbPtax(
+      req,
+      ctx(200, [HEADER, '"5,00","5,01",2026-08-28 13:00:00', '"5,00","5,02",2026-09-01 13:00:00'].join("\n")),
+    );
     expect(r.points.map((p) => p.date)).toEqual(["2026-09-01"]);
   });
 

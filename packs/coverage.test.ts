@@ -32,11 +32,9 @@ describe("coverageFor", () => {
   });
 
   it("emits exactly one entry per requested ref, in request order", () => {
-    expect(coverageFor(["z", "y", "x"], { from: "2026-01-01", to: "2026-01-02" }, [], () => true).map((c) => c.ref)).toEqual([
-      "z",
-      "y",
-      "x",
-    ]);
+    expect(
+      coverageFor(["z", "y", "x"], { from: "2026-01-01", to: "2026-01-02" }, [], () => true).map((c) => c.ref),
+    ).toEqual(["z", "y", "x"]);
   });
 
   it("produces entries that satisfy the kernel coverage schema", () => {

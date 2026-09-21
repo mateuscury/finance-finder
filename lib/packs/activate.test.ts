@@ -121,7 +121,11 @@ describe("readEnabledPackIds", () => {
 
 describe("activateFromStore", () => {
   it("reads the store and resolves dependencies in one call", async () => {
-    const store: EnabledPacksStore = { async listEnabledPacks() { return [["br"]]; } };
+    const store: EnabledPacksStore = {
+      async listEnabledPacks() {
+        return [["br"]];
+      },
+    };
     expect(ids(await activateFromStore(REGISTRY, store, 500))).toEqual(["global", "br"]);
   });
 });

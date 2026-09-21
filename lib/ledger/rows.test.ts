@@ -15,14 +15,36 @@ describe("row mappers keep money as the text PostgREST returned", () => {
       fees: "4.9000000000",
       fx_rate: null,
     });
-    expect(row).toEqual({ id: "t1", assetId: "a1", tradeDate: "2026-02-02", type: "buy", quantity: "100.0000000000", unitPrice: "150.0000000000", currency: "BRL", fees: "4.9000000000", fxRate: null });
+    expect(row).toEqual({
+      id: "t1",
+      assetId: "a1",
+      tradeDate: "2026-02-02",
+      type: "buy",
+      quantity: "100.0000000000",
+      unitPrice: "150.0000000000",
+      currency: "BRL",
+      fees: "4.9000000000",
+      fxRate: null,
+    });
     expect(typeof row.quantity).toBe("string");
   });
 
   it("cash flows, prices and series", () => {
-    expect(toCashFlow({ id: "c", date: "2026-01-15", amount: "-4648.5000000000", currency: "BRL" })).toEqual({ id: "c", date: "2026-01-15", amount: "-4648.5000000000", currency: "BRL" });
-    expect(toPrice({ asset_id: "a", date: "2026-02-10", price: "151.0000000000", currency: "BRL", source_id: "br.brapi" })).toEqual({ assetId: "a", date: "2026-02-10", price: "151.0000000000", currency: "BRL", sourceId: "br.brapi" });
-    expect(toSeries({ series_id: "br.cdi", date: "2026-02-10", value: "0.0005000000", tenor_days: 0 })).toEqual({ seriesId: "br.cdi", date: "2026-02-10", value: "0.0005000000", tenorDays: 0 });
+    expect(toCashFlow({ id: "c", date: "2026-01-15", amount: "-4648.5000000000", currency: "BRL" })).toEqual({
+      id: "c",
+      date: "2026-01-15",
+      amount: "-4648.5000000000",
+      currency: "BRL",
+    });
+    expect(
+      toPrice({ asset_id: "a", date: "2026-02-10", price: "151.0000000000", currency: "BRL", source_id: "br.brapi" }),
+    ).toEqual({ assetId: "a", date: "2026-02-10", price: "151.0000000000", currency: "BRL", sourceId: "br.brapi" });
+    expect(toSeries({ series_id: "br.cdi", date: "2026-02-10", value: "0.0005000000", tenor_days: 0 })).toEqual({
+      seriesId: "br.cdi",
+      date: "2026-02-10",
+      value: "0.0005000000",
+      tenorDays: 0,
+    });
   });
 });
 

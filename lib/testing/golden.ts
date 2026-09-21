@@ -16,8 +16,12 @@ import { GoldenFixtureSchema, type GoldenFixture } from "@/lib/calc/golden";
 const ROOT = path.resolve(__dirname, "../..");
 
 export function loadGoldenFixture(packId = "br"): { fixture: GoldenFixture; expected: Record<string, unknown> } {
-  const read = (file: string) => JSON.parse(fs.readFileSync(path.join(ROOT, "packs", packId, "fixtures", file), "utf8")) as unknown;
-  return { fixture: GoldenFixtureSchema.parse(read("portfolio.json")), expected: read("expected.json") as Record<string, unknown> };
+  const read = (file: string) =>
+    JSON.parse(fs.readFileSync(path.join(ROOT, "packs", packId, "fixtures", file), "utf8")) as unknown;
+  return {
+    fixture: GoldenFixtureSchema.parse(read("portfolio.json")),
+    expected: read("expected.json") as Record<string, unknown>,
+  };
 }
 
 async function mustInsert(admin: SupabaseClient, table: string, rows: Record<string, unknown>[]): Promise<void> {
@@ -40,9 +44,13 @@ export async function seedGoldenPortfolio(
   options: { series?: boolean; enabledPacks?: string[] } = {},
 ): Promise<SeededGolden> {
   const uuidOf = new Map(fixture.assets.map((a) => [a.id, randomUUID()] as const));
-  const settings = await admin
-    .from("user_settings")
-    .upsert({ user_id: userId, base_currency: fixture.baseCurrency, enabled_packs: options.enabledPacks ?? ["br"], locale: "pt-BR", theme: "system" });
+  const settings = await admin.from("user_settings").upsert({
+    user_id: userId,
+    base_currency: fixture.baseCurrency,
+    enabled_packs: options.enabledPacks ?? ["br"],
+    locale: "pt-BR",
+    theme: "system",
+  });
   if (settings.error) throw new Error(`dbtest: seeding user_settings failed (${settings.error.message})`);
   await mustInsert(
     admin,
@@ -78,18 +86,33 @@ export async function seedGoldenPortfolio(
   await mustInsert(
     admin,
     "cash_flows",
-    fixture.cashFlows.map((f) => ({ id: randomUUID(), user_id: userId, date: f.date, amount: f.amount, currency: f.currency, note: null })),
+    fixture.cashFlows.map((f) => ({
+      id: randomUUID(),
+      user_id: userId,
+      date: f.date,
+      amount: f.amount,
+      currency: f.currency,
+      note: null,
+    })),
   );
   const byIdentifier = new Map(fixture.assets.map((a) => [a.identifier, uuidOf.get(a.id)!] as const));
   await mustInsert(
     admin,
     "prices",
     Object.entries(fixture.prices).flatMap(([identifier, rows]) =>
-      rows.map((r) => ({ asset_id: byIdentifier.get(identifier), date: r.date, price: r.price, currency: r.currency, source_id: r.sourceId })),
+      rows.map((r) => ({
+        asset_id: byIdentifier.get(identifier),
+        date: r.date,
+        price: r.price,
+        currency: r.currency,
+        source_id: r.sourceId,
+      })),
     ),
   );
   if (options.series) {
-    const rows = Object.entries(fixture.series).flatMap(([seriesId, points]) => points.map((p) => ({ series_id: seriesId, date: p.date, value: p.value, tenor_days: p.tenorDays })));
+    const rows = Object.entries(fixture.series).flatMap(([seriesId, points]) =>
+      points.map((p) => ({ series_id: seriesId, date: p.date, value: p.value, tenor_days: p.tenorDays })),
+    );
     const upsert = await admin.from("series_points").upsert(rows, { onConflict: "series_id,date,tenor_days" });
     if (upsert.error) throw new Error(`dbtest: seeding series_points failed (${upsert.error.message})`);
   }

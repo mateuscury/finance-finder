@@ -69,14 +69,19 @@ function sortedValuations(valuations: readonly ValuationPoint[]): { date: IsoDat
   const rows = valuations.map((v) => ({ date: v.date, value: parseDecimal(v.value, "valuation") }));
   rows.sort((a, b) => compareDates(a.date, b.date));
   for (let i = 0; i < rows.length; i += 1) {
-    if (rows[i].value.lt(0)) throw new KernelError("invalid_input", "a valuation cannot be negative", { date: rows[i].date });
-    if (i > 0 && rows[i].date === rows[i - 1].date) throw new KernelError("invalid_input", "two valuations on one date", { date: rows[i].date });
+    if (rows[i].value.lt(0))
+      throw new KernelError("invalid_input", "a valuation cannot be negative", { date: rows[i].date });
+    if (i > 0 && rows[i].date === rows[i - 1].date)
+      throw new KernelError("invalid_input", "two valuations on one date", { date: rows[i].date });
   }
   return rows;
 }
 
 /** Sum of flows per valuation date it attaches to, plus the flows outside the window. */
-function attachFlows(dates: readonly IsoDate[], flows: readonly BaseFlow[]): { attached: Map<IsoDate, KDecimal>; ignored: BaseFlow[] } {
+function attachFlows(
+  dates: readonly IsoDate[],
+  flows: readonly BaseFlow[],
+): { attached: Map<IsoDate, KDecimal>; ignored: BaseFlow[] } {
   const attached = new Map<IsoDate, KDecimal>();
   const ignored: BaseFlow[] = [];
   const first = dates[0];

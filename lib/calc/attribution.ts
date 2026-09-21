@@ -52,7 +52,8 @@ function nullResult(assetId: string, from: IsoDate, to: IsoDate, reason: Attribu
 }
 
 export function attribution(input: PortfolioInput, assetId: string, from: IsoDate, to: IsoDate): Attribution {
-  if (compareDates(from, to) > 0) throw new KernelError("invalid_input", "attribution needs from ≤ to", { assetId, from, to });
+  if (compareDates(from, to) > 0)
+    throw new KernelError("invalid_input", "attribution needs from ≤ to", { assetId, from, to });
   const asset = input.assets.find((a) => a.id === assetId);
   if (!asset) throw new KernelError("invalid_input", "unknown asset", { assetId });
   const calendar = input.calendars.get(asset.packId);

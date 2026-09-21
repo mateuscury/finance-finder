@@ -25,7 +25,10 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
-    { name: "phone", use: { ...devices["Desktop Chrome"], viewport: { width: 400, height: 800 }, isMobile: true, hasTouch: true } },
+    {
+      name: "phone",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 400, height: 800 }, isMobile: true, hasTouch: true },
+    },
   ],
   webServer: {
     // Production build in CI so a journey exercises what deploys; the dev

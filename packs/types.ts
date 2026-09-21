@@ -66,12 +66,7 @@ export type SeriesKind =
   /** Each point carries one of these maturities in `tenorDays`. Rates are unit rates. */
   | { kind: "yield_curve"; tenors: number[] };
 
-export type SeriesRole =
-  | "benchmark"
-  | "deflator"
-  | "accrual_index"
-  | "discount_curve"
-  | "fx";
+export type SeriesRole = "benchmark" | "deflator" | "accrual_index" | "discount_curve" | "fx";
 
 export interface SeriesDescriptor {
   id: string; // 'br.cdi' — must be prefixed with the pack id

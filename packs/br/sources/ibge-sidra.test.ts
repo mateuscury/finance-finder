@@ -30,7 +30,11 @@ describe("ibge-sidra adapter", () => {
   it("dates each monthly level on the last calendar day and keeps the level exact", async () => {
     const r = await fetchIbgeSidra(
       req,
-      ctx(200, [row("202601", "7427.7200000000000"), row("202602", "7479.7100000000000"), row("202603", "7545.5300000000000")]),
+      ctx(200, [
+        row("202601", "7427.7200000000000"),
+        row("202602", "7479.7100000000000"),
+        row("202603", "7545.5300000000000"),
+      ]),
     );
     expect(r.points).toEqual([
       { ref: "br.ipca", date: "2026-01-31", value: "7427.72", currency: null },
@@ -49,10 +53,7 @@ describe("ibge-sidra adapter", () => {
   });
 
   it("rejects SIDRA's unavailable/confidential placeholders instead of coercing them", async () => {
-    const r = await fetchIbgeSidra(
-      req,
-      ctx(200, [row("202601", "..."), row("202602", "-"), row("202603", "X")]),
-    );
+    const r = await fetchIbgeSidra(req, ctx(200, [row("202601", "..."), row("202602", "-"), row("202603", "X")]));
     expect(r.points).toEqual([]);
     expect(r.warnings.some((w) => /rejected 3 row/.test(w))).toBe(true);
   });
@@ -118,8 +119,12 @@ describe("ibge-sidra adapter", () => {
 
   it("warns on an unknown ref and a wrong capability without requesting anything", async () => {
     const calls: string[] = [];
-    expect((await fetchIbgeSidra({ ...req, refs: ["br.igpm"] }, ctx(200, [], calls))).warnings[0]).toMatch(/no SIDRA mapping/);
-    expect((await fetchIbgeSidra({ ...req, capability: "spot" }, ctx(200, [], calls))).warnings[0]).toMatch(/only supports/);
+    expect((await fetchIbgeSidra({ ...req, refs: ["br.igpm"] }, ctx(200, [], calls))).warnings[0]).toMatch(
+      /no SIDRA mapping/,
+    );
+    expect((await fetchIbgeSidra({ ...req, capability: "spot" }, ctx(200, [], calls))).warnings[0]).toMatch(
+      /only supports/,
+    );
     expect(calls).toEqual([]);
   });
 

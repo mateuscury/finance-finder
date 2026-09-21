@@ -4,10 +4,21 @@ import { KernelDecimal, ONE } from "../decimal";
 import { buildMarketData, type SeriesObservation } from "../types";
 import { curveAt, discountFactor, rateAtTenor, type Curve } from "./yield-curve";
 
-const pt = (date: string, tenorDays: number, value: string): SeriesObservation => ({ seriesId: "br.di", date, value, tenorDays });
+const pt = (date: string, tenorDays: number, value: string): SeriesObservation => ({
+  seriesId: "br.di",
+  date,
+  value,
+  tenorDays,
+});
 const md = buildMarketData(
   [],
-  [pt("2026-02-13", 365, "0.13"), pt("2026-02-13", 30, "0.12"), pt("2026-02-13", 730, "0.14"), pt("2026-02-12", 30, "0.11"), pt("2026-02-12", 365, "0.12")],
+  [
+    pt("2026-02-13", 365, "0.13"),
+    pt("2026-02-13", 30, "0.12"),
+    pt("2026-02-13", 730, "0.14"),
+    pt("2026-02-12", 30, "0.11"),
+    pt("2026-02-12", 365, "0.12"),
+  ],
 );
 
 describe("curveAt", () => {
@@ -16,7 +27,11 @@ describe("curveAt", () => {
     expect(r.status).toBe("ok");
     if (r.status !== "ok") return;
     expect(r.observedOn).toBe("2026-02-13");
-    expect(r.value.map((p) => [p.tenorDays, p.rate.toFixed()])).toEqual([[30, "0.12"], [365, "0.13"], [730, "0.14"]]);
+    expect(r.value.map((p) => [p.tenorDays, p.rate.toFixed()])).toEqual([
+      [30, "0.12"],
+      [365, "0.13"],
+      [730, "0.14"],
+    ]);
     expect(Object.isFrozen(r.value)).toBe(true);
     expect(curveAt(md, "br.di", "2026-02-18", 5).status).toBe("carried_forward");
     expect(curveAt(md, "br.di", "2026-02-19", 5).status).toBe("stale");
@@ -41,7 +56,9 @@ describe("rateAtTenor", () => {
     expect(rateAtTenor(curve, 1).toFixed()).toBe("0.12");
     expect(rateAtTenor(curve, 3650).toFixed()).toBe("0.14");
     // Midpoint of 365 → 730 (547.5 is not an integer; use 548 and 547 around it).
-    expect(rateAtTenor(curve, 548).toFixed(20)).toBe(new KernelDecimal("0.13").plus(new KernelDecimal("0.01").times(183).div(365)).toFixed(20));
+    expect(rateAtTenor(curve, 548).toFixed(20)).toBe(
+      new KernelDecimal("0.13").plus(new KernelDecimal("0.01").times(183).div(365)).toFixed(20),
+    );
     expect(() => rateAtTenor([], 30)).toThrow();
   });
 
@@ -62,7 +79,12 @@ describe("discountFactor", () => {
   it("is 1 at tenor 0, 1/(1 + r) at one year, and decreasing in tenor", () => {
     expect(discountFactor(curve, 0).equals(ONE)).toBe(true);
     expect(discountFactor(curve, 365).minus(ONE.div("1.13")).abs().lt("1e-38")).toBe(true);
-    expect(discountFactor(curve, 730).minus(ONE.div(new KernelDecimal("1.14").pow(2))).abs().lt("1e-38")).toBe(true);
+    expect(
+      discountFactor(curve, 730)
+        .minus(ONE.div(new KernelDecimal("1.14").pow(2)))
+        .abs()
+        .lt("1e-38"),
+    ).toBe(true);
     expect(() => discountFactor(curve, -1)).toThrow();
   });
 

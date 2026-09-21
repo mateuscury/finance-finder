@@ -18,8 +18,18 @@ export default async function EditAssetPage({ params, searchParams }: PageProps<
     <main>
       <h1>Edit {asset.identifier}</h1>
       <Notice searchParams={await searchParams} />
-      {locked ? <p>This asset has transactions: its pack, kind, identifier and currency are locked (name and metadata can change).</p> : null}
-      <AssetForm action={action} values={{ ...asset, metadata: asset.metadata }} lockIdentity={locked} submitLabel="Save" />
+      {locked ? (
+        <p>
+          This asset has transactions: its pack, kind, identifier and currency are locked (name and metadata can
+          change).
+        </p>
+      ) : null}
+      <AssetForm
+        action={action}
+        values={{ ...asset, metadata: asset.metadata }}
+        lockIdentity={locked}
+        submitLabel="Save"
+      />
     </main>
   );
 }

@@ -12,7 +12,13 @@ import { compoundRate } from "./rate";
 const sevenDay: MarketCalendar = { timezone: "UTC", weekend: [], holidays: () => [], settlement: "T+0" };
 
 /** A point on every day (or business day) of [start, end] with one value. */
-function constantSeries(seriesId: string, start: string, end: string, value: string, businessOnly: boolean): SeriesObservation[] {
+function constantSeries(
+  seriesId: string,
+  start: string,
+  end: string,
+  value: string,
+  businessOnly: boolean,
+): SeriesObservation[] {
   const out: SeriesObservation[] = [];
   for (let d = start; d <= end; d = addDays(d, 1)) {
     if (businessOnly && !isBusinessDay(brCalendar, d)) continue;
@@ -32,7 +38,11 @@ describe("rate_daily", () => {
     // Fri 13 Feb → Wed 18 Feb spans Carnival: only the 18th is covered.
     const r = compoundRate(cdi, "br.cdi", daily, brCalendar, "2026-02-13", "2026-02-18");
     expect(r).toEqual({ status: "ok", factor: new KernelDecimal("1.0005"), days: 1 });
-    expect(compoundRate(cdi, "br.cdi", daily, brCalendar, "2026-02-13", "2026-02-13")).toEqual({ status: "ok", factor: ONE, days: 0 });
+    expect(compoundRate(cdi, "br.cdi", daily, brCalendar, "2026-02-13", "2026-02-13")).toEqual({
+      status: "ok",
+      factor: ONE,
+      days: 0,
+    });
   });
 
   it("property: a constant daily rate over n business days equals (1 + r)^n", () => {
@@ -61,7 +71,10 @@ describe("rate_daily", () => {
     // An interval that does not touch the gap is unaffected.
     expect(compoundRate(gappy, "br.cdi", daily, brCalendar, "2026-03-02", "2026-03-09").status).toBe("ok");
     // Unknown series: the first covered day is the gap.
-    expect(compoundRate(gappy, "br.nope", daily, brCalendar, "2026-03-02", "2026-03-03")).toMatchObject({ status: "unpriced", reason: "series_gap" });
+    expect(compoundRate(gappy, "br.nope", daily, brCalendar, "2026-03-02", "2026-03-03")).toMatchObject({
+      status: "unpriced",
+      reason: "series_gap",
+    });
   });
 
   it("property: percent_of_index with multiplier 1 equals the index; 1.1 compounds 1 + 1.1·r", () => {
@@ -80,7 +93,14 @@ describe("rate_daily", () => {
 
   it("uses calendar days for ACT/* and throws unsupported_convention for 30/360", () => {
     const act = buildMarketData([], constantSeries("uk.sonia", START, END, "0.0001", false));
-    const r = compoundRate(act, "uk.sonia", { kind: "rate_daily", dayCount: "ACT/365" }, sevenDay, "2026-02-13", "2026-02-18");
+    const r = compoundRate(
+      act,
+      "uk.sonia",
+      { kind: "rate_daily", dayCount: "ACT/365" },
+      sevenDay,
+      "2026-02-13",
+      "2026-02-18",
+    );
     expect(r).toEqual({ status: "ok", factor: new KernelDecimal("1.0001").pow(5), days: 5 });
     try {
       compoundRate(act, "uk.sonia", { kind: "rate_daily", dayCount: "30/360" }, sevenDay, "2026-02-13", "2026-02-18");
@@ -95,10 +115,24 @@ describe("rate_daily", () => {
 describe("rate_annual", () => {
   it("compounds (1 + r)^(1/N) per covered day, N = 252 for BUS/252 and 365 for ACT/365", () => {
     const selic = buildMarketData([], constantSeries("br.selic", START, END, "0.1325", true));
-    const r = compoundRate(selic, "br.selic", { kind: "rate_annual", dayCount: "BUS/252" }, brCalendar, "2025-12-31", "2026-12-31");
+    const r = compoundRate(
+      selic,
+      "br.selic",
+      { kind: "rate_annual", dayCount: "BUS/252" },
+      brCalendar,
+      "2025-12-31",
+      "2026-12-31",
+    );
     // 249 business days in 2026 but the series ends in April: a gap after it.
     expect(r).toMatchObject({ status: "unpriced", reason: "series_gap" });
-    const r2 = compoundRate(selic, "br.selic", { kind: "rate_annual", dayCount: "BUS/252" }, brCalendar, "2026-01-01", "2026-01-31");
+    const r2 = compoundRate(
+      selic,
+      "br.selic",
+      { kind: "rate_annual", dayCount: "BUS/252" },
+      brCalendar,
+      "2026-01-01",
+      "2026-01-31",
+    );
     const n = businessDaysBetween(brCalendar, "2026-01-01", "2026-01-31");
     expect(r2.status).toBe("ok");
     if (r2.status !== "ok") return;
@@ -107,12 +141,31 @@ describe("rate_annual", () => {
     expect(r2.factor.minus(expected).abs().lt("1e-30")).toBe(true);
 
     const act = buildMarketData([], constantSeries("uk.base", START, END, "0.05", false));
-    const r3 = compoundRate(act, "uk.base", { kind: "rate_annual", dayCount: "ACT/365" }, sevenDay, "2026-01-01", "2026-12-31");
+    const r3 = compoundRate(
+      act,
+      "uk.base",
+      { kind: "rate_annual", dayCount: "ACT/365" },
+      sevenDay,
+      "2026-01-01",
+      "2026-12-31",
+    );
     expect(r3).toMatchObject({ status: "unpriced", reason: "series_gap", missingDate: "2026-05-01" });
-    const r4 = compoundRate(act, "uk.base", { kind: "rate_annual", dayCount: "ACT/365" }, sevenDay, "2026-01-02", "2026-01-12");
+    const r4 = compoundRate(
+      act,
+      "uk.base",
+      { kind: "rate_annual", dayCount: "ACT/365" },
+      sevenDay,
+      "2026-01-02",
+      "2026-01-12",
+    );
     expect(r4.status).toBe("ok");
     if (r4.status !== "ok") return;
-    expect(r4.factor.minus(new KernelDecimal("1.05").pow(new KernelDecimal(10).div(365))).abs().lt("1e-30")).toBe(true);
+    expect(
+      r4.factor
+        .minus(new KernelDecimal("1.05").pow(new KernelDecimal(10).div(365)))
+        .abs()
+        .lt("1e-30"),
+    ).toBe(true);
   });
 
   it("throws unsupported_convention for ACT/360 and 30/360", () => {

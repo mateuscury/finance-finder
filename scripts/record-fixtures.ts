@@ -117,9 +117,7 @@ async function synthesizeFailure(
 ): Promise<FixtureCase> {
   const headers: Record<string, string> = status === 429 ? { "retry-after": "1" } : {};
   const body =
-    status === 429
-      ? '{"error":"rate limited","synthetic":true}'
-      : '{"error":"upstream unavailable","synthetic":true}';
+    status === 429 ? '{"error":"rate limited","synthetic":true}' : '{"error":"upstream unavailable","synthetic":true}';
   const controller = new AbortController();
   let clock = recordedAt.getTime();
   const deadline = clock + RECORD_TIMEOUT_MS;

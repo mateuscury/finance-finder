@@ -61,7 +61,11 @@ describe("tesouro canonical identifier", () => {
   });
 
   it("is stable across accents, casing and padding, so import and ingestion agree", () => {
-    const variants = ["Tesouro IPCA+ com Juros Semestrais", "  TESOURO IPCA+ COM JUROS SEMESTRAIS  ", "Tesouro IPCA+ com Juros Semestráis"];
+    const variants = [
+      "Tesouro IPCA+ com Juros Semestrais",
+      "  TESOURO IPCA+ COM JUROS SEMESTRAIS  ",
+      "Tesouro IPCA+ com Juros Semestráis",
+    ];
     // The last one differs by an accent only; all must yield one identifier.
     expect(new Set(variants.map((v) => slugify(v).replace(/a-?is$/, "ais"))).size).toBe(1);
   });
@@ -181,7 +185,11 @@ describe("tesouro-transparente adapter", () => {
     let served = false;
     const many = [
       HEADER,
-      ...Array.from({ length: 20_000 }, (_, i) => `Tesouro Selic;01/03/2029;${String((i % 28) + 1).padStart(2, "0")}/09/2026;0,03;0,04;1,00;1,00;19795,28`),
+      ...Array.from(
+        { length: 20_000 },
+        (_, i) =>
+          `Tesouro Selic;01/03/2029;${String((i % 28) + 1).padStart(2, "0")}/09/2026;0,03;0,04;1,00;1,00;19795,28`,
+      ),
     ].join("\n");
     const r = await fetchTesouroTransparente(
       { capability: "historical", refs: [SELIC], from: "2026-09-01", to: "2026-09-30" },
@@ -222,14 +230,20 @@ describe("tesouro-transparente adapter", () => {
   });
 
   it("handles CRLF line endings and a trailing newline", async () => {
-    const r = await fetchTesouroTransparente({ ...hist, refs: [SELIC] }, ctx(200, `${[HEADER, ROWS[0]].join("\r\n")}\r\n`));
+    const r = await fetchTesouroTransparente(
+      { ...hist, refs: [SELIC] },
+      ctx(200, `${[HEADER, ROWS[0]].join("\r\n")}\r\n`),
+    );
     expect(r.points).toHaveLength(1);
   });
 
   it("property: every emitted point satisfies the kernel output contract", async () => {
     const line = fc
       .tuple(fc.integer({ min: 1, max: 28 }), fc.nat(99999), fc.nat(99))
-      .map(([d, w, c]) => `Tesouro Selic;01/03/2029;${String(d).padStart(2, "0")}/09/2026;0,03;0,04;1,00;1,00;${w + 1},${String(c).padStart(2, "0")}`);
+      .map(
+        ([d, w, c]) =>
+          `Tesouro Selic;01/03/2029;${String(d).padStart(2, "0")}/09/2026;0,03;0,04;1,00;1,00;${w + 1},${String(c).padStart(2, "0")}`,
+      );
     await fc.assert(
       fc.asyncProperty(fc.array(line, { maxLength: 40 }), async (lines) => {
         const r = await fetchTesouroTransparente(

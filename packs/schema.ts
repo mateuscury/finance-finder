@@ -59,13 +59,7 @@ export const SeriesKindSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-export const SeriesRoleSchema = z.enum([
-  "benchmark",
-  "deflator",
-  "accrual_index",
-  "discount_curve",
-  "fx",
-]);
+export const SeriesRoleSchema = z.enum(["benchmark", "deflator", "accrual_index", "discount_curve", "fx"]);
 
 export const SeriesDescriptorSchema = z.object({
   id: PrefixedIdSchema,

@@ -42,11 +42,24 @@ function transaction(t: BackupTransaction): BackupTransaction {
 }
 
 function cashFlow(f: BackupCashFlow): BackupCashFlow {
-  return { id: f.id, date: f.date, amount: canonical(f.amount), currency: f.currency, note: f.note, created_at: f.created_at };
+  return {
+    id: f.id,
+    date: f.date,
+    amount: canonical(f.amount),
+    currency: f.currency,
+    note: f.note,
+    created_at: f.created_at,
+  };
 }
 
 function price(p: BackupPrice): BackupPrice {
-  return { asset_id: p.asset_id, date: p.date, price: canonical(p.price), currency: p.currency, source_id: p.source_id };
+  return {
+    asset_id: p.asset_id,
+    date: p.date,
+    price: canonical(p.price),
+    currency: p.currency,
+    source_id: p.source_id,
+  };
 }
 
 /** The same ledger in canonical form: sorted rows, fixed key order, canonical decimals. */
@@ -57,9 +70,16 @@ export function canonicalBackup(b: Backup): Backup {
     settings:
       b.settings === null
         ? null
-        : { base_currency: b.settings.base_currency, enabled_packs: [...b.settings.enabled_packs], locale: b.settings.locale, theme: b.settings.theme },
+        : {
+            base_currency: b.settings.base_currency,
+            enabled_packs: [...b.settings.enabled_packs],
+            locale: b.settings.locale,
+            theme: b.settings.theme,
+          },
     assets: b.assets.map(asset).sort((x, y) => byText(x.id, y.id)),
-    transactions: b.transactions.map(transaction).sort((x, y) => byText(x.trade_date, y.trade_date) || byText(x.id, y.id)),
+    transactions: b.transactions
+      .map(transaction)
+      .sort((x, y) => byText(x.trade_date, y.trade_date) || byText(x.id, y.id)),
     cash_flows: b.cash_flows.map(cashFlow).sort((x, y) => byText(x.date, y.date) || byText(x.id, y.id)),
     prices: b.prices.map(price).sort((x, y) => byText(x.asset_id, y.asset_id) || byText(x.date, y.date)),
   };

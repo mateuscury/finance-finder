@@ -31,7 +31,18 @@ describe("parseIsoDate", () => {
   it("accepts real calendar days only", () => {
     expect(parseIsoDate("2026-02-28")).toEqual({ year: 2026, month: 2, day: 28 });
     expect(parseIsoDate("2024-02-29")).toEqual({ year: 2024, month: 2, day: 29 });
-    for (const bad of ["2026-02-29", "2026-02-30", "2026-13-01", "2026-00-10", "2026-1-1", "26-01-01", "2026/01/01", "2026-01-01T00:00", "", "2100-02-29"]) {
+    for (const bad of [
+      "2026-02-29",
+      "2026-02-30",
+      "2026-13-01",
+      "2026-00-10",
+      "2026-1-1",
+      "26-01-01",
+      "2026/01/01",
+      "2026-01-01T00:00",
+      "",
+      "2100-02-29",
+    ]) {
       expect(() => parseIsoDate(bad), bad).toThrow();
       try {
         parseIsoDate(bad, "tradeDate");

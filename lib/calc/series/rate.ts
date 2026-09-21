@@ -19,8 +19,7 @@ import type { MarketData } from "../types";
 export type RateKind = Extract<SeriesKind, { kind: "rate_daily" | "rate_annual" }>;
 
 export type CompoundResult =
-  | { status: "ok"; factor: KDecimal; days: number }
-  | { status: "unpriced"; reason: "series_gap"; missingDate: IsoDate };
+  { status: "ok"; factor: KDecimal; days: number } | { status: "unpriced"; reason: "series_gap"; missingDate: IsoDate };
 
 /** Days in (from, to] the rate applies to: business days for BUS/252, calendar days for ACT/*. */
 function coveredDays(kind: RateKind, calendar: MarketCalendar, from: IsoDate, to: IsoDate): IsoDate[] {

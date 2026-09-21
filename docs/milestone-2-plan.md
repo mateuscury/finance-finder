@@ -27,16 +27,16 @@ pnpm test`, plus `pnpm test:db` when the database is touched) →
 `/qa-spec-fidelity` and `/qa-code-quality` → fix Must/Should findings in a
 follow-up commit → record Advisory findings → next phase.
 
-| Phase | Merge unit | Status |
-|---|---|---|
-| 0 — Baseline, harness, decisions | `5b58484`, `8c34239`, `c78e760` | merged |
-| 1 — Money, dates, calendar, kernel types | `31fe537` + `0f6a056` | merged |
-| 2 — Positions, series, FX | `08a4bdc` + `4b0f276` | merged |
-| 3 — Valuation, staleness, portfolio builder | (this commit) | merged |
-| 4 — Performance math | (this commit) | merged |
-| 5 — Golden portfolio | (this commit) | merged |
-| 6 — Backup and restore | (this commit) | merged |
-| 7 — Documentation and gates | (this commit) | merged |
+| Phase                                       | Merge unit                      | Status |
+| ------------------------------------------- | ------------------------------- | ------ |
+| 0 — Baseline, harness, decisions            | `5b58484`, `8c34239`, `c78e760` | merged |
+| 1 — Money, dates, calendar, kernel types    | `31fe537` + `0f6a056`           | merged |
+| 2 — Positions, series, FX                   | `08a4bdc` + `4b0f276`           | merged |
+| 3 — Valuation, staleness, portfolio builder | (this commit)                   | merged |
+| 4 — Performance math                        | (this commit)                   | merged |
+| 5 — Golden portfolio                        | (this commit)                   | merged |
+| 6 — Backup and restore                      | (this commit)                   | merged |
+| 7 — Documentation and gates                 | (this commit)                   | merged |
 
 Each of Phases 3–7 below carries a "Grounding" note written against the
 merged tree: the real signatures the phase builds on, the drift found between
@@ -99,8 +99,8 @@ arithmetic where the spec leaves it open.
   window comes from the **asset's pack calendar** for both the price leg and
   the FX leg; the `global` calendar (7-day, no holidays) is never used for
   staleness, exactly as `packs/global/index.ts` says.
-- An observation dated `d ≤ asOf` is *fresh* when `d = asOf`, *carried
-  forward* when `asOf − d ≤ window`, and *stale* beyond that. Stale inputs
+- An observation dated `d ≤ asOf` is _fresh_ when `d = asOf`, _carried
+  forward_ when `asOf − d ≤ window`, and _stale_ beyond that. Stale inputs
   produce no value: the holding is reported as stale with its last known value
   and date, and it is **excluded from the confident total** and listed
   separately (SPEC §11: never print a confident converted value off missing
@@ -114,7 +114,7 @@ arithmetic where the spec leaves it open.
   `buy < dividend = interest = fee < sell`, so a same-day round trip never
   oversells.
 - `buy` opens a lot `{ openedOn, quantity, unitPrice, currency,
-  transactionId }`; `sell` consumes lots **FIFO**; `dividend`, `interest`,
+transactionId }`; `sell` consumes lots **FIFO**; `dividend`, `interest`,
   `fee` touch no lot. A lot carries no fees: no valuation or contribution
   formula reads them from a lot (accrual is `quantity × unitPrice × factor`;
   contribution takes fees from the transactions via `netInvested`), and a
@@ -130,19 +130,19 @@ arithmetic where the spec leaves it open.
   surfaces in the Milestone 3 forms and CSV docs.
 - `netInvested(asset, (from, to])` for contribution: Σ buy cost
   (`quantity × unit_price + fees`) − Σ sell proceeds (`|quantity| × unit_price
-  − fees`) − Σ dividend and interest amounts (`unit_price` holds the cash
+− fees`) − Σ dividend and interest amounts (`unit_price` holds the cash
   amount) + Σ fee transactions.
 
 ### Series kinds — one function per closed kind
 
-| Kind | Function | Rule |
-|---|---|---|
-| `rate_daily` | compound over `(from, to]` | `Π (1 + r_d)` over business days (`BUS/252`) or calendar days (`ACT/*`). A missing day with no point is a **gap**: the consumer is `unpriced` with reason `series_gap`. Rates are never carried forward — that would fabricate an accrual. `30/360` with a daily series is `unsupported_convention`. |
-| `rate_annual` | compound over `(from, to]` | `Π (1 + r_d)^(1/N)` with `N = 252` (`BUS/252`) or `365` (`ACT/365`). Same gap rule. |
-| `index_level` | return over `[from, to]` | `level(to) / level(from) − 1`. Levels are prices: carried forward within the window, stale beyond. |
-| `inflation_index` | `levelAt(date)` | `none`: last anchor `≤ date`. `linear_daily`: linear interpolation on calendar days between the two anchors bracketing `date`; anchors are month-end dated (`packs/br/README.md` quirk). Before the first anchor: `unpriced`. After the last anchor: held flat and marked carried forward for up to **62 calendar days** (two monthly prints), stale beyond. |
-| `fx_rate` | `rateAt(date)` | quote units per base unit; carried forward within the asset's window, stale beyond. |
-| `yield_curve` | `discountFactor(curveAt(date), tenorDays)` | linear interpolation of the rate across declared tenors, flat extrapolation beyond the ends, `DF = (1 + r)^(−tenorDays/365)`. The curve kind carries no day count, so ACT/365 annual compounding is the kernel default until a pack needs otherwise (that is a `SeriesKind` change and an API bump). |
+| Kind              | Function                                   | Rule                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `rate_daily`      | compound over `(from, to]`                 | `Π (1 + r_d)` over business days (`BUS/252`) or calendar days (`ACT/*`). A missing day with no point is a **gap**: the consumer is `unpriced` with reason `series_gap`. Rates are never carried forward — that would fabricate an accrual. `30/360` with a daily series is `unsupported_convention`.                                                         |
+| `rate_annual`     | compound over `(from, to]`                 | `Π (1 + r_d)^(1/N)` with `N = 252` (`BUS/252`) or `365` (`ACT/365`). Same gap rule.                                                                                                                                                                                                                                                                          |
+| `index_level`     | return over `[from, to]`                   | `level(to) / level(from) − 1`. Levels are prices: carried forward within the window, stale beyond.                                                                                                                                                                                                                                                           |
+| `inflation_index` | `levelAt(date)`                            | `none`: last anchor `≤ date`. `linear_daily`: linear interpolation on calendar days between the two anchors bracketing `date`; anchors are month-end dated (`packs/br/README.md` quirk). Before the first anchor: `unpriced`. After the last anchor: held flat and marked carried forward for up to **62 calendar days** (two monthly prints), stale beyond. |
+| `fx_rate`         | `rateAt(date)`                             | quote units per base unit; carried forward within the asset's window, stale beyond.                                                                                                                                                                                                                                                                          |
+| `yield_curve`     | `discountFactor(curveAt(date), tenorDays)` | linear interpolation of the rate across declared tenors, flat extrapolation beyond the ends, `DF = (1 + r)^(−tenorDays/365)`. The curve kind carries no day count, so ACT/365 annual compounding is the kernel default until a pack needs otherwise (that is a `SeriesKind` change and an API bump).                                                         |
 
 ### Valuation strategies — one module per closed kind
 
@@ -163,11 +163,11 @@ carry free text.
   is an **effective annual rate** in unit form (`"0.12"`), except in
   `percent_of_index` mode where it is the multiplier (`"1.10"`).
 
-  | Mode | Factor |
-  |---|---|
-  | plain (no `index`) | `(1 + rate)^τ`, `τ` = year fraction by `dayCount` |
-  | `percent_of_index` | `Π_d (1 + rate × i_d)` over the index's `rate_daily` points in `(openedOn, date]` — the CETIP/B3 convention for "110% do CDI". Requires a `rate_daily` index and `compounding: "daily"`; anything else is `unsupported_convention`. |
-  | `index_plus_spread` | `level(date) / level(openedOn) × (1 + rate)^τ` with the level from an `inflation_index` or `index_level` series. |
+  | Mode                | Factor                                                                                                                                                                                                                              |
+  | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | plain (no `index`)  | `(1 + rate)^τ`, `τ` = year fraction by `dayCount`                                                                                                                                                                                   |
+  | `percent_of_index`  | `Π_d (1 + rate × i_d)` over the index's `rate_daily` points in `(openedOn, date]` — the CETIP/B3 convention for "110% do CDI". Requires a `rate_daily` index and `compounding: "daily"`; anything else is `unsupported_convention`. |
+  | `index_plus_spread` | `level(date) / level(openedOn) × (1 + rate)^τ` with the level from an `inflation_index` or `index_level` series.                                                                                                                    |
 
   `compounding` is the **recognition granularity** of an effective annual
   rate, not a different rate quote: `daily` accrues smoothly every day;
@@ -175,6 +175,7 @@ carry free text.
   monthly anniversary of the lot; `annual` steps on each yearly anniversary.
   Terminal values agree at whole periods; only the path differs. This is what
   a UK fixed-rate bond paying annually looks like on a chart.
+
 - **`curve_mark_to_market`**: cash flows from the PACKS §5 metadata shape.
   Face value 1 per unit; coupons every `12/frequency` months backward from
   `maturity`, each `rate/frequency`; principal at maturity; value =
@@ -573,19 +574,19 @@ Remaining work, in order:
 
 1. `valuation/accrual.ts` — `valueAccrual(asset, lots, asOf, ctx)`. Metadata
    is read through a kernel-owned `AccrualMetadataSchema = z.object({ rate:
-   DecimalStringSchema })` (`zod` and `@/packs/schema` are permitted
+DecimalStringSchema })` (`zod` and `@/packs/schema` are permitted
    imports); failure → `unpriced("invalid_metadata")`. Per lot `quantity ×
-   unitPrice × factor(openedOn, asOf)`, summed; `unitValue` = native ÷
+unitPrice × factor(openedOn, asOf)`, summed; `unitValue` = native ÷
    Σ quantity so `price_native` has a value to store. Factor by mode and
    `compounding` per decision 13:
    - plain, `daily`: `ONE.plus(rate).pow(yearFraction(ctx.calendar,
-     dayCount, openedOn, asOf))`; `priceDate = asOf`, status `ok` — nothing
+dayCount, openedOn, asOf))`; `priceDate = asOf`, status `ok` — nothing
      was observed, the number is fresh by construction.
    - plain, `monthly` / `annual`: `ONE.plus(rate).pow(completedMonths(
-     openedOn, asOf) / 12)`, the month count floored to a multiple of 12 for
+openedOn, asOf) / 12)`, the month count floored to a multiple of 12 for
      `annual`.
    - `percent_of_index`: `compoundRate(ctx.market, seriesId, kind,
-     ctx.calendar, openedOn, asOf, rate)` with `rate` as the multiplier;
+ctx.calendar, openedOn, asOf, rate)` with `rate` as the multiplier;
      `series_gap` → the whole holding is `unpriced("series_gap")` (one
      series covers every lot); `priceDate = asOf`. Requires `daily` and a
      `rate_daily`/`rate_annual` descriptor, else `unsupported_convention`.
@@ -593,7 +594,7 @@ Remaining work, in order:
      `inflationLevelAt` (or `levelAt` for `index_level`); status is the
      worse leg; `priceDate` is the `asOf` leg's `observedOn`; ratio ×
      `(1 + rate)^τ`. A `stale` level → `stale` with `lastKnown`.
-   `maturity` is never read (decision 14).
+     `maturity` is never read (decision 14).
 2. `valuation/curve-mtm.ts` — `valueCurveMtm(asset, quantity, asOf, ctx)`.
    Kernel-owned `CurveBondMetadataSchema` mirrors PACKS §5 exactly
    (`maturity`, `coupon: { rate, frequency: 1|2|4|12 } | null`,
@@ -605,14 +606,14 @@ Remaining work, in order:
    Schedule: coupon dates `addMonths(maturity, −k·12/frequency)` for `k ≥ 0`
    while `≥ asOf`, each `rate/frequency` per unit; principal `1` at
    maturity; `tenorDays =
-   daysBetween(asOf, cashFlowDate)`; unit value `Σ CF × discountFactor(curve,
-   tenorDays)` with `curveAt(ctx.market, strategy.seriesId, asOf,
-   ctx.windowDays)`; status and `priceDate` from the curve observation.
+daysBetween(asOf, cashFlowDate)`; unit value `Σ CF × discountFactor(curve,
+tenorDays)` with `curveAt(ctx.market, strategy.seriesId, asOf,
+ctx.windowDays)`; status and `priceDate` from the curve observation.
 3. `valuation/index.ts` — `valueHolding(asset, lots, asOf, ctx): HoldingValue`
    dispatching on `asset.instrumentKind.valuation.kind`; Σ lot quantity for
    the three non-accrual strategies. Callers never pass empty lots.
 4. `portfolio.ts` — `PortfolioInput { baseCurrency, assets, transactions,
-   market, calendars: ReadonlyMap<packId, MarketCalendar>, series }` (the
+market, calendars: ReadonlyMap<packId, MarketCalendar>, series }` (the
    kernel cannot import the registry; the caller builds the map) and
    `valuePortfolio(input, asOf): PortfolioValuation` per decision 17. Per
    asset: `lotsAt` (skip when empty) → `valueHolding` → `resolveFx` under
@@ -660,10 +661,10 @@ performance modules never look up a price themselves.
   date go to `ignored`. `twr` is `null` only when no sub-period survives.
 - `mwr.ts` — `xirr(stream: { date, amount: KDecimal }[])` →
   `{ status: "ok", rate } | { status: "null", reason: "insufficient_flows"
-  | "no_root" }`, and `mwr({ from, to, startValue, flows, endValue })`,
+| "no_root" }`, and `mwr({ from, to, startValue, flows, endValue })`,
   which builds the stream as the prose above says (deposits negated,
   `−startValue` only when positive). `t_i = daysBetween(date_0, date_i) /
-  365` with `date_0` the earliest date. NPV and its derivative are Decimal
+365` with `date_0` the earliest date. NPV and its derivative are Decimal
   (`(1 + r).pow(−t)`); Newton from `0.1`, at most 50 iterations, stop at
   `|Δr| < 1e-20`; bisection to a bracket of `1e-30` on a sign change found
   by scanning `[−0.999999, 10]` when Newton leaves `(−0.999999, 1e6)`, meets
@@ -695,7 +696,7 @@ performance modules never look up a price themselves.
   `stale`/`unpriced` → `null` with the reason; never held in the window →
   `null` with `no_position`.
 - `real.ts` — `realReturn(nominal, market, deflator: SeriesDescriptor,
-  from, to)` → `Observed<KDecimal>` (the descriptor carries the id and the
+from, to)` → `Observed<KDecimal>` (the descriptor carries the id and the
   interpolation and lets the kind be checked); `π` from `inflationLevelAt`
   at both ends, status the worse leg.
 
@@ -747,7 +748,7 @@ conventions and code that already exists:
    `pnpm codeowners --check` stays green — maintainers are unchanged.
 2. `lib/calc/golden.ts` — `GoldenFixtureSchema` (zod; the shape listed
    above, every money field `DecimalStringSchema`) and `runGolden(fixture,
-   packs: readonly MarketPack[]): GoldenResult`. The kernel may import the
+packs: readonly MarketPack[]): GoldenResult`. The kernel may import the
    `MarketPack` TYPE; the registry is passed in by the caller (the
    conformance test passes `PACKS`). The runner resolves each asset's
    `instrumentKind` by id across the fixture's packs and their
@@ -799,7 +800,7 @@ Gates as Phase 3 plus `pnpm test:packs` and `pnpm codeowners --check`.
 
 - `lib/backup/schema.ts`: `BackupSchema` v1 —
   `{ version, exported_at, settings, assets, transactions, cash_flows,
-  prices }` with decimal strings and ISO dates; `parseBackup` rejects unknown
+prices }` with decimal strings and ISO dates; `parseBackup` rejects unknown
   versions with a fixed reason.
 - `lib/backup/serialize.ts`: deterministic output — rows sorted by stable
   keys, fixed key order, canonical decimals — so two exports of the same data
@@ -860,7 +861,7 @@ Shape of the merge unit:
   18; `parseBackup` refuses any other `version` with `unsupported_version`.
 - `lib/backup/serialize.ts` — key order fixed by the schema; rows sorted
   assets by `id`, transactions by `(trade_date, id)`, cash flows by `(date,
-  id)`, prices by `(asset_id, date)`; decimals canonicalised with
+id)`, prices by `(asset_id, date)`; decimals canonicalised with
   `toDecimalString(parseDecimal(x))` from `lib/calc` (this directory is
   application code and may import the kernel).
 - `lib/backup/restore.ts` — the pure planner: the RPC's preconditions as a
@@ -872,12 +873,12 @@ Shape of the merge unit:
   rows ordered as above, so two database exports are already identical;
   `restore_backup(payload jsonb)` security definer, `set search_path = ''`,
   every table `public.`-qualified, `revoke all … from public, anon,
-  authenticated; grant execute … to authenticated` — the header
+authenticated; grant execute … to authenticated` — the header
   `commit_ingest_chunk` uses, with the reason the mode differs stated in
   the comment (decision 11). Inserts in order `user_settings` (upsert),
   `assets`, `transactions`, `cash_flows`, `prices`, casting back with
   `::numeric`; refusals raise fixed messages `restore_refused:
-  account_not_empty | asset_id_conflict | foreign_asset_reference`.
+account_not_empty | asset_id_conflict | foreign_asset_reference`.
 - `lib/backup/roundtrip.dbtest.ts` — seed the golden portfolio under the
   service role with ids preserved → `signIn()` → `export_backup` → delete
   the auth user and assert every user-scoped table (including
@@ -931,7 +932,7 @@ applies a new migration without wiping local data).
 - Update `CLAUDE.md` current state, `README.md` status, `MILESTONES.md` §2
   (mark complete, list any contract corrections found while implementing).
 - Run `pnpm typecheck && pnpm lint && pnpm test && pnpm test:db &&
-  pnpm codeowners --check`, then
+pnpm codeowners --check`, then
   `pnpm exec tsx scripts/check-release-readiness.ts` and compare the blocker
   list with the Definition of done before running `pnpm release:check`.
 
@@ -949,7 +950,7 @@ applies a new migration without wiping local data).
   every AC in US-001 and US-002, set both statuses, add a change-log row),
   and the "Progress" table at the top of this plan.
 - Gates, in this order: `pnpm typecheck && pnpm lint && pnpm test && pnpm
-  test:db && pnpm codeowners --check`, then
+test:db && pnpm codeowners --check`, then
   `pnpm exec tsx scripts/check-release-readiness.ts` — the blocker list
   must be exactly `app/login/page.tsx`, the two draft packs and
   `specs/PERSONAS.md` — then `pnpm release:check` end to end, including

@@ -26,8 +26,16 @@ describe("classify", () => {
 describe("observed / hasValue", () => {
   it("maps freshness to the result shape", () => {
     expect(observed(1, "2026-02-13", "2026-02-13", 5)).toEqual({ status: "ok", value: 1, observedOn: "2026-02-13" });
-    expect(observed(1, "2026-02-13", "2026-02-18", 5)).toEqual({ status: "carried_forward", value: 1, observedOn: "2026-02-13" });
-    expect(observed(1, "2026-02-13", "2026-02-19", 5)).toEqual({ status: "stale", lastKnown: 1, observedOn: "2026-02-13" });
+    expect(observed(1, "2026-02-13", "2026-02-18", 5)).toEqual({
+      status: "carried_forward",
+      value: 1,
+      observedOn: "2026-02-13",
+    });
+    expect(observed(1, "2026-02-13", "2026-02-19", 5)).toEqual({
+      status: "stale",
+      lastKnown: 1,
+      observedOn: "2026-02-13",
+    });
     expect(hasValue(observed(1, "2026-02-13", "2026-02-18", 5))).toBe(true);
     expect(hasValue(observed(1, "2026-02-13", "2026-02-19", 5))).toBe(false);
     expect(hasValue(unpriced("no_fx_series"))).toBe(false);

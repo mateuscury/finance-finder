@@ -15,7 +15,11 @@ function flat(date: string, rate: string): SeriesObservation[] {
 function ctx(points: SeriesObservation[]): ValuationContext {
   return { market: buildMarketData([], points), calendar: sevenDay, windowDays: 1, series: [CURVE] };
 }
-const meta = (maturity: string, coupon: { rate: string; frequency: 1 | 2 | 4 | 12 } | null, indexation: { seriesId: string } | null = null) => ({
+const meta = (
+  maturity: string,
+  coupon: { rate: string; frequency: 1 | 2 | 4 | 12 } | null,
+  indexation: { seriesId: string } | null = null,
+) => ({
   maturity,
   coupon,
   indexation,
@@ -30,7 +34,12 @@ describe("bondCashFlows", () => {
       ["2027-02-13", "1"],
     ]);
     // A coupon dated asOf is still in the value (DF(0) = 1); one the day before is not.
-    expect(bondCashFlows("2027-02-13", { rate: "0.06", frequency: 2 }, "2026-02-13").map((f) => f.date)).toEqual(["2026-02-13", "2026-08-13", "2027-02-13", "2027-02-13"]);
+    expect(bondCashFlows("2027-02-13", { rate: "0.06", frequency: 2 }, "2026-02-13").map((f) => f.date)).toEqual([
+      "2026-02-13",
+      "2026-08-13",
+      "2027-02-13",
+      "2027-02-13",
+    ]);
     expect(bondCashFlows("2027-02-13", null, "2026-02-14").map((f) => f.date)).toEqual(["2027-02-13"]);
   });
 
@@ -51,7 +60,9 @@ describe("valueCurveMtm", () => {
     const r = valueCurveMtm(a, new KernelDecimal("1000"), "2026-02-14", ctx(flat("2026-02-14", "0.05")));
     if (r.status !== "ok") throw new Error(r.status);
     const g = new KernelDecimal("1.05");
-    const unit = new KernelDecimal("0.03").times(g.pow(new KernelDecimal(-180).div(365))).plus(new KernelDecimal("1.03").times(g.pow(new KernelDecimal(-364).div(365))));
+    const unit = new KernelDecimal("0.03")
+      .times(g.pow(new KernelDecimal(-180).div(365)))
+      .plus(new KernelDecimal("1.03").times(g.pow(new KernelDecimal(-364).div(365))));
     expect(near(r.unitValue, unit)).toBe(true);
     expect(near(r.native.amount, unit.times(1000))).toBe(true);
     expect(r.priceDate).toBe("2026-02-14");
@@ -69,23 +80,37 @@ describe("valueCurveMtm", () => {
     const r = valueCurveMtm(a, ONE_UNIT, "2026-02-14", ctx(flat("2026-02-14", "0.05")));
     if (r.status !== "ok") throw new Error(r.status);
     expect(r.unitValue.toFixed()).toBe("1.03");
-    expect(valueCurveMtm(a, ONE_UNIT, "2026-02-15", ctx(flat("2026-02-15", "0.05")))).toEqual({ status: "unpriced", reason: "matured" });
+    expect(valueCurveMtm(a, ONE_UNIT, "2026-02-15", ctx(flat("2026-02-15", "0.05")))).toEqual({
+      status: "unpriced",
+      reason: "matured",
+    });
   });
 
   it("indexation, bad metadata and a missing curve are unpriced with fixed reasons", () => {
     const c = ctx(flat("2026-02-14", "0.05"));
-    expect(valueCurveMtm(asset("b1", BOND, meta("2030-01-01", null, { seriesId: "br.ipca" })), ONE_UNIT, "2026-02-14", c)).toEqual({
+    expect(
+      valueCurveMtm(asset("b1", BOND, meta("2030-01-01", null, { seriesId: "br.ipca" })), ONE_UNIT, "2026-02-14", c),
+    ).toEqual({
       status: "unpriced",
       reason: "indexation_not_supported",
     });
-    expect(valueCurveMtm(asset("b1", BOND, { maturity: "2030-01-01" }), ONE_UNIT, "2026-02-14", c)).toEqual({ status: "unpriced", reason: "invalid_metadata" });
-    expect(valueCurveMtm(asset("b1", BOND, meta("2030-01-01", null)), ONE_UNIT, "2026-02-13", c)).toEqual({ status: "unpriced", reason: "no_observation" });
+    expect(valueCurveMtm(asset("b1", BOND, { maturity: "2030-01-01" }), ONE_UNIT, "2026-02-14", c)).toEqual({
+      status: "unpriced",
+      reason: "invalid_metadata",
+    });
+    expect(valueCurveMtm(asset("b1", BOND, meta("2030-01-01", null)), ONE_UNIT, "2026-02-13", c)).toEqual({
+      status: "unpriced",
+      reason: "no_observation",
+    });
   });
 
   it("follows the curve observation's staleness", () => {
     const a = asset("b1", BOND, meta("2030-01-01", null));
     const c = ctx(flat("2026-02-14", "0.05"));
-    expect(valueCurveMtm(a, ONE_UNIT, "2026-02-15", c)).toMatchObject({ status: "carried_forward", priceDate: "2026-02-14" });
+    expect(valueCurveMtm(a, ONE_UNIT, "2026-02-15", c)).toMatchObject({
+      status: "carried_forward",
+      priceDate: "2026-02-14",
+    });
     const stale = valueCurveMtm(a, ONE_UNIT, "2026-02-16", c);
     expect(stale.status).toBe("stale");
     if (stale.status === "stale") expect(stale.lastKnown.currency).toBe("BRL");

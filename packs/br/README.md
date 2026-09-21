@@ -4,34 +4,34 @@ Status: **draft**. Maintainers: @mateuscury.
 
 ## Coverage
 
-| Instrument kind | Valuation strategy | Source | Notes |
-|---|---|---|---|
-| `br.tesouro_direto` | `nav_unit_price` | Tesouro Transparente | `custom` identifier `td:<slug>:<maturity>`; metadata is `titulo` + `maturity` (+ optional display `purchaseRate`) |
-| `br.cdb` | `accrual` BUS/252 daily, `percent_of_index` CDI | — (series only) | rate stored in metadata |
-| `br.lci_lca` | `accrual` BUS/252 daily, `percent_of_index` CDI | — (series only) | tax exemption is out of scope (no fiscal reporting) |
-| `br.cdb_prefixado` | `accrual` BUS/252 daily, plain | — (series only) | `rate` is the effective annual rate ("0.12" = 12% a.a.) |
-| `br.cdb_ipca` | `accrual` BUS/252 daily, `index_plus_spread` IPCA | — (series only) | `rate` is the spread over the índice; level ratio from `br.ipca` |
-| `br.fii` | `market_price` | brapi.dev | ticker-identified |
-| `br.stock` | `market_price` | brapi.dev | ações, ETFs and BDRs on B3, ticker-identified; metadata `{ name }`. A BDR is quoted in BRL over a foreign underlying, so FX attribution reports 0 for it (SPEC §11 known gap) |
+| Instrument kind     | Valuation strategy                                | Source               | Notes                                                                                                                                                                         |
+| ------------------- | ------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `br.tesouro_direto` | `nav_unit_price`                                  | Tesouro Transparente | `custom` identifier `td:<slug>:<maturity>`; metadata is `titulo` + `maturity` (+ optional display `purchaseRate`)                                                             |
+| `br.cdb`            | `accrual` BUS/252 daily, `percent_of_index` CDI   | — (series only)      | rate stored in metadata                                                                                                                                                       |
+| `br.lci_lca`        | `accrual` BUS/252 daily, `percent_of_index` CDI   | — (series only)      | tax exemption is out of scope (no fiscal reporting)                                                                                                                           |
+| `br.cdb_prefixado`  | `accrual` BUS/252 daily, plain                    | — (series only)      | `rate` is the effective annual rate ("0.12" = 12% a.a.)                                                                                                                       |
+| `br.cdb_ipca`       | `accrual` BUS/252 daily, `index_plus_spread` IPCA | — (series only)      | `rate` is the spread over the índice; level ratio from `br.ipca`                                                                                                              |
+| `br.fii`            | `market_price`                                    | brapi.dev            | ticker-identified                                                                                                                                                             |
+| `br.stock`          | `market_price`                                    | brapi.dev            | ações, ETFs and BDRs on B3, ticker-identified; metadata `{ name }`. A BDR is quoted in BRL over a foreign underlying, so FX attribution reports 0 for it (SPEC §11 known gap) |
 
 ## Series
 
-| Id | Kind | Roles | Source | Upstream ref |
-|---|---|---|---|---|
-| `br.cdi` | rate_daily BUS/252 | benchmark, accrual_index | BCB SGS | 12 |
-| `br.selic` | rate_daily BUS/252 | benchmark, accrual_index | BCB SGS | 11 |
-| `br.ipca` | inflation_index, linear_daily | benchmark, deflator, accrual_index | IBGE SIDRA | table 1737, variable 2266 |
-| `br.ibovespa` | index_level | benchmark | brapi.dev | `^BVSP` |
-| `br.ifix` | index_level | benchmark | brapi.dev | `IFIX.SA` |
+| Id            | Kind                          | Roles                              | Source     | Upstream ref              |
+| ------------- | ----------------------------- | ---------------------------------- | ---------- | ------------------------- |
+| `br.cdi`      | rate_daily BUS/252            | benchmark, accrual_index           | BCB SGS    | 12                        |
+| `br.selic`    | rate_daily BUS/252            | benchmark, accrual_index           | BCB SGS    | 11                        |
+| `br.ipca`     | inflation_index, linear_daily | benchmark, deflator, accrual_index | IBGE SIDRA | table 1737, variable 2266 |
+| `br.ibovespa` | index_level                   | benchmark                          | brapi.dev  | `^BVSP`                   |
+| `br.ifix`     | index_level                   | benchmark                          | brapi.dev  | `IFIX.SA`                 |
 
 ## Sources
 
-| Id | Licence | Auth | Env | Adapter |
-|---|---|---|---|---|
-| `br.bcb_sgs` | public-domain | none | — | implemented — CDI/SELIC; SGS 433 (IPCA) deliberately refused |
-| `br.ibge_sidra` | public-domain | none | — | implemented — IPCA número-índice |
-| `br.brapi` | api-terms:free-tier | api_key | `BRAPI_TOKEN` | implemented — FII and equity spot/historical, index series |
-| `br.tesouro_transparente` | **odbl-1.0** | none | — | implemented — `PU Base Manha` |
+| Id                        | Licence             | Auth    | Env           | Adapter                                                      |
+| ------------------------- | ------------------- | ------- | ------------- | ------------------------------------------------------------ |
+| `br.bcb_sgs`              | public-domain       | none    | —             | implemented — CDI/SELIC; SGS 433 (IPCA) deliberately refused |
+| `br.ibge_sidra`           | public-domain       | none    | —             | implemented — IPCA número-índice                             |
+| `br.brapi`                | api-terms:free-tier | api_key | `BRAPI_TOKEN` | implemented — FII and equity spot/historical, index series   |
+| `br.tesouro_transparente` | **odbl-1.0**        | none    | —             | implemented — `PU Base Manha`                                |
 
 ### Attribution
 
@@ -44,14 +44,14 @@ deployment that redistributes this data.
 ## Quirks
 
 - **Calendar is ANBIMA/national, not B3 trading.** B3 does not trade on 24 and
-  31 December but CDI is still published, so those days are *not* holidays here.
+  31 December but CDI is still published, so those days are _not_ holidays here.
   Consequence: a missing FII quote on those two days will look like an
   ingestion failure. Track under the "two calendars per pack" kernel question.
 - **BCB rate units are percentage points.** The adapter divides CDI/SELIC by
   100 using decimal-string operations (`0.045513` → `0.00045513`); it never
   converts money or rates through a JS number.
 - **`br.ipca` comes from IBGE SIDRA, not BCB SGS 433.** SGS 433 is a monthly
-  percentage *change*; the kernel's `inflation_index` needs a *level*, and
+  percentage _change_; the kernel's `inflation_index` needs a _level_, and
   chaining one into the other is arithmetic — which packs never supply
   (PACKS.md §1). SIDRA table 1737 variable 2266 publishes the número-índice
   (base December 1993 = 100) directly. The SGS adapter still refuses `br.ipca`
@@ -66,7 +66,7 @@ deployment that redistributes this data.
   adapter certifies coverage for it. Treating it as an error would stall the
   CDI/SELIC watermark on every such run.
 - **Tesouro Direto is valued from `PU Base Manha`, not from a curve.** Tesouro
-  publishes one rate and one unit price per *bond* per day, never per tenor, so
+  publishes one rate and one unit price per _bond_ per day, never per tenor, so
   a fixed-tenor `br.td_curve` would have meant interpolating inside a pack. The
   PU is what Tesouro itself marks against and what a broker statement shows.
   The rate locked at purchase may be stored as `purchaseRate` metadata for

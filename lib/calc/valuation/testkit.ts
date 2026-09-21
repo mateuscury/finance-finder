@@ -53,15 +53,32 @@ export function kind(id: string, valuation: ValuationStrategy, quoteCurrency = "
   return { id, label: id, valuation, metadataSchema: z.object({}).passthrough(), identifier: "custom", quoteCurrency };
 }
 
-export function asset(id: string, instrumentKind: InstrumentKind, metadata: unknown = {}, nativeCurrency = "BRL", packId = "br"): HoldingAsset {
+export function asset(
+  id: string,
+  instrumentKind: InstrumentKind,
+  metadata: unknown = {},
+  nativeCurrency = "BRL",
+  packId = "br",
+): HoldingAsset {
   return { id, packId, instrumentKind, identifier: id, nativeCurrency, metadata };
 }
 
 export function lot(openedOn: string, quantity: string, unitPrice: string, currency = "BRL"): Lot {
-  return { openedOn, quantity: new KernelDecimal(quantity), unitPrice: new KernelDecimal(unitPrice), currency, transactionId: `t-${openedOn}` };
+  return {
+    openedOn,
+    quantity: new KernelDecimal(quantity),
+    unitPrice: new KernelDecimal(unitPrice),
+    currency,
+    transactionId: `t-${openedOn}`,
+  };
 }
 
-export const pt = (seriesId: string, date: string, value: string, tenorDays = 0): SeriesObservation => ({ seriesId, date, value, tenorDays });
+export const pt = (seriesId: string, date: string, value: string, tenorDays = 0): SeriesObservation => ({
+  seriesId,
+  date,
+  value,
+  tenorDays,
+});
 
 /** One `br.cdi` point per business day of [start, end] under `calendar`. */
 export function constantCdi(calendar: MarketCalendar, start: string, end: string, value: string): SeriesObservation[] {

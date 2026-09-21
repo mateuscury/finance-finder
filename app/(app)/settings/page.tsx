@@ -3,7 +3,16 @@ import { PACKS } from "@/packs";
 import { Notice } from "@/app/(app)/_components/notice";
 import { requireUser } from "@/lib/auth/session";
 import { readSettings } from "@/lib/ledger/rows";
-import { changeBaseCurrencyAction, changePasswordAction, deleteEverythingAction, restoreBackupAction, setEnabledPacksAction, signOutEverywhereAction, unenrolTotpAction, updatePreferencesAction } from "./actions";
+import {
+  changeBaseCurrencyAction,
+  changePasswordAction,
+  deleteEverythingAction,
+  restoreBackupAction,
+  setEnabledPacksAction,
+  signOutEverywhereAction,
+  unenrolTotpAction,
+  updatePreferencesAction,
+} from "./actions";
 import { TotpEnrol } from "./totp-enrol";
 
 // Pack enable schedules a series backfill after the response (decision 30).
@@ -23,7 +32,8 @@ const RESTORE_COPY: Record<string, string> = {
   unsupported_version: "That backup was written by a newer version of this app.",
   duplicate_asset_id: "The file lists the same asset twice.",
   foreign_asset_reference: "The file references an asset it does not contain.",
-  account_not_empty: "Restore only works into an empty account. Delete everything first, or restore into a fresh instance.",
+  account_not_empty:
+    "Restore only works into an empty account. Delete everything first, or restore into a fresh instance.",
   asset_id_conflict: "An asset id in the file already exists.",
   not_authenticated: "Sign in again and retry.",
   write_failed: "The restore was refused.",
@@ -58,7 +68,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           Base currency <input name="base_currency" defaultValue={settings.base_currency} pattern="[A-Z]{3}" required />
         </label>
         <label>
-          <input type="checkbox" name="confirm_reset" /> I understand changing it after my first transaction discards every snapshot and rebuilds history in the new currency.
+          <input type="checkbox" name="confirm_reset" /> I understand changing it after my first transaction discards
+          every snapshot and rebuilds history in the new currency.
         </label>
         <button type="submit">Save base currency</button>
       </form>
@@ -68,9 +79,18 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           <legend>Enabled market packs</legend>
           {PACKS.map((p) => (
             <label key={p.id}>
-              <input type="checkbox" name="packs" value={p.id} defaultChecked={enabled.has(p.id)} disabled={p.status === "unmaintained"} /> {p.id} — {p.name} · {p.instruments.length} instrument kinds ·{" "}
-              {p.series.length} series · <em>{p.status}</em>
-              {p.status === "draft" ? " — draft: incomplete or unvalidated; enable at your own discretion (PACKS.md §12)" : ""}
+              <input
+                type="checkbox"
+                name="packs"
+                value={p.id}
+                defaultChecked={enabled.has(p.id)}
+                disabled={p.status === "unmaintained"}
+              />{" "}
+              {p.id} — {p.name} · {p.instruments.length} instrument kinds · {p.series.length} series ·{" "}
+              <em>{p.status}</em>
+              {p.status === "draft"
+                ? " — draft: incomplete or unvalidated; enable at your own discretion (PACKS.md §12)"
+                : ""}
               {p.status === "unmaintained" ? " — cannot be enabled" : ""}
             </label>
           ))}
@@ -94,7 +114,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
       </form>
 
       <h2>Security</h2>
-      <p>Signed in as {identity.email ?? identity.userId}. Session level: {identity.currentLevel}.</p>
+      <p>
+        Signed in as {identity.email ?? identity.userId}. Session level: {identity.currentLevel}.
+      </p>
       <form action={changePasswordAction}>
         <label>
           New password <input name="password" type="password" autoComplete="new-password" minLength={12} required />
@@ -127,10 +149,12 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
 
       <h2>Your data</h2>
       <p>
-        You run the server, and the server sees your data: plaintext rows in your own Supabase project, encrypted at rest and in transit by Supabase. Pack sources learn what you hold, never how much.
+        You run the server, and the server sees your data: plaintext rows in your own Supabase project, encrypted at
+        rest and in transit by Supabase. Pack sources learn what you hold, never how much.
       </p>
       <p>
-        Last export: {settings.last_export_at ?? "never"}. Supabase&apos;s free tier keeps no automated backups. <Link href="/settings/export/json">Download backup (JSON)</Link> ·{" "}
+        Last export: {settings.last_export_at ?? "never"}. Supabase&apos;s free tier keeps no automated backups.{" "}
+        <Link href="/settings/export/json">Download backup (JSON)</Link> ·{" "}
         <Link href="/settings/export/csv">Download transactions (CSV)</Link>
       </p>
       <h3>Restore a backup</h3>
@@ -144,7 +168,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
       <form action={restoreBackupAction}>
         <input type="file" name="file" accept=".json,application/json" required />
         <label>
-          <input type="checkbox" name="acknowledge_warnings" /> restore even if some assets cannot be priced by this build
+          <input type="checkbox" name="acknowledge_warnings" /> restore even if some assets cannot be priced by this
+          build
         </label>
         <button type="submit">Restore into this (empty) account</button>
       </form>
@@ -152,9 +177,11 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
       {del ? <p role="alert">{DELETE_COPY[del] ?? DELETE_COPY.failed}</p> : null}
       <form action={deleteEverythingAction}>
         <p>
-          Type <code>delete everything</code> and your password. The account and every row cascade; market data stays. This cannot be undone.
+          Type <code>delete everything</code> and your password. The account and every row cascade; market data stays.
+          This cannot be undone.
         </p>
-        <input name="phrase" autoComplete="off" required /> <input name="password" type="password" autoComplete="current-password" required />{" "}
+        <input name="phrase" autoComplete="off" required />{" "}
+        <input name="password" type="password" autoComplete="current-password" required />{" "}
         <button type="submit">Delete everything</button>
       </form>
     </main>

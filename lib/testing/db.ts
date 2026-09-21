@@ -8,7 +8,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll } from "vitest";
 import { assertStackReachable, createDbTestClient, createThrowawayUser, type ThrowawayUserHandle } from "./stack";
 
-export { assertStackReachable, createDbTestClient, createThrowawayUser, requireDbEnv, type ThrowawayUserHandle } from "./stack";
+export {
+  assertStackReachable,
+  createDbTestClient,
+  createThrowawayUser,
+  requireDbEnv,
+  type ThrowawayUserHandle,
+} from "./stack";
 
 export interface ThrowawayUser {
   readonly client: SupabaseClient;

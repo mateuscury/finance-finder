@@ -22,8 +22,14 @@ export { NAV_EXTRA_DAYS, valueNavUnitPrice } from "./nav-unit-price";
 export { findSeries, type HoldingValue, type ValuationContext } from "./result";
 
 /** Values ONE asset's open lots as of `asOf`. Callers never pass empty lots. */
-export function valueHolding(asset: HoldingAsset, lots: readonly Lot[], asOf: IsoDate, ctx: ValuationContext): HoldingValue {
-  if (lots.length === 0) throw new KernelError("invalid_input", "valueHolding needs at least one open lot", { assetId: asset.id });
+export function valueHolding(
+  asset: HoldingAsset,
+  lots: readonly Lot[],
+  asOf: IsoDate,
+  ctx: ValuationContext,
+): HoldingValue {
+  if (lots.length === 0)
+    throw new KernelError("invalid_input", "valueHolding needs at least one open lot", { assetId: asset.id });
   const strategy = asset.instrumentKind.valuation;
   switch (strategy.kind) {
     case "market_price":

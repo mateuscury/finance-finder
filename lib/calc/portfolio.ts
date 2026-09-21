@@ -82,12 +82,27 @@ export function stalenessWindowFor(input: PortfolioInput, packId: string, date: 
  * `observedOn` is the FX date, or `date` itself when no conversion was needed.
  */
 export function toBase(input: PortfolioInput, money: Money, date: IsoDate, packId: string): Observed<Money> {
-  const fx = resolveFx(input.market, input.series, money.currency, input.baseCurrency, date, stalenessWindowFor(input, packId, date));
+  const fx = resolveFx(
+    input.market,
+    input.series,
+    money.currency,
+    input.baseCurrency,
+    date,
+    stalenessWindowFor(input, packId, date),
+  );
   if (fx.status === "unpriced") return fx;
   if (fx.status === "stale") {
-    return { status: "stale", lastKnown: Money.of(money.amount.times(fx.lastKnown), input.baseCurrency), observedOn: fx.fxDate };
+    return {
+      status: "stale",
+      lastKnown: Money.of(money.amount.times(fx.lastKnown), input.baseCurrency),
+      observedOn: fx.fxDate,
+    };
   }
-  return { status: fx.status, value: Money.of(money.amount.times(fx.rate), input.baseCurrency), observedOn: fx.fxDate ?? date };
+  return {
+    status: fx.status,
+    value: Money.of(money.amount.times(fx.rate), input.baseCurrency),
+    observedOn: fx.fxDate ?? date,
+  };
 }
 
 export function valuePortfolio(input: PortfolioInput, asOf: IsoDate): PortfolioValuation {
@@ -133,7 +148,13 @@ export function valuePortfolio(input: PortfolioInput, asOf: IsoDate): PortfolioV
       marketValueBase: base,
     });
     if (status === "stale") {
-      excluded.push({ assetId: asset.id, status: "stale", lastKnownBase: base, priceDate: value.priceDate, fxDate: fx.fxDate });
+      excluded.push({
+        assetId: asset.id,
+        status: "stale",
+        lastKnownBase: base,
+        priceDate: value.priceDate,
+        fxDate: fx.fxDate,
+      });
     } else {
       totalBase = totalBase.add(base);
     }

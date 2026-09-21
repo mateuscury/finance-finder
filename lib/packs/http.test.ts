@@ -123,7 +123,8 @@ describe("createPackHttp — live", () => {
   it("retries a 5xx and returns the first success", async () => {
     let calls = 0;
     const { opts } = base({
-      fetchImpl: (async () => (++calls < 3 ? okResponse("boom", 503) : okResponse('{"ok":true}'))) as unknown as typeof fetch,
+      fetchImpl: (async () =>
+        ++calls < 3 ? okResponse("boom", 503) : okResponse('{"ok":true}')) as unknown as typeof fetch,
     });
     const res = await createPackHttp(opts).http.get("https://example.test/a");
     expect(calls).toBe(3);
@@ -297,9 +298,11 @@ describe("createPackHttp — replay", () => {
       deadline: Number.MAX_SAFE_INTEGER,
       exchanges,
       now: () => 0,
-      fetchImpl: fetchImpl ?? ((() => {
-        throw new Error("replay must not touch the network");
-      }) as unknown as typeof fetch),
+      fetchImpl:
+        fetchImpl ??
+        ((() => {
+          throw new Error("replay must not touch the network");
+        }) as unknown as typeof fetch),
     });
 
   it("serves recorded responses in order without any network call", async () => {
@@ -313,9 +316,9 @@ describe("createPackHttp — replay", () => {
 
   it("rejects a changed URL", async () => {
     const handle = replay([exchange("https://a.test/1")]);
-    await expect(handle.http.get("https://a.test/CHANGED", { headers: { accept: "application/json" } })).rejects.toThrow(
-      /does not match the recording/,
-    );
+    await expect(
+      handle.http.get("https://a.test/CHANGED", { headers: { accept: "application/json" } }),
+    ).rejects.toThrow(/does not match the recording/);
   });
 
   it("rejects a changed order", async () => {

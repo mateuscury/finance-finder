@@ -80,9 +80,17 @@ export type DryRun =
     };
 
 const canon = (s: string) => (isDecimalString(s) ? toDecimalString(parseDecimal(s)) : s);
-const duplicateKey = (t: KnownTransaction): string => `${t.asset_id}|${t.trade_date}|${t.type}|${canon(t.quantity)}|${canon(t.unit_price)}`;
+const duplicateKey = (t: KnownTransaction): string =>
+  `${t.asset_id}|${t.trade_date}|${t.type}|${canon(t.quantity)}|${canon(t.unit_price)}`;
 
-export function dryRun(header: readonly string[], dataRows: readonly (readonly string[])[], map: ColumnMap, assets: readonly KnownAsset[], existing: readonly KnownTransaction[], registry: readonly MarketPack[]): DryRun {
+export function dryRun(
+  header: readonly string[],
+  dataRows: readonly (readonly string[])[],
+  map: ColumnMap,
+  assets: readonly KnownAsset[],
+  existing: readonly KnownTransaction[],
+  registry: readonly MarketPack[],
+): DryRun {
   const columns = resolveColumns(header, map);
   if (!columns.ok) return { ok: false, reason: "missing_columns", missing: columns.missing };
 
@@ -99,7 +107,9 @@ export function dryRun(header: readonly string[], dataRows: readonly (readonly s
     }
     // Resolve the asset by identity, normalising the identifier the way asset creation does.
     const kind = registry.find((p) => p.id === values.pack)?.instruments.find((k) => k.id === values.instrument_kind);
-    const identifier = kind ? (normalizeIdentifier(kind.identifier, values.identifier) ?? values.identifier) : values.identifier;
+    const identifier = kind
+      ? (normalizeIdentifier(kind.identifier, values.identifier) ?? values.identifier)
+      : values.identifier;
     const asset = assetByIdentity.get(`${values.pack}|${values.instrument_kind}|${identifier}`) ?? null;
 
     // An unresolved row is still validated field by field, so the preview can
@@ -119,7 +129,13 @@ export function dryRun(header: readonly string[], dataRows: readonly (readonly s
     const errors = parsed.success ? [] : failedFields(parsed.error).map((f) => (f === "trade_date" ? "date" : f));
     if (!asset) {
       const key = `${values.pack}|${values.instrument_kind}|${identifier}`;
-      const entry = unresolved.get(key) ?? { pack_id: values.pack, instrument_kind: values.instrument_kind, identifier, rows: [], registered: kind !== undefined };
+      const entry = unresolved.get(key) ?? {
+        pack_id: values.pack,
+        instrument_kind: values.instrument_kind,
+        identifier,
+        rows: [],
+        registered: kind !== undefined,
+      };
       entry.rows.push(index);
       unresolved.set(key, entry);
     }
@@ -134,7 +150,9 @@ export function dryRun(header: readonly string[], dataRows: readonly (readonly s
     rows.push(row);
   });
 
-  const previewHash = createHash("sha256").update(JSON.stringify(rows.map((r) => r.values))).digest("hex");
+  const previewHash = createHash("sha256")
+    .update(JSON.stringify(rows.map((r) => r.values)))
+    .digest("hex");
   return {
     ok: true,
     rows,

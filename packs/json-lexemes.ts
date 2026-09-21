@@ -53,9 +53,9 @@ class JsonReader {
     if (c === "{") return this.object();
     if (c === "[") return this.array();
     if (c === '"') return this.string();
-    if (this.s.startsWith("true", this.i)) return (this.i += 4), true;
-    if (this.s.startsWith("false", this.i)) return (this.i += 5), false;
-    if (this.s.startsWith("null", this.i)) return (this.i += 4), null;
+    if (this.s.startsWith("true", this.i)) return ((this.i += 4), true);
+    if (this.s.startsWith("false", this.i)) return ((this.i += 5), false);
+    if (this.s.startsWith("null", this.i)) return ((this.i += 4), null);
     return this.number();
   }
 
@@ -63,7 +63,7 @@ class JsonReader {
     this.expect("{");
     const out: { [key: string]: JsonValue } = {};
     this.skipWhitespace();
-    if (this.s[this.i] === "}") return this.i++, out;
+    if (this.s[this.i] === "}") return (this.i++, out);
     for (;;) {
       this.skipWhitespace();
       const key = this.string();
@@ -92,7 +92,7 @@ class JsonReader {
     this.expect("[");
     const out: JsonValue[] = [];
     this.skipWhitespace();
-    if (this.s[this.i] === "]") return this.i++, out;
+    if (this.s[this.i] === "]") return (this.i++, out);
     for (;;) {
       out.push(this.value());
       this.skipWhitespace();

@@ -121,7 +121,10 @@ describe("brapi adapter", () => {
       status: 200,
       body: historyBody("HGLG11", [bar(1788231600, "147"), bar(1788318000, "147.82")]),
     }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
     expect(r.points).toEqual([
       { ref: "HGLG11", date: "2026-09-01", value: "147", currency: "BRL" },
       { ref: "HGLG11", date: "2026-09-02", value: "147.82", currency: "BRL" },
@@ -135,14 +138,23 @@ describe("brapi adapter", () => {
       status: 200,
       body: historyBody(url.includes("BVSP") ? "^BVSP" : "HGLG11", [bar(1788231600, "100.5")]),
     }));
-    const index = await fetchBrapi({ capability: "series", refs: ["br.ibovespa"], from: "2026-09-01", to: "2026-09-06" }, context);
-    const fii = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+    const index = await fetchBrapi(
+      { capability: "series", refs: ["br.ibovespa"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
+    const fii = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
     expect(index.points[0].currency).toBeNull();
     expect(fii.points[0].currency).toBe("BRL");
   });
 
   it("serves an equity ticker through the same quote path as a FII (br.stock)", async () => {
-    const { context, seen } = ctx((url) => ({ status: 200, body: quoteBody(url.includes("PETR4") ? "PETR4" : "HGLG11") }));
+    const { context, seen } = ctx((url) => ({
+      status: 200,
+      body: quoteBody(url.includes("PETR4") ? "PETR4" : "HGLG11"),
+    }));
     const res = await fetchBrapi({ capability: "spot", refs: ["PETR4"] }, context);
     expect(seen[0].url).toBe("https://brapi.dev/api/quote/PETR4");
     expect(res.points).toEqual([{ ref: "PETR4", date: "2026-09-04", value: "148.3", currency: "BRL" }]);
@@ -154,13 +166,19 @@ describe("brapi adapter", () => {
       status: 200,
       body: historyBody("HGLG11", [bar(1788231600, "147"), bar(1788318000, "147.82"), bar(1788404400, "148.49")]),
     }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-02", to: "2026-09-02" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-02", to: "2026-09-02" },
+      context,
+    );
     expect(r.points.map((p) => p.date)).toEqual(["2026-09-02"]);
   });
 
   it("reports the plan's history cap as uncovered instead of passing off a short series", async () => {
     const { context } = ctx(() => ({ status: 200, body: historyBody("HGLG11", [bar(1788231600, "147")]) }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-01-01", to: "2026-09-06" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-01-01", to: "2026-09-06" },
+      context,
+    );
     expect(r.points).toHaveLength(1);
     expect(r.coverage?.[0]).toMatchObject({ complete: false, returned: { from: "2026-09-01", to: "2026-09-01" } });
     expect(r.warnings.some((w) => /3mo limit is unavailable/.test(w))).toBe(true);
@@ -168,7 +186,10 @@ describe("brapi adapter", () => {
 
   it("certifies a window it could fully reach", async () => {
     const { context } = ctx(() => ({ status: 200, body: historyBody("HGLG11", [bar(1788231600, "147")]) }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
     expect(r.coverage?.[0].complete).toBe(true);
   });
 
@@ -182,16 +203,25 @@ describe("brapi adapter", () => {
     ];
     for (const [status, pattern] of cases) {
       const { context } = ctx(() => ({ status, body: "{}" }));
-      const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+      const r = await fetchBrapi(
+        { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+        context,
+      );
       expect(r.points).toEqual([]);
       expect(r.coverage?.[0].complete).toBe(false);
-      expect(r.warnings.some((w) => pattern.test(w)), `${status}: ${r.warnings.join("|")}`).toBe(true);
+      expect(
+        r.warnings.some((w) => pattern.test(w)),
+        `${status}: ${r.warnings.join("|")}`,
+      ).toBe(true);
     }
   });
 
   it("refuses a payload that answers a different symbol", async () => {
     const { context } = ctx(() => ({ status: 200, body: historyBody("KNRI11", [bar(1788231600, "147")]) }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
     expect(r.points).toEqual([]);
     expect(r.warnings.some((w) => /different symbol/.test(w))).toBe(true);
   });
@@ -199,7 +229,10 @@ describe("brapi adapter", () => {
   it("handles an empty result set and an unparsable body without throwing", async () => {
     for (const body of ['{"results":[]}', "not json", '{"results":[{"symbol":"HGLG11"}]}']) {
       const { context } = ctx(() => ({ status: 200, body }));
-      const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+      const r = await fetchBrapi(
+        { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+        context,
+      );
       expect(r.points).toEqual([]);
       expect(r.coverage?.[0].complete).toBe(false);
     }
@@ -222,7 +255,10 @@ describe("brapi adapter", () => {
 
   it("stops requesting once the budget signal has aborted", async () => {
     const { context, seen } = ctx(() => ({ status: 200, body: quoteBody("HGLG11") }), { signal: abortedSignal() });
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
     expect(seen).toEqual([]);
     expect(r.coverage?.[0].complete).toBe(false);
   });
@@ -281,7 +317,10 @@ describe("brapi declares its availability floor (backfill must not loop)", () =>
 
   it("declares no floor when the window was fully reachable", async () => {
     const { context } = ctx(() => ({ status: 200, body: historyBody("HGLG11", [bar(1788231600, "147")]) }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-06" },
+      context,
+    );
     expect(r.coverage![0].complete).toBe(true);
     expect(r.coverage![0].unavailableBefore).toBeUndefined();
   });
@@ -290,7 +329,10 @@ describe("brapi declares its availability floor (backfill must not loop)", () =>
     // A 5xx must NOT be mistaken for a structural limit: the history is still
     // there, we just could not read it this time.
     const { context } = ctx(() => ({ status: 503, body: "{}" }));
-    const r = await fetchBrapi({ capability: "historical", refs: ["HGLG11"], from: "2025-01-01", to: "2025-04-01" }, context);
+    const r = await fetchBrapi(
+      { capability: "historical", refs: ["HGLG11"], from: "2025-01-01", to: "2025-04-01" },
+      context,
+    );
     expect(r.coverage![0].unavailableBefore).toBeUndefined();
     expect(r.coverage![0].complete).toBe(false);
   });

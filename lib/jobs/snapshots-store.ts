@@ -20,8 +20,20 @@ export function createSnapshotStore(client: SupabaseClient, registry: readonly M
       const users: SnapshotUser[] = [];
       for (const { user_id } of settings) {
         const [last, first] = await Promise.all([
-          client.from("portfolio_snapshots").select("date").eq("user_id", user_id).order("date", { ascending: false }).limit(1).maybeSingle(),
-          client.from("transactions").select("trade_date").eq("user_id", user_id).order("trade_date", { ascending: true }).limit(1).maybeSingle(),
+          client
+            .from("portfolio_snapshots")
+            .select("date")
+            .eq("user_id", user_id)
+            .order("date", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          client
+            .from("transactions")
+            .select("trade_date")
+            .eq("user_id", user_id)
+            .order("trade_date", { ascending: true })
+            .limit(1)
+            .maybeSingle(),
         ]);
         if (last.error) throw new Error(`snapshots: last date (${last.error.code ?? "unknown"})`);
         if (first.error) throw new Error(`snapshots: first trade (${first.error.code ?? "unknown"})`);
@@ -36,7 +48,8 @@ export function createSnapshotStore(client: SupabaseClient, registry: readonly M
       return users.sort((a, b) => {
         if (a.lastSnapshotDate === null && b.lastSnapshotDate !== null) return -1;
         if (b.lastSnapshotDate === null && a.lastSnapshotDate !== null) return 1;
-        if (a.lastSnapshotDate !== null && b.lastSnapshotDate !== null && a.lastSnapshotDate !== b.lastSnapshotDate) return a.lastSnapshotDate < b.lastSnapshotDate ? -1 : 1;
+        if (a.lastSnapshotDate !== null && b.lastSnapshotDate !== null && a.lastSnapshotDate !== b.lastSnapshotDate)
+          return a.lastSnapshotDate < b.lastSnapshotDate ? -1 : 1;
         return a.userId < b.userId ? -1 : 1;
       });
     },

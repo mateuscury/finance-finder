@@ -28,7 +28,9 @@ export function normalizeIdentifier(spec: IdentifierSpec, raw: string): string |
 export function prepareAsset(input: unknown, registry: readonly MarketPack[]): ActionResult<AssetInput> {
   const parsed = AssetInputSchema.safeParse(input);
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
-  const kind = registry.find((p) => p.id === parsed.data.pack_id)?.instruments.find((k) => k.id === parsed.data.instrument_kind);
+  const kind = registry
+    .find((p) => p.id === parsed.data.pack_id)
+    ?.instruments.find((k) => k.id === parsed.data.instrument_kind);
   if (!kind) return fail("unknown_kind", ["instrument_kind"]);
   const identifier = normalizeIdentifier(kind.identifier, parsed.data.identifier);
   if (identifier === null) return fail("invalid_input", ["identifier"]);
@@ -37,24 +39,47 @@ export function prepareAsset(input: unknown, registry: readonly MarketPack[]): A
 }
 
 async function transactionCount(client: SupabaseClient, assetId: string): Promise<number | null> {
-  const { count, error } = await client.from("transactions").select("*", { count: "exact", head: true }).eq("asset_id", assetId);
+  const { count, error } = await client
+    .from("transactions")
+    .select("*", { count: "exact", head: true })
+    .eq("asset_id", assetId);
   return error ? null : (count ?? 0);
 }
 
-export async function createAsset(client: SupabaseClient, registry: readonly MarketPack[], userId: string, input: unknown): Promise<ActionResult<{ id: string }>> {
+export async function createAsset(
+  client: SupabaseClient,
+  registry: readonly MarketPack[],
+  userId: string,
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
   const prepared = prepareAsset(input, registry);
   if (!prepared.ok) return prepared;
-  const { data, error } = await client.from("assets").insert({ user_id: userId, ...prepared.value }).select("id").single();
+  const { data, error } = await client
+    .from("assets")
+    .insert({ user_id: userId, ...prepared.value })
+    .select("id")
+    .single();
   if (error || !data) return fail(reasonFor(error));
   return ok({ id: data.id as string });
 }
 
-export async function updateAsset(client: SupabaseClient, registry: readonly MarketPack[], assetId: string, input: unknown): Promise<ActionResult> {
-  const current = await client.from("assets").select("pack_id,instrument_kind,identifier,native_currency").eq("id", assetId).maybeSingle();
+export async function updateAsset(
+  client: SupabaseClient,
+  registry: readonly MarketPack[],
+  assetId: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const current = await client
+    .from("assets")
+    .select("pack_id,instrument_kind,identifier,native_currency")
+    .eq("id", assetId)
+    .maybeSingle();
   if (current.error || !current.data) return fail("not_found");
   const prepared = prepareAsset(input, registry);
   if (!prepared.ok) return prepared;
-  const identityChanged = (["pack_id", "instrument_kind", "identifier", "native_currency"] as const).some((k) => prepared.value[k] !== current.data![k]);
+  const identityChanged = (["pack_id", "instrument_kind", "identifier", "native_currency"] as const).some(
+    (k) => prepared.value[k] !== current.data![k],
+  );
   if (identityChanged) {
     const n = await transactionCount(client, assetId);
     if (n === null) return fail("write_failed");

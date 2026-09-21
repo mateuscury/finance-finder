@@ -6,21 +6,21 @@ Sources and series that belong to no single national market (PACKS.md §13).
 
 ## Coverage
 
-| Instrument kind | Valuation strategy | Source | Notes |
-|---|---|---|---|
-| — | — | — | Crypto (`market_price` via CoinGecko) and Yahoo Finance multi-market quotes are planned; not yet declared. |
+| Instrument kind | Valuation strategy | Source | Notes                                                                                                      |
+| --------------- | ------------------ | ------ | ---------------------------------------------------------------------------------------------------------- |
+| —               | —                  | —      | Crypto (`market_price` via CoinGecko) and Yahoo Finance multi-market quotes are planned; not yet declared. |
 
 ## Series
 
-| Id | Kind | Roles | Source |
-|---|---|---|---|
+| Id              | Kind            | Roles         | Source   |
+| --------------- | --------------- | ------------- | -------- |
 | `global.usdbrl` | fx_rate USD→BRL | fx, benchmark | BCB PTAX |
 
 ## Sources
 
-| Id | Licence | Auth | Env | Adapter |
-|---|---|---|---|---|
-| `global.bcb_ptax` | public-domain | none | — | implemented — Olinda PTAX, CSV, closing quote |
+| Id                | Licence       | Auth | Env | Adapter                                       |
+| ----------------- | ------------- | ---- | --- | --------------------------------------------- |
+| `global.bcb_ptax` | public-domain | none | —   | implemented — Olinda PTAX, CSV, closing quote |
 
 ## Quirks
 

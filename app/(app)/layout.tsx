@@ -13,7 +13,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       <header>
         <nav aria-label="Ledger">
-          <Link href="/">Overview</Link> · <Link href="/assets">Assets</Link> · <Link href="/transactions">Transactions</Link> · <Link href="/cash-flows">Cash flows</Link> ·{" "}
+          <Link href="/">Overview</Link> · <Link href="/assets">Assets</Link> ·{" "}
+          <Link href="/transactions">Transactions</Link> · <Link href="/cash-flows">Cash flows</Link> ·{" "}
           <Link href="/settings">Settings</Link>
         </nav>
         <form action={signOut}>

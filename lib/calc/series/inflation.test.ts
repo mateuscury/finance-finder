@@ -13,27 +13,50 @@ const md = buildMarketData([], [pt("2026-01-31", "7000"), pt("2026-02-28", "7035
 describe("inflationLevelAt", () => {
   it("returns the anchor exactly on an anchor date in both modes", () => {
     for (const mode of ["none", "linear_daily"] as const) {
-      expect(inflationLevelAt(md, "br.ipca", "2026-02-28", mode)).toEqual({ status: "ok", value: new KernelDecimal("7035"), observedOn: "2026-02-28" });
+      expect(inflationLevelAt(md, "br.ipca", "2026-02-28", mode)).toEqual({
+        status: "ok",
+        value: new KernelDecimal("7035"),
+        observedOn: "2026-02-28",
+      });
     }
   });
 
   it("is unpriced before the first anchor and for an unknown series", () => {
-    expect(inflationLevelAt(md, "br.ipca", "2026-01-30", "none")).toEqual({ status: "unpriced", reason: "before_first_anchor" });
-    expect(inflationLevelAt(md, "br.nope", "2026-02-15", "none")).toEqual({ status: "unpriced", reason: "no_observation" });
+    expect(inflationLevelAt(md, "br.ipca", "2026-01-30", "none")).toEqual({
+      status: "unpriced",
+      reason: "before_first_anchor",
+    });
+    expect(inflationLevelAt(md, "br.nope", "2026-02-15", "none")).toEqual({
+      status: "unpriced",
+      reason: "no_observation",
+    });
   });
 
   it("`none` steps: the last anchor ≤ date, status ok", () => {
-    expect(inflationLevelAt(md, "br.ipca", "2026-02-15", "none")).toEqual({ status: "ok", value: new KernelDecimal("7000"), observedOn: "2026-01-31" });
-    expect(inflationLevelAt(md, "br.ipca", "2026-03-30", "none")).toEqual({ status: "ok", value: new KernelDecimal("7035"), observedOn: "2026-02-28" });
+    expect(inflationLevelAt(md, "br.ipca", "2026-02-15", "none")).toEqual({
+      status: "ok",
+      value: new KernelDecimal("7000"),
+      observedOn: "2026-01-31",
+    });
+    expect(inflationLevelAt(md, "br.ipca", "2026-03-30", "none")).toEqual({
+      status: "ok",
+      value: new KernelDecimal("7035"),
+      observedOn: "2026-02-28",
+    });
   });
 
   it("`linear_daily` interpolates on calendar days between the bracketing anchors", () => {
     // 31 Jan → 28 Feb is 28 days; 14 Feb is day 14: 7000 + 35 × 14/28 = 7017.5
-    expect(inflationLevelAt(md, "br.ipca", "2026-02-14", "linear_daily")).toEqual({ status: "ok", value: new KernelDecimal("7017.5"), observedOn: "2026-02-14" });
+    expect(inflationLevelAt(md, "br.ipca", "2026-02-14", "linear_daily")).toEqual({
+      status: "ok",
+      value: new KernelDecimal("7017.5"),
+      observedOn: "2026-02-14",
+    });
     // 28 Feb → 31 Mar is 31 days; 1 Mar is day 1: 7035 + 35/31
     const r = inflationLevelAt(md, "br.ipca", "2026-03-01", "linear_daily");
     expect(r.status).toBe("ok");
-    if (r.status === "ok") expect(r.value.equals(new KernelDecimal("7035").plus(new KernelDecimal(35).div(31)))).toBe(true);
+    if (r.status === "ok")
+      expect(r.value.equals(new KernelDecimal("7035").plus(new KernelDecimal(35).div(31)))).toBe(true);
   });
 
   it("after the last anchor: flat and carried forward for 62 days, stale on day 63", () => {
@@ -41,15 +64,26 @@ describe("inflationLevelAt", () => {
     const day62 = addDays("2026-03-31", 62);
     const day63 = addDays("2026-03-31", 63);
     for (const mode of ["none", "linear_daily"] as const) {
-      expect(inflationLevelAt(md, "br.ipca", day62, mode)).toEqual({ status: "carried_forward", value: new KernelDecimal("7070"), observedOn: "2026-03-31" });
-      expect(inflationLevelAt(md, "br.ipca", day63, mode)).toEqual({ status: "stale", lastKnown: new KernelDecimal("7070"), observedOn: "2026-03-31" });
+      expect(inflationLevelAt(md, "br.ipca", day62, mode)).toEqual({
+        status: "carried_forward",
+        value: new KernelDecimal("7070"),
+        observedOn: "2026-03-31",
+      });
+      expect(inflationLevelAt(md, "br.ipca", day63, mode)).toEqual({
+        status: "stale",
+        lastKnown: new KernelDecimal("7070"),
+        observedOn: "2026-03-31",
+      });
     }
   });
 
   it("property: linear interpolation equals the anchors at anchor dates and is monotone between them", () => {
     // Increasing anchors at random month-ish spacing.
     const anchors = fc
-      .array(fc.tuple(fc.integer({ min: 20, max: 40 }), fc.integer({ min: 0, max: 500 })), { minLength: 2, maxLength: 8 })
+      .array(fc.tuple(fc.integer({ min: 20, max: 40 }), fc.integer({ min: 0, max: 500 })), {
+        minLength: 2,
+        maxLength: 8,
+      })
       .map((steps) => {
         let date = "2025-01-31";
         let level = 5000;

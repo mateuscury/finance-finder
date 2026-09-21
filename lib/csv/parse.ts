@@ -6,7 +6,9 @@
  * reaches decimal.js as a string.
  */
 
-export type CsvParseResult = { ok: true; header: string[]; rows: string[][] } | { ok: false; reason: "empty" | "unterminated_quote" | "quote_in_unquoted_field"; line: number };
+export type CsvParseResult =
+  | { ok: true; header: string[]; rows: string[][] }
+  | { ok: false; reason: "empty" | "unterminated_quote" | "quote_in_unquoted_field"; line: number };
 
 export function parseCsv(text: string): CsvParseResult {
   const src = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;

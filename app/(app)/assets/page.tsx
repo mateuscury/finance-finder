@@ -4,7 +4,13 @@ import { Notice } from "@/app/(app)/_components/notice";
 import { requireUser } from "@/lib/auth/session";
 import { listAssets } from "@/lib/ledger/queries";
 import { AssetForm } from "./_form";
-import { createAssetThen, deleteAssetAction, deleteManualPriceAction, refreshAction, setManualPriceAction } from "./actions";
+import {
+  createAssetThen,
+  deleteAssetAction,
+  deleteManualPriceAction,
+  refreshAction,
+  setManualPriceAction,
+} from "./actions";
 
 // The create action schedules the price-then-snapshot chain after the response (decision 30).
 export const maxDuration = 60;
@@ -59,7 +65,8 @@ export default async function AssetsPage({ searchParams }: PageProps<"/assets">)
                   {a.valuation === "accrual" ? null : (
                     <form action={setManualPriceAction}>
                       <input type="hidden" name="asset_id" value={a.id} />
-                      <input name="date" type="date" required /> <input name="price" inputMode="decimal" placeholder="price" required />{" "}
+                      <input name="date" type="date" required />{" "}
+                      <input name="price" inputMode="decimal" placeholder="price" required />{" "}
                       <button type="submit">Set</button>
                     </form>
                   )}

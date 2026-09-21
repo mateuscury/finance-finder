@@ -23,10 +23,12 @@ export type ActionReason =
   /** The database refused for a reason the code did not anticipate. */
   | "write_failed";
 
-export type ActionResult<T = undefined> = { ok: true; value: T } | { ok: false; reason: ActionReason; fields?: readonly string[] };
+export type ActionResult<T = undefined> =
+  { ok: true; value: T } | { ok: false; reason: ActionReason; fields?: readonly string[] };
 
 export const ok = <T>(value: T): ActionResult<T> => ({ ok: true, value });
-export const fail = <T = undefined>(reason: ActionReason, fields?: readonly string[]): ActionResult<T> => (fields ? { ok: false, reason, fields } : { ok: false, reason });
+export const fail = <T = undefined>(reason: ActionReason, fields?: readonly string[]): ActionResult<T> =>
+  fields ? { ok: false, reason, fields } : { ok: false, reason };
 
 /** A PostgREST/Postgres error reduced to a reason. The message is never read. */
 export function reasonFor(error: { code?: string | null } | null | undefined): ActionReason {

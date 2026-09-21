@@ -102,7 +102,8 @@ export function validatePoints(points: readonly FetchPoint[], scope: ValidationS
         if (kind.kind === "fx_rate") {
           // The value is quote-currency units per one base unit, so the point's
           // currency must be the QUOTE currency.
-          if (point.currency !== kind.quote) return reject("fx point currency does not match the declared quote currency");
+          if (point.currency !== kind.quote)
+            return reject("fx point currency does not match the declared quote currency");
           if (!isPositiveDecimal(point.value)) return reject("an fx rate must be positive");
         } else {
           if (point.currency !== null) return reject("a scalar series point carries no currency");

@@ -19,7 +19,8 @@ vi.mock("@/lib/jobs/snapshots", () => ({ runSnapshots: (...args: unknown[]) => r
 const { GET, maxDuration } = await import("./route");
 
 const SECRET = "x".repeat(48);
-const authorized = () => new Request("https://app.test/api/cron/snapshots", { headers: { authorization: `Bearer ${SECRET}` } });
+const authorized = () =>
+  new Request("https://app.test/api/cron/snapshots", { headers: { authorization: `Bearer ${SECRET}` } });
 
 beforeEach(() => {
   created.serviceClients = 0;
@@ -41,13 +42,25 @@ describe("GET /api/cron/snapshots", () => {
     runSnapshots.mockResolvedValue({
       ok: true,
       durationMs: 12,
-      users: [{ userId: "u1", status: "complete", from: "2026-02-10", to: "2026-02-27", daysBuilt: 12, rowsWritten: 70, errorCode: null }],
+      users: [
+        {
+          userId: "u1",
+          status: "complete",
+          from: "2026-02-10",
+          to: "2026-02-27",
+          daysBuilt: 12,
+          rowsWritten: 70,
+          errorCode: null,
+        },
+      ],
     });
     const res = await GET(authorized());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(body.users).toEqual([{ status: "complete", from: "2026-02-10", to: "2026-02-27", daysBuilt: 12, rowsWritten: 70, errorCode: null }]);
+    expect(body.users).toEqual([
+      { status: "complete", from: "2026-02-10", to: "2026-02-27", daysBuilt: 12, rowsWritten: 70, errorCode: null },
+    ]);
     expect(JSON.stringify(body)).not.toContain("u1");
     expect(runSnapshots.mock.calls[0][0]).toMatchObject({ scope: { kind: "all_users" } });
     expect(created.serviceClients).toBe(1);

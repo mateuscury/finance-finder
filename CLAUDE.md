@@ -8,12 +8,12 @@ for validation, vitest + fast-check for tests.
 
 ## Design documents (root)
 
-| Doc | Owns |
-|---|---|
-| `PACKS.md` | **architecture**: market-pack model, kernel/pack boundary, schema changes for multi-country, conformance gates, governance |
-| `ARCHITECTURE.md` | **features & principles**: scope (no tax/fiscal, no brokers), the nine invariants (§4.9 = privacy posture), data flow, glossary |
-| `SPEC.md` | **features**: calculation formulas, ingestion/snapshot behaviour, the ten screens, design system, edge cases; §2–3 mirror the migration |
-| `MILESTONES.md` | Delivery order and production-data safety gate. PACKS.md §14: `packs/br` from the first commit, canary `packs/uk` + conformance as Milestone 4 |
+| Doc               | Owns                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PACKS.md`        | **architecture**: market-pack model, kernel/pack boundary, schema changes for multi-country, conformance gates, governance                     |
+| `ARCHITECTURE.md` | **features & principles**: scope (no tax/fiscal, no brokers), the nine invariants (§4.9 = privacy posture), data flow, glossary                |
+| `SPEC.md`         | **features**: calculation formulas, ingestion/snapshot behaviour, the ten screens, design system, edge cases; §2–3 mirror the migration        |
+| `MILESTONES.md`   | Delivery order and production-data safety gate. PACKS.md §14: `packs/br` from the first commit, canary `packs/uk` + conformance as Milestone 4 |
 
 ### Document precedence
 

@@ -35,13 +35,20 @@ export async function ingestJob(scope: IngestScope, spentMs = 0): Promise<Ingest
     store,
     registry: PACKS,
     env: process.env,
-    httpFactory: (source: PriceSource, signal: AbortSignal, deadline: number) => createPackHttp({ source, mode: "live", signal, deadline, env: process.env }),
+    httpFactory: (source: PriceSource, signal: AbortSignal, deadline: number) =>
+      createPackHttp({ source, mode: "live", signal, deadline, env: process.env }),
   });
 }
 
 export async function snapshotsJob(scope: SnapshotScope, spentMs = 0): Promise<SnapshotSummary> {
   const store = createSnapshotStore(createServiceRoleClient(), PACKS);
-  return runSnapshots({ scope, budgetMs: remainingBudgetMs(spentMs), reserveMs: CRON_RESERVE_MS, now: () => new Date(), store });
+  return runSnapshots({
+    scope,
+    budgetMs: remainingBudgetMs(spentMs),
+    reserveMs: CRON_RESERVE_MS,
+    now: () => new Date(),
+    store,
+  });
 }
 
 /**
@@ -49,7 +56,11 @@ export async function snapshotsJob(scope: SnapshotScope, spentMs = 0): Promise<S
  * (decision 29): price, then value. The ingest's own budget accounting
  * leaves whatever it did not use to the snapshots.
  */
-export async function priceThenSnapshot(ingest: IngestScope, userIds: string[], spentMs = 0): Promise<{ ingest: IngestSummary; snapshots: SnapshotSummary }> {
+export async function priceThenSnapshot(
+  ingest: IngestScope,
+  userIds: string[],
+  spentMs = 0,
+): Promise<{ ingest: IngestSummary; snapshots: SnapshotSummary }> {
   const startedAt = Date.now();
   const ingestSummary = await ingestJob(ingest, spentMs);
   const snapshotsSummary = await snapshotsJob({ kind: "users", userIds }, spentMs + (Date.now() - startedAt));

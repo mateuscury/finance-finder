@@ -1,19 +1,19 @@
 # lib/packs — kernel-side pack runtime
 
-Kernel code that *consumes* manifests. Packs never import from here (lint and
+Kernel code that _consumes_ manifests. Packs never import from here (lint and
 `packs/conformance/hygiene.test.ts` both enforce it).
 
 ## What is here
 
-| File | Responsibility |
-|---|---|
-| `http.ts` | The `PackHttp` implementation: token-bucket rate limiting, retries, deadline-aware aborts, and fixture record/replay |
-| `redact.ts` | Secret redaction, applied before a byte reaches a fixture, an exception or a diagnostic |
-| `fixtures.ts` | The versioned fixture envelope and its zod schema |
-| `validate.ts` | Adapter-output validation against the manifest that asked for the data |
-| `activate.ts` | Resolves `user_settings.enabled_packs` transitively (`br` → `global`) |
-| `ingest.ts` | The single scheduler: windowing, budgets, watermarks, commit payloads |
-| `store.ts` | The only file that knows about PostgREST; paginates every collection |
+| File          | Responsibility                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `http.ts`     | The `PackHttp` implementation: token-bucket rate limiting, retries, deadline-aware aborts, and fixture record/replay |
+| `redact.ts`   | Secret redaction, applied before a byte reaches a fixture, an exception or a diagnostic                              |
+| `fixtures.ts` | The versioned fixture envelope and its zod schema                                                                    |
+| `validate.ts` | Adapter-output validation against the manifest that asked for the data                                               |
+| `activate.ts` | Resolves `user_settings.enabled_packs` transitively (`br` → `global`)                                                |
+| `ingest.ts`   | The single scheduler: windowing, budgets, watermarks, commit payloads                                                |
+| `store.ts`    | The only file that knows about PostgREST; paginates every collection                                                 |
 
 ## HTTP modes
 
@@ -33,7 +33,7 @@ forms are honoured (delay-seconds and HTTP-date), but the runtime never sleeps
 past the source or invocation deadline: returning the 429 now leaves time for
 the commit, where sleeping would not.
 
-**Rate-limit scope:** the token bucket is *process-local*. It is not a
+**Rate-limit scope:** the token bucket is _process-local_. It is not a
 distributed limit, and two concurrent instances would each hold their own. That
 is acceptable only because ingestion is a single scheduled invocation; an
 upstream 429 remains the final authority.
@@ -52,8 +52,10 @@ during replay:
     {
       "input": { "capability": "series", "refs": ["br.cdi"], "from": "...", "to": "..." },
       "exchanges": [
-        { "request": { "method": "GET", "url": "...", "headers": {} },
-          "response": { "status": 200, "headers": {}, "body": "..." } }
+        {
+          "request": { "method": "GET", "url": "...", "headers": {} },
+          "response": { "status": 200, "headers": {}, "body": "..." }
+        }
       ]
     }
   ]
@@ -86,7 +88,7 @@ this morning, and a legitimately empty window would be re-requested nightly.
 - `target_from` — the earliest date this ref is currently wanted from. A newly
   created asset can pull it **earlier**, which restarts that ref's forward
   cursor and replays forward idempotently rather than leaving a hole.
-- `last_date` — the highest date whose request *and* validated write both
+- `last_date` — the highest date whose request _and_ validated write both
   succeeded. It advances through `to` on a coverage-complete response,
   **including a genuinely empty one**, and never on an auth failure, abort,
   transport failure, or rejected output.
@@ -107,12 +109,12 @@ is written off.
 
 Telemetry carries **source id, attempt, status code and duration only**. Never a
 URL, header, body, adapter warning, ref, quantity, or price. The cron route's
-summary is built from that telemetry plus counts, and reviewed error *codes* —
+summary is built from that telemetry plus counts, and reviewed error _codes_ —
 never an upstream message.
 
 ## Safety requirements (all enforced by tests)
 
-- validate every adapter result structurally *and* semantically against the
+- validate every adapter result structurally _and_ semantically against the
   manifest, rejecting rather than coercing;
 - paginate every PostgREST read past `api.max_rows` (currently 1,000);
 - never overwrite a user-authored `manual` price — enforced in the database by

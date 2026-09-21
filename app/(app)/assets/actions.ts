@@ -28,7 +28,10 @@ export async function createAssetThen(returnTo: "/assets" | "/transactions/impor
   const started = Date.now();
   const { client, identity } = await requireUser();
   const metadata = metadataFromForm(formData);
-  const result = metadata === null ? ({ ok: false, reason: "invalid_metadata", fields: ["metadata"] } as const) : await createAsset(client, PACKS, identity.userId, { ...formValues(formData, ASSET_FIELDS), metadata });
+  const result =
+    metadata === null
+      ? ({ ok: false, reason: "invalid_metadata", fields: ["metadata"] } as const)
+      : await createAsset(client, PACKS, identity.userId, { ...formValues(formData, ASSET_FIELDS), metadata });
   if (result.ok) {
     const assetId = result.value.id;
     const spent = Date.now() - started;
@@ -42,7 +45,10 @@ export async function createAssetThen(returnTo: "/assets" | "/transactions/impor
 export async function updateAssetAction(assetId: string, formData: FormData): Promise<void> {
   const { client } = await requireUser();
   const metadata = metadataFromForm(formData);
-  const result = metadata === null ? ({ ok: false, reason: "invalid_metadata", fields: ["metadata"] } as const) : await updateAsset(client, PACKS, assetId, { ...formValues(formData, ASSET_FIELDS), metadata });
+  const result =
+    metadata === null
+      ? ({ ok: false, reason: "invalid_metadata", fields: ["metadata"] } as const)
+      : await updateAsset(client, PACKS, assetId, { ...formValues(formData, ASSET_FIELDS), metadata });
   if (result.ok) {
     revalidatePath("/assets");
     redirect("/assets?saved=1");

@@ -52,32 +52,56 @@ export const FIXTURE_CATALOG: SourceCatalog[] = [
   {
     sourceId: "global.bcb_ptax",
     success: [
-      { note: "fx: four consecutive business days", input: { capability: "fx", refs: ["global.usdbrl"], from: "2026-09-01", to: "2026-09-04" } },
-      { note: "historical: same window, same contract", input: { capability: "historical", refs: ["global.usdbrl"], from: "2026-09-01", to: "2026-09-04" } },
+      {
+        note: "fx: four consecutive business days",
+        input: { capability: "fx", refs: ["global.usdbrl"], from: "2026-09-01", to: "2026-09-04" },
+      },
+      {
+        note: "historical: same window, same contract",
+        input: { capability: "historical", refs: ["global.usdbrl"], from: "2026-09-01", to: "2026-09-04" },
+      },
     ],
     empty: [
-      { note: "fx: a weekend has no fixing (200, header-only body)", input: { capability: "fx", refs: ["global.usdbrl"], from: "2026-09-05", to: "2026-09-06" } },
-      { note: "historical: before PTAX's history begins", input: { capability: "historical", refs: ["global.usdbrl"], from: "1980-01-01", to: "1980-01-10" } },
+      {
+        note: "fx: a weekend has no fixing (200, header-only body)",
+        input: { capability: "fx", refs: ["global.usdbrl"], from: "2026-09-05", to: "2026-09-06" },
+      },
+      {
+        note: "historical: before PTAX's history begins",
+        input: { capability: "historical", refs: ["global.usdbrl"], from: "1980-01-01", to: "1980-01-10" },
+      },
     ],
     errorInput: { capability: "fx", refs: ["global.usdbrl"], from: "2026-09-01", to: "2026-09-04" },
   },
   {
     sourceId: "br.bcb_sgs",
     success: [
-      { note: "series: CDI and SELIC over published business days", input: { capability: "series", refs: ["br.cdi", "br.selic"], from: "2026-09-01", to: "2026-09-03" } },
+      {
+        note: "series: CDI and SELIC over published business days",
+        input: { capability: "series", refs: ["br.cdi", "br.selic"], from: "2026-09-01", to: "2026-09-03" },
+      },
     ],
     empty: [
-      { note: "series: a weekend, which SGS answers with 404 'Value(s) not found'", input: { capability: "series", refs: ["br.cdi"], from: "2026-09-05", to: "2026-09-06" } },
+      {
+        note: "series: a weekend, which SGS answers with 404 'Value(s) not found'",
+        input: { capability: "series", refs: ["br.cdi"], from: "2026-09-05", to: "2026-09-06" },
+      },
     ],
     errorInput: { capability: "series", refs: ["br.cdi"], from: "2026-09-01", to: "2026-09-03" },
   },
   {
     sourceId: "br.ibge_sidra",
     success: [
-      { note: "series: seven months of published IPCA index levels", input: { capability: "series", refs: ["br.ipca"], from: "2026-01-01", to: "2026-07-31" } },
+      {
+        note: "series: seven months of published IPCA index levels",
+        input: { capability: "series", refs: ["br.ipca"], from: "2026-01-01", to: "2026-07-31" },
+      },
     ],
     empty: [
-      { note: "series: months far in the future are published as []", input: { capability: "series", refs: ["br.ipca"], from: "2090-01-01", to: "2090-03-31" } },
+      {
+        note: "series: months far in the future are published as []",
+        input: { capability: "series", refs: ["br.ipca"], from: "2090-01-01", to: "2090-03-31" },
+      },
     ],
     errorInput: { capability: "series", refs: ["br.ipca"], from: "2026-01-01", to: "2026-07-31" },
   },
@@ -85,31 +109,82 @@ export const FIXTURE_CATALOG: SourceCatalog[] = [
     sourceId: "br.brapi",
     success: [
       { note: "spot: a liquid, non-sandbox FII", input: { capability: "spot", refs: ["HGLG11"] } },
-      { note: "historical: the same FII over a recent window inside the free plan's 3mo cap", input: { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-04" } },
-      { note: "spot: an equity ticker — the br.stock kind (MILESTONES §4 decision 33)", input: { capability: "spot", refs: ["PETR4"] } },
-      { note: "historical: the same equity over the same window", input: { capability: "historical", refs: ["PETR4"], from: "2026-09-01", to: "2026-09-04" } },
-      { note: "series: both index symbols, ^BVSP and IFIX.SA", input: { capability: "series", refs: ["br.ibovespa", "br.ifix"], from: "2026-09-01", to: "2026-09-04" } },
+      {
+        note: "historical: the same FII over a recent window inside the free plan's 3mo cap",
+        input: { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-04" },
+      },
+      {
+        note: "spot: an equity ticker — the br.stock kind (MILESTONES §4 decision 33)",
+        input: { capability: "spot", refs: ["PETR4"] },
+      },
+      {
+        note: "historical: the same equity over the same window",
+        input: { capability: "historical", refs: ["PETR4"], from: "2026-09-01", to: "2026-09-04" },
+      },
+      {
+        note: "series: both index symbols, ^BVSP and IFIX.SA",
+        input: { capability: "series", refs: ["br.ibovespa", "br.ifix"], from: "2026-09-01", to: "2026-09-04" },
+      },
     ],
     empty: [
-      { note: "spot: an unlisted symbol, which brapi answers with 404 NOT_FOUND", input: { capability: "spot", refs: ["ZZZZ99"] } },
+      {
+        note: "spot: an unlisted symbol, which brapi answers with 404 NOT_FOUND",
+        input: { capability: "spot", refs: ["ZZZZ99"] },
+      },
       // A PAST weekend, not the current one: brapi emits a bar for today even
       // on a non-trading day, so "this weekend" is not actually empty.
-      { note: "historical: a past weekend window filters every returned bar away", input: { capability: "historical", refs: ["HGLG11"], from: "2026-08-29", to: "2026-08-30" } },
-      { note: "series: the same past weekend window for both indices", input: { capability: "series", refs: ["br.ibovespa", "br.ifix"], from: "2026-08-29", to: "2026-08-30" } },
+      {
+        note: "historical: a past weekend window filters every returned bar away",
+        input: { capability: "historical", refs: ["HGLG11"], from: "2026-08-29", to: "2026-08-30" },
+      },
+      {
+        note: "series: the same past weekend window for both indices",
+        input: { capability: "series", refs: ["br.ibovespa", "br.ifix"], from: "2026-08-29", to: "2026-08-30" },
+      },
     ],
     errorInput: { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-04" },
   },
   {
     sourceId: "br.tesouro_transparente",
     success: [
-      { note: "spot: newest published PU for two real bonds", input: { capability: "spot", refs: ["td:tesouro-selic:2029-03-01", "td:tesouro-ipca-com-juros-semestrais:2035-05-15"] } },
-      { note: "historical: the same bonds over a recent window", input: { capability: "historical", refs: ["td:tesouro-selic:2029-03-01", "td:tesouro-ipca-com-juros-semestrais:2035-05-15"], from: "2026-09-01", to: "2026-09-04" } },
+      {
+        note: "spot: newest published PU for two real bonds",
+        input: {
+          capability: "spot",
+          refs: ["td:tesouro-selic:2029-03-01", "td:tesouro-ipca-com-juros-semestrais:2035-05-15"],
+        },
+      },
+      {
+        note: "historical: the same bonds over a recent window",
+        input: {
+          capability: "historical",
+          refs: ["td:tesouro-selic:2029-03-01", "td:tesouro-ipca-com-juros-semestrais:2035-05-15"],
+          from: "2026-09-01",
+          to: "2026-09-04",
+        },
+      },
     ],
     empty: [
-      { note: "spot: a bond that has never been issued", input: { capability: "spot", refs: ["td:tesouro-selic:2099-01-01"] } },
-      { note: "historical: a real bond over a window before it existed", input: { capability: "historical", refs: ["td:tesouro-selic:2029-03-01"], from: "2005-01-03", to: "2005-01-07" } },
+      {
+        note: "spot: a bond that has never been issued",
+        input: { capability: "spot", refs: ["td:tesouro-selic:2099-01-01"] },
+      },
+      {
+        note: "historical: a real bond over a window before it existed",
+        input: {
+          capability: "historical",
+          refs: ["td:tesouro-selic:2029-03-01"],
+          from: "2005-01-03",
+          to: "2005-01-07",
+        },
+      },
     ],
-    errorInput: { capability: "historical", refs: ["td:tesouro-selic:2029-03-01"], from: "2026-09-01", to: "2026-09-04" },
+    errorInput: {
+      capability: "historical",
+      refs: ["td:tesouro-selic:2029-03-01"],
+      from: "2026-09-01",
+      to: "2026-09-04",
+    },
     trimBody: trimTesouroCsv,
   },
 ];

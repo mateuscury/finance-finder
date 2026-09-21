@@ -24,7 +24,9 @@ export async function uploadCsvAction(formData: FormData): Promise<void> {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) redirect(`${IMPORT}?error=no_file`);
   const content = await file.text();
-  const { error } = await client.from("csv_imports").upsert({ user_id: identity.userId, filename: file.name, content }, { onConflict: "user_id" });
+  const { error } = await client
+    .from("csv_imports")
+    .upsert({ user_id: identity.userId, filename: file.name, content }, { onConflict: "user_id" });
   redirect(error ? `${IMPORT}?error=${reasonFor(error) === "invalid_input" ? "too_large" : "write_failed"}` : IMPORT);
 }
 
@@ -42,7 +44,9 @@ export async function saveMappingAction(formData: FormData): Promise<void> {
     if (typeof v === "string") raw[col] = v;
   }
   const map = normalizeColumnMap(raw);
-  const { error } = await client.from("user_settings").upsert({ user_id: identity.userId, csv_column_map: map }, { onConflict: "user_id" });
+  const { error } = await client
+    .from("user_settings")
+    .upsert({ user_id: identity.userId, csv_column_map: map }, { onConflict: "user_id" });
   redirect(error ? `${IMPORT}?error=write_failed` : `${IMPORT}?saved=1`);
 }
 
@@ -50,7 +54,12 @@ export async function commitImportAction(formData: FormData): Promise<void> {
   const started = Date.now();
   const { client, identity } = await requireUser();
   const { preview_hash } = formValues(formData, ["preview_hash"] as const);
-  const force = new Set(formData.getAll("force").map((v) => parseInt(String(v), 10)).filter((n) => Number.isInteger(n)));
+  const force = new Set(
+    formData
+      .getAll("force")
+      .map((v) => parseInt(String(v), 10))
+      .filter((n) => Number.isInteger(n)),
+  );
 
   const loaded = await loadDryRun(client, PACKS);
   if (loaded.kind !== "preview") redirect(`${IMPORT}?error=${loaded.kind === "none" ? "no_file" : loaded.reason}`);
@@ -58,7 +67,9 @@ export async function commitImportAction(formData: FormData): Promise<void> {
   if (!plan.ok) redirect(`${IMPORT}?error=${plan.reason}`);
 
   // One insert statement: a constraint failure on any row writes nothing.
-  const { error } = await client.from("transactions").insert(plan.rows.map((r) => ({ user_id: identity.userId, ...r })));
+  const { error } = await client
+    .from("transactions")
+    .insert(plan.rows.map((r) => ({ user_id: identity.userId, ...r })));
   if (error) redirect(`${IMPORT}?error=${reasonFor(error)}`);
   await client.from("csv_imports").delete().eq("user_id", identity.userId);
 

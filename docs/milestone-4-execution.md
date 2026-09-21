@@ -2,9 +2,9 @@
 
 For the worker who executes Milestone 4 from the first unit to the hand-off
 without needing to ask a question that this document or the tree can answer.
-`docs/milestone-4-plan.md` is the *why* (conventions, decisions 32–52, the
-debt inventory); this is the *what, in which order, and how you know it is
-done*. Decisions 33–52 are confirmed and recorded in `MILESTONES.md` §4 —
+`docs/milestone-4-plan.md` is the _why_ (conventions, decisions 32–52, the
+debt inventory); this is the _what, in which order, and how you know it is
+done_. Decisions 33–52 are confirmed and recorded in `MILESTONES.md` §4 —
 nothing below is open for interpretation except where a unit says
 "choose".
 
@@ -37,7 +37,7 @@ Every unit is one commit on `main` and goes through exactly this loop:
 1. **Read first** — the files the unit lists. Never edit a file you have not
    read in this session.
 2. **Build** the steps in order. Match the surrounding code's comment
-   density and idiom. Doc comments explain *why*, tests prove *what*.
+   density and idiom. Doc comments explain _why_, tests prove _what_.
 3. **Tests** — write the ones the unit names; keep every existing test green.
 4. **Gate** — `pnpm typecheck && pnpm lint && pnpm test && pnpm test:db`
    (`pnpm test:packs` whenever `packs/**` or `lib/calc/**` changed;
@@ -72,14 +72,14 @@ output; never edit an applied migration.
   bodies (decision 52). Apply with `supabase migration up --local`; a draft
   you must re-run: `supabase migration repair --status reverted <version>`
   then `up` again. Every new function: `revoke all … from public, anon,
-  service_role` by name unless the service role is the intended caller.
+service_role` by name unless the service role is the intended caller.
 - New dependencies are exactly: `recharts` (prod), `@playwright/test`
   and `prettier` (dev). Nothing else, whatever a problem seems to need. No
   major version bumps.
 - Every `(app)` page and action calls `requireUser()` first. `getSession()`
   never. Service-role client only in `app/api/cron/**` and `lib/jobs/**`.
 - Logs and error messages: ids, counts, codes, durations, variable
-  *names*. Never a value, never a URL with a token.
+  _names_. Never a value, never a URL with a token.
 - Nothing in `app/` or `lib/` names a pack, a currency or a locale outside
   `lib/settings/defaults.ts` (and locale literals in `lib/copy/index.ts`).
   The neutrality test (P0-U4) enforces it; do not add an allowlist entry
@@ -93,12 +93,12 @@ output; never edit an applied migration.
 Four steps need the maintainer. None of them blocks the rest; each has a
 fallback so the run continues end to end.
 
-| Touchpoint | Unit | Fallback when no answer arrives |
-|---|---|---|
+| Touchpoint                                               | Unit  | Fallback when no answer arrives                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **M-1 Git remote** — the repository must exist on GitHub | P1-U1 | If `gh auth status` succeeds, ask once for consent to run `gh repo create finance-finder --private --source=. --remote=origin --push`; run it on a yes. Otherwise finish P1-U1's workflow changes, verify each job's commands locally, mark the unit `done (CI unverified)` and continue. Re-check `git remote -v` at the start of every later phase; the first green run closes the item. |
-| **M-2 Review gate** after Phase 2 (decision 39) | P2-U6 | Produce the screenshots, post the summary and the paths, and wait if the session is interactive. If no reply is possible, continue to Phase 3: the SPEC §10 tokens mean a later direction change is one stylesheet edit, and Phase 5 restyles the ledger screens anyway. Record "gate passed by default" in the unit's tick. |
-| **M-3 `supported` status** (decision 41) | P8-U1 | Flip the two manifests yourself when every PACKS §12 criterion is met and list the evidence in the commit body; the maintainer's merge is the approval. |
-| **M-4 Deploy accounts** (decision 43) | P9-U1 | Cannot be done alone. Deliver `docs/DEPLOY.md`, `.env.example`, a green `release:check`, and the hand-off note in §3. Stop there. |
+| **M-2 Review gate** after Phase 2 (decision 39)          | P2-U6 | Produce the screenshots, post the summary and the paths, and wait if the session is interactive. If no reply is possible, continue to Phase 3: the SPEC §10 tokens mean a later direction change is one stylesheet edit, and Phase 5 restyles the ledger screens anyway. Record "gate passed by default" in the unit's tick.                                                               |
+| **M-3 `supported` status** (decision 41)                 | P8-U1 | Flip the two manifests yourself when every PACKS §12 criterion is met and list the evidence in the commit body; the maintainer's merge is the approval.                                                                                                                                                                                                                                    |
+| **M-4 Deploy accounts** (decision 43)                    | P9-U1 | Cannot be done alone. Deliver `docs/DEPLOY.md`, `.env.example`, a green `release:check`, and the hand-off note in §3. Stop there.                                                                                                                                                                                                                                                          |
 
 ### 0.5 Tracking
 
@@ -119,41 +119,41 @@ fallback so the run continues end to end.
 
 ## 1. Unit index
 
-| Unit | Title | Depends on | Status |
-|---|---|---|---|
-| P0-U1 | Docs baseline: ARCHITECTURE §3, PACKS §5/§15/§16 | — | not started |
-| P0-U2 | Stories US-009–US-014 and personas | — | not started |
-| P0-U3 | Dependencies: Recharts, Playwright, e2e tier | — | not started |
-| P0-U4 | Neutrality: `INSTANCE_DEFAULTS`, the test, the lint changes | — | not started |
-| P0-U5 | `br.stock`: kind, fixtures, golden row | P0-U4 | not started |
-| P1-U1 | Remote and CI (M-1) | — | not started |
-| P1-U2 | Prettier and dependency currency | P1-U1 | not started |
-| P1-U3 | Typed client and `lib/env.ts` | P1-U2 | not started |
-| P1-U4 | Security headers and nonce CSP | P1-U3 | not started |
-| P1-U5 | Reads and jobs: helpers, views, bounded reads, chunked writes, run logs | P1-U3 | not started |
-| P1-U6 | Restore hardening | P1-U5 | not started |
-| P1-U7 | Copy in two languages, test utilities, doc drift, one-factor rule | P1-U3 | not started |
-| P1-U8 | Coverage thresholds | P1-U7 | not started |
-| P2-U1 | Tokens, fonts, theme and `lang` | P1-U8 | not started |
-| P2-U2 | `lib/format` | P2-U1 | not started |
-| P2-U3 | Shell: nav, toggles, privacy mode, loading/error | P2-U2 | not started |
-| P2-U4 | Status strip and Refresh | P2-U3 | not started |
-| P2-U5 | Overview and the first-run card | P2-U4 | not started |
-| P2-U6 | Review gate (M-2) | P2-U5 | not started |
-| P3-U1 | Snapshot readers and `seriesReturn` | P2-U6 | not started |
-| P3-U2 | Performance | P3-U1 | not started |
-| P3-U3 | Allocation | P3-U1 | not started |
-| P4-U1 | Contribution and attribution drill-in | P3-U1 | not started |
-| P4-U2 | Maturities | P3-U1 | not started |
-| P5-U1 | Schema-driven fields and the asset form | P2-U6 | not started |
-| P5-U2 | Assets, Transactions and Import designed | P5-U1 | not started |
-| P5-U3 | Cash flows, Settings, Login/MFA/reset designed | P5-U1 | not started |
-| P6-U1 | Synthetic ledger and performance budgets | P4-U2, P5-U3 | not started |
-| P7-U1 | Smoke journeys, including the security-boundary journey | P6-U1 | not started |
-| P7-U2 | Accessibility pass | P7-U1 | not started |
-| P8-U1 | Fixtures re-recorded; packs `supported` (M-3) | P7-U2 | not started |
-| P8-U2 | Deploy runbook, `.env.example`, release gate green | P8-U1 | not started |
-| P9-U1 | First deploy with the maintainer (M-4) | P8-U2 | not started |
+| Unit  | Title                                                                   | Depends on   | Status      |
+| ----- | ----------------------------------------------------------------------- | ------------ | ----------- |
+| P0-U1 | Docs baseline: ARCHITECTURE §3, PACKS §5/§15/§16                        | —            | not started |
+| P0-U2 | Stories US-009–US-014 and personas                                      | —            | not started |
+| P0-U3 | Dependencies: Recharts, Playwright, e2e tier                            | —            | not started |
+| P0-U4 | Neutrality: `INSTANCE_DEFAULTS`, the test, the lint changes             | —            | not started |
+| P0-U5 | `br.stock`: kind, fixtures, golden row                                  | P0-U4        | not started |
+| P1-U1 | Remote and CI (M-1)                                                     | —            | not started |
+| P1-U2 | Prettier and dependency currency                                        | P1-U1        | not started |
+| P1-U3 | Typed client and `lib/env.ts`                                           | P1-U2        | not started |
+| P1-U4 | Security headers and nonce CSP                                          | P1-U3        | not started |
+| P1-U5 | Reads and jobs: helpers, views, bounded reads, chunked writes, run logs | P1-U3        | not started |
+| P1-U6 | Restore hardening                                                       | P1-U5        | not started |
+| P1-U7 | Copy in two languages, test utilities, doc drift, one-factor rule       | P1-U3        | not started |
+| P1-U8 | Coverage thresholds                                                     | P1-U7        | not started |
+| P2-U1 | Tokens, fonts, theme and `lang`                                         | P1-U8        | not started |
+| P2-U2 | `lib/format`                                                            | P2-U1        | not started |
+| P2-U3 | Shell: nav, toggles, privacy mode, loading/error                        | P2-U2        | not started |
+| P2-U4 | Status strip and Refresh                                                | P2-U3        | not started |
+| P2-U5 | Overview and the first-run card                                         | P2-U4        | not started |
+| P2-U6 | Review gate (M-2)                                                       | P2-U5        | not started |
+| P3-U1 | Snapshot readers and `seriesReturn`                                     | P2-U6        | not started |
+| P3-U2 | Performance                                                             | P3-U1        | not started |
+| P3-U3 | Allocation                                                              | P3-U1        | not started |
+| P4-U1 | Contribution and attribution drill-in                                   | P3-U1        | not started |
+| P4-U2 | Maturities                                                              | P3-U1        | not started |
+| P5-U1 | Schema-driven fields and the asset form                                 | P2-U6        | not started |
+| P5-U2 | Assets, Transactions and Import designed                                | P5-U1        | not started |
+| P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1        | not started |
+| P6-U1 | Synthetic ledger and performance budgets                                | P4-U2, P5-U3 | not started |
+| P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1        | not started |
+| P7-U2 | Accessibility pass                                                      | P7-U1        | not started |
+| P8-U1 | Fixtures re-recorded; packs `supported` (M-3)                           | P7-U2        | not started |
+| P8-U2 | Deploy runbook, `.env.example`, release gate green                      | P8-U1        | not started |
+| P9-U1 | First deploy with the maintainer (M-4)                                  | P8-U2        | not started |
 
 **Blocked:** (none yet)
 
@@ -170,21 +170,22 @@ any code is written against them.
 "Neutrality: the multi-country seam" and D-24; `packs/br/README.md` Quirks.
 
 **Steps.**
+
 1. `ARCHITECTURE.md` §3: rewrite the table to the installed truth. Rows:
    Styling → "plain CSS on the SPEC §10 tokens + CSS Modules (decision 47);
    no utility framework, no component library"; Database & auth →
    `@supabase/supabase-js` 2.116 + `@supabase/ssr` 0.12.7 installed; Charts →
-   Recharts *installed in Milestone 4 Phase 0, exact-pinned*; Date math →
+   Recharts _installed in Milestone 4 Phase 0, exact-pinned_; Date math →
    "UTC helpers in `lib/calc/dates.ts`; no date library"; Forms → "native
    `<form action>` + server actions + zod (decision 48)"; Testing → "Vitest 5
-   + fast-check 4 + Playwright (`pnpm test:e2e`, Milestone 4); no React
-   Testing Library (decision 50)"; add rows Formatter → Prettier (decision
-   50) and Security headers → nonce CSP from `proxy.ts` (decision 51). Keep
-   the two bold rules and add: "Milestone 4 added `recharts`,
-   `@playwright/test` and `prettier`; anything further is a decision."
+   - fast-check 4 + Playwright (`pnpm test:e2e`, Milestone 4); no React
+     Testing Library (decision 50)"; add rows Formatter → Prettier (decision
+   50. and Security headers → nonce CSP from `proxy.ts` (decision 51). Keep
+       the two bold rules and add: "Milestone 4 added `recharts`,
+       `@playwright/test` and `prettier`; anything further is a decision."
 2. `ARCHITECTURE.md` §5: replace `(dashboard)/ (planned)` with `(app)/` as it
    exists (list today's routes plus the five analysis routes marked
-   *Milestone 4*), remove *(planned)* from `login/` and `lib/supabase/`,
+   _Milestone 4_), remove _(planned)_ from `login/` and `lib/supabase/`,
    add `lib/auth`, `lib/ledger`, `lib/jobs`, `lib/csv`, `lib/import`,
    `lib/backup`, `lib/testing`, `proxy.ts`. Mark `lib/database.types.ts`
    "generated; committed from Milestone 4 Phase 1".
@@ -216,7 +217,7 @@ any code is written against them.
    still says "Next: Milestone 4 (UK pack canary) and 5 (the ten designed
    screens)". Add the `lib/copy`, `lib/format`, `lib/settings` and
    `app/(app)/_charts` lines to the Layout block as they arrive (do it now,
-   marked *Milestone 4*).
+   marked _Milestone 4_).
 
 **Tests.** None (docs). `pnpm test:packs` still green (README parsing).
 
@@ -242,6 +243,7 @@ placeholder.
 lines 63–68 (the placeholder regex the file must not match).
 
 **Steps.**
+
 1. Append the six stories in the existing format (As a / I want / So that,
    AC list with `[ ]`, Test Scenarios, Priority Must Have, Status Planned).
    Use these acceptance criteria verbatim, adding the SPEC citation each
@@ -255,8 +257,8 @@ lines 63–68 (the placeholder regex the file must not match).
      counts on every render, disappears as steps complete, reappears if
      data is deleted; steps are never gated. AC-009.3 The headline is the
      kernel's confident total at today in the base currency
-     (`valuePortfolio` over a latest-price ledger read); "—" with *N assets
-     unpriced* when no position is priced; stale and unpriced are never
+     (`valuePortfolio` over a latest-price ledger read); "—" with _N assets
+     unpriced_ when no position is priced; stale and unpriced are never
      summed. AC-009.4 Day change from the last two snapshot totals, period
      change from the first total in range; signed, coloured, with an arrow;
      "History starts after tonight's snapshot." below two snapshots.
@@ -334,8 +336,7 @@ lines 63–68 (the placeholder regex the file must not match).
      `docs/performance-budgets.md` records `runSnapshots` ≥ 50 days/s and
      every screen read < 500 ms p50 on the synthetic five-year,
      twenty-asset ledger. AC-014.4 `pnpm test:e2e` passes the eight
-     journeys of decision 46 plus the security-boundary journey of decision
-     40. AC-014.5 `packs/br` and `packs/global` are `supported` with
+     journeys of decision 46 plus the security-boundary journey of decision 40. AC-014.5 `packs/br` and `packs/global` are `supported` with
      fixtures ≤ 90 days old; `pnpm test:packs` reports one skip (`global`,
      no instruments). AC-014.6 `docs/DEPLOY.md` and `.env.example` are
      complete; `pnpm release:check` is green locally and in CI. AC-014.7
@@ -390,16 +391,17 @@ requires it.
 testing with Playwright.
 
 **Steps.**
+
 1. `pnpm add -E recharts` and `pnpm add -DE @playwright/test`, then
    `pnpm exec playwright install chromium`. Note the resolved versions in
    the commit body.
 2. `playwright.config.ts`: `testDir: "e2e"`, `fullyParallel: false`
    (one shared database), `retries: 0`, `use.baseURL =
-   process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000"`,
+process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000"`,
    `reporter: "list"`, projects `desktop` (chromium, 1280×800) and `phone`
    (chromium, 400×800, `isMobile: true`), `webServer: { command:
-   process.env.CI ? "pnpm start" : "pnpm dev", url: baseURL + "/login",
-   reuseExistingServer: !process.env.CI, timeout: 120_000 }`.
+process.env.CI ? "pnpm start" : "pnpm dev", url: baseURL + "/login",
+reuseExistingServer: !process.env.CI, timeout: 120_000 }`.
    `globalSetup: "./e2e/setup.ts"` (a placeholder in this unit that only
    asserts the four env variables by name and the stack's reachability —
    reuse `requireDbEnv` and `assertStackReachable` from `lib/testing/db.ts`).
@@ -439,12 +441,18 @@ page.tsx` line ~110 (`native_currency: "BRL"`); `lib/ledger/rows.ts`
 files).
 
 **Steps.**
+
 1. `lib/settings/defaults.ts`:
    ```ts
    /** The instance's defaults — the ONLY place app/ or lib/ may name a pack,
     *  a currency or a locale (MILESTONES §4 decision 42). These mirror the
     *  database defaults in the initial migration. */
-   export const INSTANCE_DEFAULTS = { baseCurrency: "BRL", locale: "pt-BR", theme: "system", enabledPacks: [] as string[] } as const;
+   export const INSTANCE_DEFAULTS = {
+     baseCurrency: "BRL",
+     locale: "pt-BR",
+     theme: "system",
+     enabledPacks: [] as string[],
+   } as const;
    ```
    Add a `lib/settings/README.md` of five lines saying why the file exists
    and that adding a second literal site is a decision.
@@ -455,7 +463,7 @@ files).
 3. `packs/conformance/kernel-neutrality.test.ts`: walk `app/**` and `lib/**`
    for `.ts`/`.tsx`, skipping `*.test.ts`, `*.dbtest.ts`, `lib/testing/**`,
    `lib/database.types.ts`, `lib/settings/defaults.ts`, and `lib/copy/
-   index.ts` for locale literals only. Fail on any line matching
+index.ts` for locale literals only. Fail on any line matching
    `/["'](br|global)(\.[a-z_]+)?["']/` (pack ids and prefixed ids),
    `/["']BRL["']/`, `/["']pt-BR["']/` — except a line containing
    `scope: "global"` (Supabase's sign-out scope, not the pack id). The
@@ -500,6 +508,7 @@ whole; `packs/conformance/fixtures.test.ts`; `packs/br/README.md`;
 `lib/calc/golden.ts` (`GoldenFixtureSchema`).
 
 **Steps.**
+
 1. `packs/br/instruments.ts`: add
    `{ id: "br.stock", label: "Ação / ETF / BDR (B3)", valuation: { kind: "market_price", sourceId: "br.brapi" }, metadataSchema: StockMetadata, identifier: "ticker", quoteCurrency: "BRL" }`
    with `const StockMetadata = z.object({ name: z.string().min(1) })` and a
@@ -520,7 +529,7 @@ whole; `packs/conformance/fixtures.test.ts`; `packs/br/README.md`;
    echoing the value), the FII and index cases still replay. Set
    `recordedAt` as the script does.
 5. `portfolio.json`: asset `stk` (`br.stock`, `PETR4`, BRL, `{ name:
-   "Petrobras PN" }`), one `buy` on `2026-02-10` (quantity 100, price
+"Petrobras PN" }`), one `buy` on `2026-02-10` (quantity 100, price
    `38.20`, fees `4.90`), a deposit cash flow that day for the cost, prices
    on all six valuation dates (choose plausible values; they are fixture
    data, not market data — say so in `$comment`), and update the
@@ -560,6 +569,7 @@ database tier.
 `supabase status -o env` prints (record the names, not the values).
 
 **Steps.**
+
 1. Remote: `git remote -v`. If empty, apply M-1's fallback (§0.4). If a
    remote exists or is created, `git push -u origin main`.
 2. `ci.yml`: keep job `check` as is. Add job `db` (needs nothing; runs in
@@ -602,19 +612,20 @@ patch/minor; the policy written down.
 `CLAUDE.md` non-negotiables (where the policy goes).
 
 **Steps.**
+
 1. `pnpm add -DE prettier`. `.prettierrc.json`: `{ "printWidth": 120,
-   "singleQuote": false, "trailingComma": "all", "semi": true }`.
+"singleQuote": false, "trailingComma": "all", "semi": true }`.
    `.prettierignore`: `.next`, `node_modules`, `coverage`, `pnpm-lock.yaml`,
    `lib/database.types.ts`, `packs/*/fixtures/**`, `.github/CODEOWNERS`,
    `test-results`, `playwright-report`, `docs/review`.
 2. Scripts: `"format": "prettier --write ."`, `"format:check": "prettier
-   --check ."`. `ci.yml` `check` gains `pnpm format:check` after lint.
+--check ."`. `ci.yml` `check` gains `pnpm format:check` after lint.
 3. Run `pnpm format` and commit **only** the formatting as its own commit
    (`Milestone 4 Phase 1: one formatting-only commit (Prettier)`), gate
    green before and after.
 4. Second commit: `pnpm outdated`; bump every patch and minor
    (`pnpm add -E next@16.3.x eslint-config-next@16.3.x react@19.3.x
-   react-dom@19.3.x`, `pnpm update` for the caret ranges — vitest,
+react-dom@19.3.x`, `pnpm update` for the caret ranges — vitest,
    @vitest/coverage-v8, fast-check, tsx, @types/*). No major. Run the full
    gate and `pnpm build`. If a bump breaks something, pin the previous
    version for that package and record why in the commit body.
@@ -646,9 +657,10 @@ variable names in the error.
 `scripts/bootstrap-user.ts` (reads env itself; leave it).
 
 **Steps.**
+
 1. Stack up; `pnpm db:types` → `lib/database.types.ts`. Commit it. Add to
    `ci.yml` `db` job, after `supabase start`: `pnpm db:types && git diff
-   --exit-code lib/database.types.ts` (message in the step name: "types
+--exit-code lib/database.types.ts` (message in the step name: "types
    drifted — run pnpm db:types").
 2. `lib/supabase/types.ts`: `export type Db = SupabaseClient<Database>`.
    `createServerSupabase(): Promise<Db>` via `createServerClient<Database>`;
@@ -703,13 +715,14 @@ Security Policy and on `proxy`; `app/layout.tsx`; `app/(app)/settings/
 totp-enrol.tsx` (the QR is a data URI — `img-src` must allow `data:`).
 
 **Steps.**
+
 1. `lib/security/csp.ts`: `buildCsp(nonce: string, opts: { dev: boolean }):
-   string` returning `default-src 'self'; script-src 'self' 'nonce-<n>'
-   'strict-dynamic'[ 'unsafe-eval' in dev]; style-src 'self'
-   'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src
-   'self'[ ws: in dev]; frame-ancestors 'none'; base-uri 'self';
-   form-action 'self'; object-src 'none'[; upgrade-insecure-requests outside
-   dev]`. `newNonce()` = 16 random bytes, base64.
+string` returning `default-src 'self'; script-src 'self' 'nonce-<n>'
+'strict-dynamic'[ 'unsafe-eval' in dev]; style-src 'self'
+'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src
+'self'[ ws: in dev]; frame-ancestors 'none'; base-uri 'self';
+form-action 'self'; object-src 'none'[; upgrade-insecure-requests outside
+dev]`. `newNonce()` = 16 random bytes, base64.
 2. `proxy.ts`: generate the nonce first; build the forwarded request headers
    with `x-nonce`; every `NextResponse.next({ request: { headers } })` (the
    initial one and the one rebuilt in `setAll`) carries them; set
@@ -718,7 +731,7 @@ totp-enrol.tsx` (the QR is a data URI — `img-src` must allow `data:`).
 3. `next.config.ts`: `poweredByHeader: false`; `headers()` for `/(.*)`:
    `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
    `Permissions-Policy: camera=(), microphone=(), geolocation=(),
-   payment=(), usb=()`, `X-Frame-Options: DENY`, and in production
+payment=(), usb=()`, `X-Frame-Options: DENY`, and in production
    `Strict-Transport-Security: max-age=63072000; includeSubDomains`.
 4. `app/layout.tsx`: read the nonce with `(await headers()).get("x-nonce")`
    and keep it available (P2-U1 uses it for the boot script). Nothing
@@ -757,15 +770,16 @@ load.ts`; `lib/import/dryRun.ts` (`KnownTransaction`); `app/api/cron/
 `supabase/migrations/20260920210000_ledger_reads.sql` (the view pattern).
 
 **Steps.**
+
 1. **D-09** `ingest.ts`: delete its `addDays`, import from `@/lib/calc/dates`
    (that direction — runtime importing kernel — is allowed). Both are UTC
    day arithmetic; `ingest.test.ts` proves nothing moved.
 2. **D-10** `lib/util/order.ts`: `nullsFirst<T>(key: (t: T) => string | null,
-   then: (a: T, b: T) => number): (a: T, b: T) => number`. Use it in
+then: (a: T, b: T) => number): (a: T, b: T) => number`. Use it in
    `listUsers` and in the ingest source ordering. Test: nulls first, then
    key ascending, then the tiebreak.
 3. **D-11 + Overview's need** — migration `supabase/migrations/
-   <timestamp>_snapshot_views.sql` (`date +%Y%m%d%H%M%S`, later than
+<timestamp>_snapshot_views.sql` (`date +%Y%m%d%H%M%S`, later than
    `20260920230000`):
    - `snapshot_markers` `with (security_invoker = true)`: per
      `user_settings.user_id`, `max(portfolio_snapshots.date)` as
@@ -774,25 +788,25 @@ load.ts`; `lib/import/dryRun.ts` (`KnownTransaction`); `app/api/cron/
      user). Grant select to `authenticated` (the strip reads its own row in
      P2-U4; the service role reads all).
    - `snapshot_totals` `with (security_invoker = true)`: per `(user_id,
-     date)`: `sum(market_value_base) filter (where status in ('ok',
-     'carried_forward'))::text as total_base`, `count(*) as rows`,
+date)`: `sum(market_value_base) filter (where status in ('ok',
+'carried_forward'))::text as total_base`, `count(*) as rows`,
      `count(*) filter (where status = 'stale') as stale_rows`,
      `count(*) filter (where carried_forward) as carried_rows`,
      `base_currency` (max — it is uniform per user per date). Grant select
      to `authenticated`.
    - Comments on both views; apply with `supabase migration up --local`;
      `pnpm db:types` and commit the regenerated file.
-   `listUsers` becomes one paginated read of `snapshot_markers` (filtered
-   by `scope.userIds` when given, before `.range()`), ordered by
-   `last_snapshot_date` nulls first then `user_id` — order in SQL
-   (`.order("last_snapshot_date", { ascending: true, nullsFirst: true })`)
-   and keep `nullsFirst` as the in-memory guarantee for the fake store.
+     `listUsers` becomes one paginated read of `snapshot_markers` (filtered
+     by `scope.userIds` when given, before `.range()`), ordered by
+     `last_snapshot_date` nulls first then `user_id` — order in SQL
+     (`.order("last_snapshot_date", { ascending: true, nullsFirst: true })`)
+     and keep `nullsFirst` as the in-memory guarantee for the fake store.
 4. **D-12** `store.ts` `listAssets` `unpriced`: replace the price-row diff
    with a chunked read of `asset_latest_prices` (`asset_id` only, `.in(…)`
    per 500 ids); priced = present. Delete the "should become a view"
    comment; explain the view.
 5. **D-13** `readLedger` options: `pricesFrom?: IsoDate` (`.gte("date",
-   pricesFrom)` on the price read) and `prices?: "all" | "latest"` —
+pricesFrom)` on the price read) and `prices?: "all" | "latest"` —
    `"latest"` reads `asset_latest_prices` (text price) instead of the
    `prices` table and is documented as valid only for a valuation at a
    date ≥ every latest price date (today). The snapshot job keeps `"all"`
@@ -813,7 +827,7 @@ load.ts`; `lib/import/dryRun.ts` (`KnownTransaction`); `app/api/cron/
    crash; the marker is `max(date)`, so the next run rebuilds that day
    whole (the upsert is idempotent). `lib/jobs/README.md` says the same.
 8. **D-19** both cron routes: after computing the summary, `console.log(
-   JSON.stringify({ job: "prices" | "snapshots", ...summary }))` — the
+JSON.stringify({ job: "prices" | "snapshots", ...summary }))` — the
    summary is already counts and codes; the route tests assert the logged
    line contains no `http`, no token-shaped string and no key named
    `value`/`price`/`quantity`.
@@ -849,18 +863,19 @@ serialises concurrent restores per user.
 settings/actions.ts` `restoreBackupAction`; the `RESTORE_COPY` map.
 
 **Steps.**
+
 1. Migration `<timestamp>_restore_hardening.sql`: `create or replace
-   function public.restore_backup(payload jsonb)` restating the whole body
+function public.restore_backup(payload jsonb)` restating the whole body
    (function bodies are allowed, decision 52) with two changes: after the
    `not_authenticated` check, `perform pg_advisory_xact_lock(hashtext(
-   v_uid::text));` (a comment: two concurrent restores into one empty
+v_uid::text));` (a comment: two concurrent restores into one empty
    account both passed the emptiness check; the lock serialises them so
    the second sees `account_not_empty`); and an `exception` block that
    catches only the data and integrity classes — `when check_violation or
-   not_null_violation or foreign_key_violation or unique_violation or
-   invalid_text_representation or numeric_value_out_of_range or
-   datetime_field_overflow or invalid_datetime_format then raise exception
-   'restore_refused: invalid_rows'` — so the function's own
+not_null_violation or foreign_key_violation or unique_violation or
+invalid_text_representation or numeric_value_out_of_range or
+datetime_field_overflow or invalid_datetime_format then raise exception
+'restore_refused: invalid_rows'` — so the function's own
    `restore_refused: …` raises pass through untouched. Re-apply the
    revoke/grant lines exactly as the original.
 2. `lib/backup/restore.ts` (or wherever the reason is mapped): add
@@ -903,12 +918,13 @@ page.tsx` (the three maps); `app/(app)/transactions/import/page.tsx` (its
 paragraph ("nine migrations").
 
 **Steps.**
+
 1. `lib/copy/types.ts`: `interface Copy` with nested groups — `nav`
    (route labels, sign out, theme, privacy), `login` (fields, the one
    bootstrap line, uniform failure, reset messages, MFA), `reasons:
-   Record<ActionReason, string>`, `security: Record<SecurityReason |
-   "factor_exists", string>`, `restore: Record<RestoreReason | "done" |
-   "no_file" | "invalid_backup", string>` (`RestoreReason` = the refusal
+Record<ActionReason, string>`, `security: Record<SecurityReason |
+"factor_exists", string>`, `restore: Record<RestoreReason | "done" |
+"no_file" | "invalid_backup", string>` (`RestoreReason` = the refusal
    union `lib/backup/restore.ts` exports, whatever its name), `delete`, `import` (the existing
    keys), `status` (strip items; P2-U4 fills), `empty` (SPEC §9.5 rows;
    P2–P5 fill), `firstRun` (§9.3 rows; P2-U5), `screens` (one group per
@@ -967,13 +983,14 @@ lib/testing/fake-client.ts` · `/qa-spec-fidelity lib/copy against MILESTONES
 "Tests".
 
 **Steps.**
+
 1. `vitest.config.mts` `test.coverage`: `provider: "v8"`, `include:
-   ["lib/**"]`, `exclude: ["lib/testing/**", "lib/database.types.ts",
-   "**/*.test.ts", "**/*.dbtest.ts", "lib/calc/valuation/testkit.ts"]`,
+["lib/**"]`, `exclude: ["lib/testing/**", "lib/database.types.ts",
+"**/*.test.ts", "**/*.dbtest.ts", "lib/calc/valuation/testkit.ts"]`,
    `reporter: ["text-summary", "lcov"]`, `thresholds: { "lib/calc/**":
-   { lines: 95, branches: 95, functions: 95 }, "lib/{ledger,jobs,import,csv,
-   backup,packs,auth,copy,format,util,security,env}*/**": { lines: 85,
-   branches: 85, functions: 85 }, autoUpdate: true }`.
+{ lines: 95, branches: 95, functions: 95 }, "lib/{ledger,jobs,import,csv,
+backup,packs,auth,copy,format,util,security,env}*/**": { lines: 85,
+branches: 85, functions: 85 }, autoUpdate: true }`.
 2. `"test:coverage": "vitest run --coverage"`; `ci.yml` `check` runs it
    instead of plain `pnpm test`.
 3. Run it. Where a directory is below its threshold, write the missing
@@ -1008,13 +1025,14 @@ and locale on `<html>` with no flash and no database read on public pages.
 `updatePreferencesAction`; `app/login/actions.ts` `signIn`.
 
 **Steps.**
+
 1. `globals.css`: `:root` with the nine §10 tokens for light, `[data-theme=
-   "dark"]` for dark, and `@media (prefers-color-scheme: dark) { :root:not(
-   [data-theme="light"]) {…} }` for `system`. Starting palette (P7-U2
+"dark"]` for dark, and `@media (prefers-color-scheme: dark) { :root:not(
+[data-theme="light"]) {…} }` for `system`. Starting palette (P7-U2
    verifies AA and may adjust): light `--bg #FFFDF9`, `--bg-subtle #F5F1E9`,
    `--surface #FFFFFF`, `--border-hairline #E3DDD2`, `--text #1B1A17`,
    `--text-muted #625D55`, `--pos #1B6F47`, `--neg #A8261F`, `--accent
-   #B24E24`; dark `--bg #121211`, `--bg-subtle #1A1917`, `--surface #1F1E1B`,
+#B24E24`; dark `--bg #121211`, `--bg-subtle #1A1917`, `--surface #1F1E1B`,
    `--border-hairline #2F2D29`, `--text #ECE7DD`, `--text-muted #A59F94`,
    `--pos #63C48E`, `--neg #F07A70`, `--accent #E28B5B`. Type scale, spacing
    scale, `font-variant-numeric: tabular-nums` on `.figure`, hairline rule
@@ -1024,10 +1042,10 @@ and locale on `<html>` with no flash and no database read on public pages.
    `variable: "--font-display"`) and the system sans stack as
    `--font-body` (no Geist); `lang` and `data-theme` from the `ff-locale`
    and `ff-theme` cookies (validated against `LOCALES` and `"system" |
-   "light" | "dark"`, falling back to `INSTANCE_DEFAULTS`); a nonce'd inline
+"light" | "dark"`, falling back to `INSTANCE_DEFAULTS`); a nonce'd inline
    boot script (nonce from `x-nonce`) that reads `localStorage["ff-privacy"]`
    and sets `data-privacy="on"` on `<html>` before paint. `<meta name=
-   "color-scheme">` per theme.
+"color-scheme">` per theme.
 3. Cookies are written by server actions only: `updatePreferencesAction`
    sets both after saving; `signIn` reads the user's settings once after a
    successful sign-in and sets both; `signOut` clears them. Cookie options:
@@ -1062,12 +1080,13 @@ strings per locale, never through a float.
 `lib/calc/money.ts`; the plan's "Formatting never goes through a float".
 
 **Steps.**
+
 1. `lib/format/separators.ts`: `separatorsFor(locale)` from
    `Intl.NumberFormat(locale).formatToParts(1234567.891)` → `{ group,
-   decimal }` (memoised per locale); `currencySymbolFor(locale, currency)`
+decimal }` (memoised per locale); `currencySymbolFor(locale, currency)`
    and its position from `formatToParts` with `style: "currency"` on `0`.
 2. `lib/format/number.ts`: `formatDecimal(value: string, opts: { locale,
-   minFraction, maxFraction, sign?: "auto" | "always" })` — split the
+minFraction, maxFraction, sign?: "auto" | "always" })` — split the
    canonical decimal string on `.`, round the fraction with `KernelDecimal`
    (`toFixed(maxFraction, ROUND_HALF_EVEN)` then trim to `minFraction`),
    group the integer digits by hand (thousands, or the locale's grouping
@@ -1081,7 +1100,7 @@ strings per locale, never through a float.
    `formatDate(iso, locale, style: "short" | "long")` through
    `Intl.DateTimeFormat` with `timeZone: "UTC"` on the ISO date (a date,
    not an instant); `formatChange(delta, currency, locale)` → `{ text,
-   sign: "pos" | "neg" | "zero" }`.
+sign: "pos" | "neg" | "zero" }`.
 4. `lib/format/index.ts` re-exports; `lib/format/README.md` (six lines: why
    no float, what each does).
 
@@ -1114,6 +1133,7 @@ theme and privacy toggles, `<Amount>`, `<ValueStatus>`, skip link,
 Next docs on `loading.tsx`, `error.tsx` (client component), `useActionState`.
 
 **Steps.**
+
 1. `app/(app)/_components/nav.tsx` (+ `.module.css`): two groups (Analysis:
    `/`, `/performance`, `/allocation`, `/contribution`, `/maturities`;
    Ledger: `/assets`, `/transactions`, `/cash-flows`), Settings, theme
@@ -1130,17 +1150,17 @@ Next docs on `loading.tsx`, `error.tsx` (client component), `useActionState`.
    `<Amount value={string} kind="money" | "quantity">` rendering
    `<span class="amount" aria-label={copy.privacy.hidden when on}>` — the
    mask is CSS: `[data-privacy="on"] .amount { color: transparent;
-   position: relative } [data-privacy="on"] .amount::after { content:
-   "•••"; color: var(--text); position: absolute; inset: 0 }`. Percentages,
+position: relative } [data-privacy="on"] .amount::after { content:
+"•••"; color: var(--text); position: absolute; inset: 0 }`. Percentages,
    returns and names never use `<Amount>`.
 4. `app/(app)/_components/value-status.tsx`: `<ValueStatus status=
-   "ok" | "carried_forward" | "stale" | "unpriced" date? reason?>` rendering
+"ok" | "carried_forward" | "stale" | "unpriced" date? reason?>` rendering
    the mark and the §11/§9.5 copy (`copy.status.*`), with `title` and an
    `aria-label`.
 5. `app/(app)/layout.tsx`: skip link → `#main`; `<header>` with the nav;
    `<main id="main">`; the strip slot (P2-U4). `app/(app)/loading.tsx`
    (a token-coloured skeleton, no copy) and `app/(app)/error.tsx` (`"use
-   client"`; an error boundary receives no server props, so it reads the
+client"`; an error boundary receives no server props, so it reads the
    language from `document.documentElement.lang` and picks `copyFor`; the
    message names no error detail and offers "Try again" via `reset()`).
 6. Restyle the existing unstyled pages only as far as the shell requires
@@ -1173,19 +1193,20 @@ queries.ts` `listAssets` (how unpriced is derived); the `snapshot_markers`
 view; `lib/packs/activate.ts`; `packs/types.ts` `PriceSource.envVars`.
 
 **Steps.**
+
 1. `lib/ledger/status.ts`: `readStatus(client: Db, registry, env:
-   Readonly<Record<string, string | undefined>>, today: IsoDate): Promise<
-   LedgerStatus>` with `LedgerStatus = { unpricedAssets: number; rebuild:
-   { from: IsoDate; through: IsoDate | null; target: IsoDate } | null;
-   disabledSources: { sourceId: string; variable: string }[]; exportNudge:
-   { lastExportAt: string | null } | null }`. Unpriced: assets whose kind
+Readonly<Record<string, string | undefined>>, today: IsoDate): Promise<
+LedgerStatus>` with `LedgerStatus = { unpricedAssets: number; rebuild:
+{ from: IsoDate; through: IsoDate | null; target: IsoDate } | null;
+disabledSources: { sourceId: string; variable: string }[]; exportNudge:
+{ lastExportAt: string | null } | null }`. Unpriced: assets whose kind
    is `market_price`/`nav_unit_price` (registry) with no row in
    `asset_latest_prices` (ids read chunked). Rebuild: from
    `snapshot_markers` (the user's own row): when `earliest_trade_date` is
    set and `last_snapshot_date` is null or before the last trading day ≤
    today over the user's holdable calendars (`tradingCalendars` +
    `isTradingDay` from `lib/jobs/snapshots.ts`) — `{ from: earliest,
-   through: last, target: lastTradingDay }`. Disabled sources: for every
+through: last, target: lastTradingDay }`. Disabled sources: for every
    source of the user's resolved packs, each declared `envVars` entry
    absent in `env` (names only). Export nudge: `transactions` count > 0 and
    (`last_export_at` null or older than 30 days).
@@ -1199,7 +1220,7 @@ view; `lib/packs/activate.ts`; `packs/types.ts` `PriceSource.envVars`.
    (with counts), each a link (`/assets`, `/`, `/settings`), the Refresh
    form (`refreshAction` moved to `app/(app)/_actions/refresh.ts`; the old
    export in `assets/actions.ts` removed), `role="status" aria-live=
-   "polite"`. Mounted in `(app)/layout.tsx` under the nav.
+"polite"`. Mounted in `(app)/layout.tsx` under the nav.
 
 **Tests.** `lib/ledger/status.test.ts` with the fake client: each item's
 presence/absence; the export nudge's 30-day boundary; the source check by
@@ -1231,22 +1252,23 @@ for the model tests); Recharts docs for `AreaChart`/`PieChart` (via the
 installed package's types, not memory).
 
 **Steps.**
+
 1. `lib/ledger/snapshots.ts` (first half; P3-U1 extends): `readSnapshotTotals(
-   client, { from?, to? })` → `{ date, totalBase: string, rows, staleRows,
-   carriedRows }[]` from `snapshot_totals`, paginated by date;
+client, { from?, to? })` → `{ date, totalBase: string, rows, staleRows,
+carriedRows }[]` from `snapshot_totals`, paginated by date;
    `readSnapshotRange(client)` → `{ first, last, count }`;
    `readSnapshotRowsAt(client, date)` text-cast rows (`quantity::text` etc.
    — write `SNAPSHOT_SELECT`).
 2. `app/(app)/_models/overview.ts` — pure: `overviewModel(input: { counts,
-   settings, today, valuation: PortfolioValuation | null, unpricedAssets,
-   totals: SnapshotTotal[], latestRows, previousRows, assets, registry })`
+settings, today, valuation: PortfolioValuation | null, unpricedAssets,
+totals: SnapshotTotal[], latestRows, previousRows, assets, registry })`
    → `{ firstRun: { steps: [...4 with done flags] } | null, headline:
-   { total: string; currency } | { unpriced: number }, dayChange:
-   { delta, rate } | null, periodChange, sparkline: { date, y: string }[],
-   allocation: { kindLabel, share: string }[], movers: { assetId, name,
-   delta, rate }[], empties: … }`. All strings; ratios via `KernelDecimal`.
+{ total: string; currency } | { unpriced: number }, dayChange:
+{ delta, rate } | null, periodChange, sparkline: { date, y: string }[],
+allocation: { kindLabel, share: string }[], movers: { assetId, name,
+delta, rate }[], empties: … }`. All strings; ratios via `KernelDecimal`.
    First-run steps per the §9.3 table: base currency (`updated_at >
-   created_at` — add both columns to `SETTINGS_SELECT` — or any
+created_at` — add both columns to `SETTINGS_SELECT` — or any
    transaction), first asset, first transaction, priced (every market/nav
    asset has a latest price).
 3. `app/(app)/page.tsx`: `requireUser`, reads in parallel (`countLedger`,
@@ -1288,6 +1310,7 @@ app/(app)/_models/overview.ts against US-009 and SPEC §9.3, §9.5` ·
 it.
 
 **Steps.**
+
 1. `e2e/gate.spec.ts` (kept; reused by P7-U1's helpers): sign in as a
    throwaway owner with the golden ledger restored and snapshots run
    (helpers in `e2e/helpers.ts`: `createOwner`, `restoreGolden`,
@@ -1316,13 +1339,14 @@ date-ranged; the one kernel addition of the milestone.
 staleness.ts`; `lib/calc/README.md`; `packs/types.ts` `SeriesKind`.
 
 **Steps.**
+
 1. `lib/ledger/snapshots.ts` gains `readAssetSeries(client, assetId, { from,
-   to })` (per-asset `market_value_base::text` by date) and
+to })` (per-asset `market_value_base::text` by date) and
    `readSnapshotRowsBetween(client, from, to)` (for contribution's
    per-asset endpoints when the kernel is not re-run — see P4-U1).
 2. `lib/calc/benchmark.ts`: `seriesReturn(descriptor: SeriesDescriptor,
-   market: MarketData, from: IsoDate, to: IsoDate, calendar?: MarketCalendar):
-   Observed<KernelDecimal> | { status: "unpriced"; reason }` — `index_level`
+market: MarketData, from: IsoDate, to: IsoDate, calendar?: MarketCalendar):
+Observed<KernelDecimal> | { status: "unpriced"; reason }` — `index_level`
    → `indexReturn`; `rate_daily`/`rate_annual` → `compoundRate(…) − 1` (with
    the descriptor's `dayCount`; needs the calendar for business days — take
    it as a parameter, never import a pack); `inflation_index` → level ratio
@@ -1364,13 +1388,14 @@ addition that leaves the golden untouched), `lib/calc/mwr.ts`,
 and `deflator` roles in `packs/br/series.ts`.
 
 **Steps.**
+
 1. `app/(app)/_models/performance.ts` — pure `performanceModel(input: {
-   totals: SnapshotTotal[]; cashFlows: ExternalCashFlow[] (base currency,
-   decision 25); period: { from, to, key }; benchmarks: { descriptor,
-   series: { date, return: Observed }[] }[]; deflator?: …; real: boolean })`
+totals: SnapshotTotal[]; cashFlows: ExternalCashFlow[] (base currency,
+decision 25); period: { from, to, key }; benchmarks: { descriptor,
+series: { date, return: Observed }[] }[]; deflator?: …; real: boolean })`
    → `{ twr: { rate: string | null; reason?; skipped: … }, mwr, series: {
-   date, portfolio: string (cumulative), [benchmarkId]: string | null }[],
-   stale dates, empties }`. Period keys `1m | ytd | 1y | all`; `from` is the
+date, portfolio: string (cumulative), [benchmarkId]: string | null }[],
+stale dates, empties }`. Period keys `1m | ytd | 1y | all`; `from` is the
    last snapshot date ≤ the period start (so the first sub-period has a
    start value); default per AC-010.1.
 2. `app/(app)/performance/page.tsx`: `searchParams` `period`, `benchmarks`
@@ -1378,7 +1403,7 @@ and `deflator` roles in `packs/br/series.ts`.
    the user's holdable pack), `real=1`. Reads: totals in range, cash flows in
    range, `readLedger` full mode with `seriesFrom = from − lookback` for the
    series data (`buildMarketData`), then per date `seriesReturn(descriptor,
-   market, from, date, calendar)`; `realReturn` when `real` and a `deflator`
+market, from, date, calendar)`; `realReturn` when `real` and a `deflator`
    series exists. Toggles are links (server-rendered `<a>` with the query
    string) — no client state. Chart `app/(app)/_charts/performance-chart.tsx`
    (`LineChart`, portfolio in `--accent`, benchmarks in `--text-muted`,
@@ -1409,6 +1434,7 @@ app/(app)/_models/performance.ts against US-010` · `/qa-code-quality` same
 `lib/ledger/rows.ts` `resolveAssets`.
 
 **Steps.**
+
 1. `app/(app)/_models/allocation.ts` — pure: rows + assets + registry →
    `{ byKind, byPack, byCurrency }` each `{ label, valueBase, share }[]` with
    shares as 2-decimal strings summing to exactly `100.00` (largest
@@ -1442,9 +1468,10 @@ gap, §9.5 row 5; `lib/calc/contribution.ts`, `lib/calc/attribution.ts`
 decision 15.
 
 **Steps.**
+
 1. `app/(app)/_models/contribution.ts`: pure wrapper turning
    `contribution()`'s result into rows `{ assetId, name, kindLabel, gain:
-   string | null, share: string | null, reason? }`, `partial` with reasons,
+string | null, share: string | null, reason? }`, `partial` with reasons,
    the total equal to the simple return; `attributionModel` for one asset:
    `R_native`, `R_fx`, `R_base`, the identity line, `no_position` handling.
 2. `app/(app)/contribution/page.tsx`: period selector (same keys as
@@ -1453,7 +1480,7 @@ decision 15.
    (`app/(app)/_charts/bars.tsx`, `--pos/--neg` plus sign), partial banner,
    each asset links to `/contribution/[assetId]`.
 3. `app/(app)/contribution/[assetId]/page.tsx`: `attribution(input, assetId,
-   from, to)`; for a base-currency asset state "R_fx = 0 — this asset is
+from, to)`; for a base-currency asset state "R_fx = 0 — this asset is
    quoted in your base currency" (`copy.screens.contribution`). Kinds
    carry no BDR flag, so the SPEC §11 gap is stated once on the page as
    general copy: "an asset quoted in your base currency over a foreign
@@ -1483,6 +1510,7 @@ sentence from P0-U1); `lib/calc/valuation/index.ts` (`valueHolding`,
 `packs/br/instruments.ts` (which kinds carry `maturity`, which are plain).
 
 **Steps.**
+
 1. `lib/ledger/maturity.ts`: `hasMaturity(kind: InstrumentKind): boolean` —
    inspects `kind.metadataSchema` for a `maturity` key (zod object shape;
    unwrap optional) — and `maturityOf(asset): IsoDate | null` (parse the
@@ -1490,9 +1518,9 @@ sentence from P0-U1); `lib/calc/valuation/index.ts` (`valueHolding`,
    Neither names a kind id.
 2. `app/(app)/_models/maturities.ts` — pure: for each held asset (open lots
    at today) with a maturity: `{ assetId, name, kindLabel, maturity,
-   daysToGo (calendar), current: HoldingValue, contracted: string | null
-   (plain-rate accrual only: `valueHolding(asset, lots, maturity, ctx)`),
-   indexed: boolean, matured: boolean }` sorted by date; timeline groups by
+daysToGo (calendar), current: HoldingValue, contracted: string | null
+(plain-rate accrual only: `valueHolding(asset, lots, maturity, ctx)`),
+indexed: boolean, matured: boolean }` sorted by date; timeline groups by
    `YYYY-MM`.
 3. `app/(app)/maturities/page.tsx`: ladder table + timeline; `<Amount>`,
    `<ValueStatus>`; matured-but-held rows marked with the AC-012.2 copy;
@@ -1525,19 +1553,20 @@ assets.ts` (metadata validation); `packs/schema.ts` (`DecimalStringSchema`,
 `unwrap()`); every in-repo `metadataSchema`.
 
 **Steps.**
+
 1. `lib/forms/zod-fields.ts`: `fieldsOf(schema: ZodType): Field[]` for a
    `ZodObject`: each key → `{ name, label (from the key, humanised),
-   kind: "text" | "decimal" | "date" | "select" | "checkbox", required,
-   options? }` — `decimal` when the unwrapped schema `=== DecimalStringSchema`,
+kind: "text" | "decimal" | "date" | "select" | "checkbox", required,
+options? }` — `decimal` when the unwrapped schema `=== DecimalStringSchema`,
    `date` when `=== IsoDateSchema`, `select` for `z.enum`, `checkbox` for
    `z.boolean`, `text` for `z.string`; a `z.number()` throws
    `unsupported_metadata_field` (values are strings). `valuesFromForm(
-   fields, formData)` builds the metadata object (empty optional → omitted).
+fields, formData)` builds the metadata object (empty optional → omitted).
 2. `_form.tsx`: pack `<select>` (registry, status shown), kind `<select>`
    (per pack; a native form: changing the pack submits `?pack=` — or a small
    client component that swaps the kind list; choose the client component,
    it is interaction only), the generated fields (`<input inputmode=
-   "decimal">` for decimals, `type="date"` for dates), identifier with the
+"decimal">` for decimals, `type="date"` for dates), identifier with the
    kind's `IdentifierSpec` hint, currency defaulting to the kind's
    `quoteCurrency`. Edit form: identity fields read-only once traded
    (decision 27), name and metadata editable. `useActionState` for pending
@@ -1572,6 +1601,7 @@ phone layouts; the import as four steps.
 6–7, §9.1, §9.4, §9.5 rows 7–8; `lib/ledger/queries.ts`.
 
 **Steps.**
+
 1. Assets list: row states priced (value, source, date) / carried forward /
    stale / unpriced with reason (`sourceError`, "Retry · Enter a price")
    / accrues (accrual kinds: "accrues — valued from the series");
@@ -1611,6 +1641,7 @@ dictionaries.
 §12.3, §9.5 rows 9–10; `app/(app)/settings/totp-enrol.tsx`.
 
 **Steps.**
+
 1. Cash flows: list + form; the empty state's sentence verbatim; base
    currency shown, not editable (decision 25).
 2. Settings in the §9 screen 9 sections: Portfolio (base currency with the
@@ -1649,6 +1680,7 @@ fails.
 every `_models/*.ts` and page read path; `lib/csv/parse.ts`.
 
 **Steps.**
+
 1. `lib/testing/synthetic.ts`: `syntheticLedger(seed: number): GoldenFixture`
    — deterministic PRNG (mulberry32), five years ending today, twenty
    assets across all seven BR kinds, a monthly buy each, quarterly sells on
@@ -1694,6 +1726,7 @@ Playwright docs (installed package) on `globalSetup`, `storageState`,
 `page.on("console")`.
 
 **Steps.**
+
 1. `e2e/setup.ts`: creates one throwaway owner through the admin API (email,
    password in `process.env` for the run), stores nothing on disk;
    teardown deletes the user. `e2e/helpers.ts`: `signIn(page)`, `enrolTotp`
@@ -1716,7 +1749,7 @@ Playwright docs (installed package) on `globalSetup`, `storageState`,
    password, every route redirects to `/login/mfa`; every response carries
    the decision 51 headers).
 3. `ci.yml`: job `e2e` after `db`'s pattern: stack up, env, `pnpm exec
-   playwright install --with-deps chromium`, `pnpm build`, `pnpm test:e2e`;
+playwright install --with-deps chromium`, `pnpm build`, `pnpm test:e2e`;
    upload `playwright-report` on failure.
 
 **Tests.** The journeys; `pnpm test:e2e` green locally and in CI.
@@ -1739,6 +1772,7 @@ decisions 40, 46 and US-014 AC-014.2, AC-014.4` · `/qa-code-quality e2e`.
 text, 3:1 large and UI).
 
 **Steps.**
+
 1. `docs/accessibility.md`: the checklist (landmarks, skip link, labels,
    focus order, contrast, reduced motion, 400 px, `aria-live`, error copy)
    and a table screen × item with the date walked.
@@ -1770,6 +1804,7 @@ a journey, but run them).
 `packs/*/README.md` status lines; `scripts/check-release-readiness.ts`.
 
 **Steps.**
+
 1. `pnpm fixtures:record --all` with the live token; inspect the diff for
    redaction and shape; `pnpm test:packs` green (1 skip); fix an adapter if
    an upstream contract moved (record it under "Contract corrections").
@@ -1797,14 +1832,15 @@ PACKS §12 and MILESTONES §4 decision 41`.
 `.env.example`; `scripts/bootstrap-user.ts`; `README.md`.
 
 **Steps.**
+
 1. `docs/DEPLOY.md`: Supabase project (create; `supabase link`; `supabase db
-   push`; dashboard auth: signups off, password 12 chars, email provider
+push`; dashboard auth: signups off, password 12 chars, email provider
    on, confirmations off, TOTP on, site URL + redirect `<site>/auth/callback`,
    SMTP for reset mail); Vercel project (import the repo; env vars by name;
    `CRON_SECRET` via `openssl rand -base64 32`; the two crons from
    `vercel.json`; Fluid compute check — D-27: if enabled, raise both
    literals in `lib/cron/budget.ts` and the routes); first deploy; `pnpm
-   bootstrap:user` against production (env pointed at the project); first
+bootstrap:user` against production (env pointed at the project); first
    sign-in and TOTP; observe both crons fire once (Vercel logs show the
    D-19 summary lines); run `pnpm test:e2e` against production with
    `NEXT_PUBLIC_SITE_URL` set (the setup creates and deletes its own

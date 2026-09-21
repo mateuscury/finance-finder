@@ -93,9 +93,13 @@ function validatePrice(p: PriceObservation, i: number): void {
 
 function validateSeries(s: SeriesObservation, i: number): void {
   if (!isIsoDate(s.date)) throw new KernelError("invalid_date", "series date", { index: i, seriesId: s.seriesId });
-  if (!isDecimalString(s.value)) throw new KernelError("invalid_decimal", "series value", { index: i, seriesId: s.seriesId });
+  if (!isDecimalString(s.value))
+    throw new KernelError("invalid_decimal", "series value", { index: i, seriesId: s.seriesId });
   if (!Number.isInteger(s.tenorDays) || s.tenorDays < 0) {
-    throw new KernelError("invalid_input", "tenorDays must be a non-negative integer", { index: i, seriesId: s.seriesId });
+    throw new KernelError("invalid_input", "tenorDays must be a non-negative integer", {
+      index: i,
+      seriesId: s.seriesId,
+    });
   }
 }
 
@@ -116,10 +120,7 @@ function lastIndexAtOrBefore(rows: readonly { date: string }[], date: string): n
   return found;
 }
 
-export function buildMarketData(
-  prices: readonly PriceObservation[],
-  series: readonly SeriesObservation[],
-): MarketData {
+export function buildMarketData(prices: readonly PriceObservation[], series: readonly SeriesObservation[]): MarketData {
   const priceIndex = new Map<string, PriceObservation[]>();
   prices.forEach((p, i) => {
     validatePrice(p, i);

@@ -56,7 +56,9 @@ function parsed(t: LedgerTransaction): { quantity: KDecimal; unitPrice: KDecimal
 }
 
 /** One asset's rows per asset id, in input order; an asset with no rows has no entry. */
-export function groupByAsset(transactions: readonly LedgerTransaction[]): ReadonlyMap<string, readonly LedgerTransaction[]> {
+export function groupByAsset(
+  transactions: readonly LedgerTransaction[],
+): ReadonlyMap<string, readonly LedgerTransaction[]> {
   const groups = new Map<string, LedgerTransaction[]>();
   for (const t of transactions) {
     const rows = groups.get(t.assetId);
@@ -139,7 +141,11 @@ export interface InvestedFlow {
  * Contribution converts each entry at its own date (MILESTONES.md §2
  * decision 15); `netInvested` sums them in one currency.
  */
-export function investedFlows(transactions: readonly LedgerTransaction[], from: IsoDate, to: IsoDate): readonly InvestedFlow[] {
+export function investedFlows(
+  transactions: readonly LedgerTransaction[],
+  from: IsoDate,
+  to: IsoDate,
+): readonly InvestedFlow[] {
   const flows: InvestedFlow[] = [];
   for (const t of sortLedger(transactions)) {
     if (!inWindow(t.tradeDate, from, to)) continue;

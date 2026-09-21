@@ -49,7 +49,12 @@ export function bondCashFlows(maturity: IsoDate, coupon: Coupon, asOf: IsoDate):
   return flows.sort((a, b) => compareDates(a.date, b.date));
 }
 
-export function valueCurveMtm(asset: HoldingAsset, quantity: KDecimal, asOf: IsoDate, ctx: ValuationContext): HoldingValue {
+export function valueCurveMtm(
+  asset: HoldingAsset,
+  quantity: KDecimal,
+  asOf: IsoDate,
+  ctx: ValuationContext,
+): HoldingValue {
   const strategy = asset.instrumentKind.valuation;
   if (strategy.kind !== "curve_mark_to_market") {
     throw new KernelError("invalid_input", "valueCurveMtm needs a curve_mark_to_market strategy", {

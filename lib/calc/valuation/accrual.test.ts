@@ -25,11 +25,22 @@ const br: ValuationContext = { market, calendar: brCalendar, windowDays: 5, seri
 const open: ValuationContext = { ...br, calendar: sevenDay, windowDays: 1 };
 
 function accrual(convention: AccrualConvention) {
-  return kind(`zz.${convention.compounding}.${convention.dayCount}.${convention.index?.mode ?? "plain"}`, { kind: "accrual", convention });
+  return kind(`zz.${convention.compounding}.${convention.dayCount}.${convention.index?.mode ?? "plain"}`, {
+    kind: "accrual",
+    convention,
+  });
 }
 const plainDaily = accrual({ dayCount: "BUS/252", compounding: "daily" });
-const pctCdi = accrual({ dayCount: "BUS/252", compounding: "daily", index: { mode: "percent_of_index", seriesId: "br.cdi" } });
-const ipcaPlus = accrual({ dayCount: "BUS/252", compounding: "daily", index: { mode: "index_plus_spread", seriesId: "br.ipca" } });
+const pctCdi = accrual({
+  dayCount: "BUS/252",
+  compounding: "daily",
+  index: { mode: "percent_of_index", seriesId: "br.cdi" },
+});
+const ipcaPlus = accrual({
+  dayCount: "BUS/252",
+  compounding: "daily",
+  index: { mode: "index_plus_spread", seriesId: "br.ipca" },
+});
 
 // Mon 2 Feb → Fri 13 Feb 2026: 3,4,5,6,9,10,11,12,13 = nine business days.
 const NINE = new KernelDecimal(9).div(252);
@@ -64,9 +75,18 @@ describe("plain fixed rate", () => {
       return r.native.amount;
     };
     expect(at("2026-02-14").toFixed()).toBe("1000");
-    expect(near(at("2026-02-15"), new KernelDecimal("1000").times(new KernelDecimal("1.12").pow(ONE.div(12))))).toBe(true);
-    expect(near(at("2026-03-14"), new KernelDecimal("1000").times(new KernelDecimal("1.12").pow(ONE.div(12))))).toBe(true);
-    expect(near(at("2026-03-15"), new KernelDecimal("1000").times(new KernelDecimal("1.12").pow(new KernelDecimal(2).div(12))))).toBe(true);
+    expect(near(at("2026-02-15"), new KernelDecimal("1000").times(new KernelDecimal("1.12").pow(ONE.div(12))))).toBe(
+      true,
+    );
+    expect(near(at("2026-03-14"), new KernelDecimal("1000").times(new KernelDecimal("1.12").pow(ONE.div(12))))).toBe(
+      true,
+    );
+    expect(
+      near(
+        at("2026-03-15"),
+        new KernelDecimal("1000").times(new KernelDecimal("1.12").pow(new KernelDecimal(2).div(12))),
+      ),
+    ).toBe(true);
   });
 
   it("annual steps on each yearly anniversary", () => {
@@ -104,7 +124,10 @@ describe("percent_of_index", () => {
 
   it("a day without a published rate is unpriced with series_gap, never carried forward", () => {
     const a = asset("cdb", pctCdi, { rate: "1.10" });
-    expect(valueAccrual(a, [lot("2026-04-29", "1", "10000")], "2026-05-04", br)).toEqual({ status: "unpriced", reason: "series_gap" });
+    expect(valueAccrual(a, [lot("2026-04-29", "1", "10000")], "2026-05-04", br)).toEqual({
+      status: "unpriced",
+      reason: "series_gap",
+    });
   });
 });
 
@@ -123,37 +146,66 @@ describe("index_plus_spread", () => {
 
   it("is carried forward after the last anchor and unpriced before the first", () => {
     const a = asset("cdb", ipcaPlus, { rate: "0.06" });
-    expect(valueAccrual(a, [lot("2026-02-02", "1", "10000")], "2026-03-10", br)).toMatchObject({ status: "carried_forward", priceDate: "2026-02-28" });
-    expect(valueAccrual(a, [lot("2026-01-15", "1", "10000")], "2026-02-13", br)).toEqual({ status: "unpriced", reason: "before_first_anchor" });
+    expect(valueAccrual(a, [lot("2026-02-02", "1", "10000")], "2026-03-10", br)).toMatchObject({
+      status: "carried_forward",
+      priceDate: "2026-02-28",
+    });
+    expect(valueAccrual(a, [lot("2026-01-15", "1", "10000")], "2026-02-13", br)).toEqual({
+      status: "unpriced",
+      reason: "before_first_anchor",
+    });
   });
 
   it("accepts an index_level series, carried forward within the window", () => {
-    const ibovPlus = accrual({ dayCount: "BUS/252", compounding: "daily", index: { mode: "index_plus_spread", seriesId: "br.ibovespa" } });
+    const ibovPlus = accrual({
+      dayCount: "BUS/252",
+      compounding: "daily",
+      index: { mode: "index_plus_spread", seriesId: "br.ibovespa" },
+    });
     const a = asset("note", ibovPlus, { rate: "0" });
     const r = valueAccrual(a, [lot("2026-02-02", "1", "1000")], "2026-02-13", br);
     if (r.status !== "ok") throw new Error(r.status);
     expect(money(r.native)).toBe("BRL 1050");
-    expect(valueAccrual(a, [lot("2026-02-02", "1", "1000")], "2026-02-16", br)).toMatchObject({ status: "carried_forward", priceDate: "2026-02-13" });
+    expect(valueAccrual(a, [lot("2026-02-02", "1", "1000")], "2026-02-16", br)).toMatchObject({
+      status: "carried_forward",
+      priceDate: "2026-02-13",
+    });
   });
 });
 
 describe("contract", () => {
   it("metadata without a rate is unpriced with invalid_metadata, never a throw", () => {
-    expect(valueAccrual(asset("cdb", plainDaily, {}), [lot("2026-02-02", "1", "1")], "2026-02-13", br)).toEqual({ status: "unpriced", reason: "invalid_metadata" });
-    expect(valueAccrual(asset("cdb", plainDaily, { rate: "12%" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br)).toEqual({ status: "unpriced", reason: "invalid_metadata" });
+    expect(valueAccrual(asset("cdb", plainDaily, {}), [lot("2026-02-02", "1", "1")], "2026-02-13", br)).toEqual({
+      status: "unpriced",
+      reason: "invalid_metadata",
+    });
+    expect(
+      valueAccrual(asset("cdb", plainDaily, { rate: "12%" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br),
+    ).toEqual({ status: "unpriced", reason: "invalid_metadata" });
   });
 
   it("maturity is never read: a lot keeps accruing past it", () => {
-    const a = asset("cdb", accrual({ dayCount: "ACT/365", compounding: "daily" }), { rate: "0.12", maturity: "2025-06-30" });
+    const a = asset("cdb", accrual({ dayCount: "ACT/365", compounding: "daily" }), {
+      rate: "0.12",
+      maturity: "2025-06-30",
+    });
     const r = valueAccrual(a, [lot("2025-01-01", "1", "1000")], "2026-01-01", open);
     if (r.status !== "ok") throw new Error(r.status);
     expect(money(r.native)).toBe("BRL 1120");
   });
 
   it("a lot in another currency is currency_mismatch; an unknown index series is invalid_input", () => {
-    expect(() => valueAccrual(asset("cdb", plainDaily, { rate: "0.1" }), [lot("2026-02-02", "1", "1", "USD")], "2026-02-13", br)).toThrow(/currency_mismatch/);
-    const orphan = accrual({ dayCount: "BUS/252", compounding: "daily", index: { mode: "percent_of_index", seriesId: "br.nope" } });
-    expect(() => valueAccrual(asset("cdb", orphan, { rate: "1" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br)).toThrow(/invalid_input/);
+    expect(() =>
+      valueAccrual(asset("cdb", plainDaily, { rate: "0.1" }), [lot("2026-02-02", "1", "1", "USD")], "2026-02-13", br),
+    ).toThrow(/currency_mismatch/);
+    const orphan = accrual({
+      dayCount: "BUS/252",
+      compounding: "daily",
+      index: { mode: "percent_of_index", seriesId: "br.nope" },
+    });
+    expect(() =>
+      valueAccrual(asset("cdb", orphan, { rate: "1" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br),
+    ).toThrow(/invalid_input/);
   });
 
   const dayCounts: DayCount[] = ["BUS/252", "ACT/365", "ACT/360", "30/360"];
@@ -168,7 +220,11 @@ describe("contract", () => {
 
   it.each(dayCounts)("percent_of_index accepts only daily with a matching day count under %s", (dayCount) => {
     for (const compounding of granularities) {
-      const a = asset("x", accrual({ dayCount, compounding, index: { mode: "percent_of_index", seriesId: "br.cdi" } }), { rate: "1" });
+      const a = asset(
+        "x",
+        accrual({ dayCount, compounding, index: { mode: "percent_of_index", seriesId: "br.cdi" } }),
+        { rate: "1" },
+      );
       const run = () => valueAccrual(a, [lot("2026-02-02", "1", "1")], "2026-02-13", br);
       if (compounding === "daily" && dayCount === "BUS/252") expect(run().status).toBe("ok");
       else expect(run).toThrow(/unsupported_convention/);
@@ -177,16 +233,32 @@ describe("contract", () => {
 
   it.each(dayCounts)("index_plus_spread accepts every granularity under %s", (dayCount) => {
     for (const compounding of granularities) {
-      const a = asset("x", accrual({ dayCount, compounding, index: { mode: "index_plus_spread", seriesId: "br.ipca" } }), { rate: "0.06" });
+      const a = asset(
+        "x",
+        accrual({ dayCount, compounding, index: { mode: "index_plus_spread", seriesId: "br.ipca" } }),
+        { rate: "0.06" },
+      );
       expect(valueAccrual(a, [lot("2026-02-02", "1", "1")], "2026-02-13", br).status).toBe("ok");
     }
   });
 
   it("refuses the wrong series kind for each indexed mode", () => {
-    const pctIpca = accrual({ dayCount: "BUS/252", compounding: "daily", index: { mode: "percent_of_index", seriesId: "br.ipca" } });
-    const cdiPlus = accrual({ dayCount: "BUS/252", compounding: "daily", index: { mode: "index_plus_spread", seriesId: "br.cdi" } });
-    expect(() => valueAccrual(asset("x", pctIpca, { rate: "1" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br)).toThrow(/unsupported_convention/);
-    expect(() => valueAccrual(asset("x", cdiPlus, { rate: "0" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br)).toThrow(/unsupported_convention/);
+    const pctIpca = accrual({
+      dayCount: "BUS/252",
+      compounding: "daily",
+      index: { mode: "percent_of_index", seriesId: "br.ipca" },
+    });
+    const cdiPlus = accrual({
+      dayCount: "BUS/252",
+      compounding: "daily",
+      index: { mode: "index_plus_spread", seriesId: "br.cdi" },
+    });
+    expect(() =>
+      valueAccrual(asset("x", pctIpca, { rate: "1" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br),
+    ).toThrow(/unsupported_convention/);
+    expect(() =>
+      valueAccrual(asset("x", cdiPlus, { rate: "0" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br),
+    ).toThrow(/unsupported_convention/);
     try {
       valueAccrual(asset("x", pctIpca, { rate: "1" }), [lot("2026-02-02", "1", "1")], "2026-02-13", br);
     } catch (err) {

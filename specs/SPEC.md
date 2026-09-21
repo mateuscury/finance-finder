@@ -44,6 +44,7 @@ mappings valued correctly (PACKS.md §11.5)
 **Acceptance Criteria** (`docs/milestone-2-plan.md` "Definition of done";
 conventions in its "Why the conventions below are written down first"
 section; decisions in `MILESTONES.md` §2):
+
 - [x] AC-001.1: `lib/calc/` contains `decimal.ts`, `money.ts`, `types.ts`,
       `dates.ts`, `calendar.ts`, `positions.ts`, `fx.ts`, `staleness.ts`,
       `series/` (one module per closed `SeriesKind`), `valuation/` (one
@@ -85,6 +86,7 @@ section; decisions in `MILESTONES.md` §2):
       is property-tested against a synthetic curve.
 
 **Test Scenarios**:
+
 ```
 Given: packs/br/fixtures/portfolio.json (seven instrument kinds since
        br.stock, ten transactions incl. one sell and one dividend, five cash
@@ -121,6 +123,7 @@ recoverable event and not the end of my portfolio history (root SPEC §12.3)
 
 **Acceptance Criteria** (`docs/milestone-2-plan.md` Phase 6; decisions 3, 4
 and 8 in `MILESTONES.md` §2):
+
 - [x] AC-002.1: `lib/backup/` holds a versioned zod `BackupSchema` (v1:
       `version`, `exported_at`, `settings`, `assets`, `transactions`,
       `cash_flows`, `prices`), a deterministic serializer (stable row order,
@@ -164,6 +167,7 @@ and 8 in `MILESTONES.md` §2):
       the tier; `pnpm release:check` requires it.
 
 **Test Scenarios**:
+
 ```
 Given: a throwaway user holding the golden portfolio
 When:  export_backup → delete user → recreate user → restore_backup → export_backup
@@ -199,6 +203,7 @@ password alone is not enough to open it (root SPEC §9.6)
 
 **Acceptance Criteria** (`docs/milestone-3-plan.md` "Identity and sessions";
 decisions 19, 31):
+
 - [x] AC-003.1: Sessions are cookie-based through `@supabase/ssr`
       (`lib/supabase/server.ts`, `httpOnly`, `Secure` outside development,
       `SameSite=Lax`). `proxy.ts` refreshes the session on every matched
@@ -230,6 +235,7 @@ decisions 19, 31):
       `getAuthenticatorAssuranceLevel()` to `aal2`.
 
 **Test Scenarios**:
+
 ```
 Given: the owner has no TOTP factor
 When:  they sign in with the right password
@@ -259,13 +265,14 @@ consistent, and never silently re-priced (root SPEC §2, §9 screens 6–8, §11
 
 **Acceptance Criteria** (`docs/milestone-3-plan.md` "Writes"; decisions 19,
 25, 26, 27):
+
 - [x] AC-004.1: `lib/ledger/schemas.ts` (zod) validates every form in
       decimal strings and mirrors the database checks: quantity sign by
       type, `unit_price > 0`, `fees ≥ 0`, ISO 4217 currency, real dates.
       `parseFloat` / `Number(` are banned in `lib/ledger` by lint.
-- [x] AC-004.2: Every action returns `{ ok: true, … } | { ok: false,
-      reason, fields? }` with a closed reason set; a Supabase error message
-      never reaches the browser.
+- [x] AC-004.2: Every action returns `{ ok: true, … } | { ok: false, reason, fields? }`
+      with a closed reason set; a Supabase error message never reaches the
+      browser.
 - [x] AC-004.3: Asset create/edit validates `metadata` against the pack's
       `metadataSchema` and the identifier per `IdentifierSpec`; `pack_id`,
       `instrument_kind`, `identifier` and `native_currency` are immutable
@@ -287,6 +294,7 @@ consistent, and never silently re-priced (root SPEC §2, §9 screens 6–8, §11
       signed-in user's rows.
 
 **Test Scenarios**:
+
 ```
 Given: an asset with one transaction
 When:  the owner edits its identifier
@@ -316,6 +324,7 @@ number I typed is never overwritten by a source (root SPEC §9.4, §2 prices)
 
 **Acceptance Criteria** (`docs/milestone-3-plan.md` "Keys and clients";
 decisions 29, 30):
+
 - [x] AC-005.1: Creating an asset commits the row first; only then does
       the action schedule `runIngest({ kind: "assets", assetIds })` through
       `after()` under the service role in `lib/jobs`, followed by
@@ -325,7 +334,7 @@ decisions 29, 30):
       `app/api/cron/**` and `lib/jobs/**`; `pnpm lint` fails on any other
       import of `@/lib/supabase/service`.
 - [x] AC-005.3: The asset list shows, per asset, the latest price with its
-      `source_id` and date, or *unpriced* with the source's
+      `source_id` and date, or _unpriced_ with the source's
       `ingest_cursors.last_error` when there is one.
 - [x] AC-005.4: A manual price form on the asset writes
       `prices.source_id = 'manual'`; `commit_ingest_chunk` never overwrites
@@ -336,6 +345,7 @@ decisions 29, 30):
       after-response jobs receive the remaining budget.
 
 **Test Scenarios**:
+
 ```
 Given: an asset created with a source whose env var is absent
 When:  the after-response ingest runs
@@ -362,6 +372,7 @@ and never a stale cache (root SPEC §8, §11; Milestone 2 decision 6)
 
 **Acceptance Criteria** (`docs/milestone-3-plan.md` "The snapshot
 invariant" and "The snapshot job"; decisions 20, 21, 22):
+
 - [x] AC-006.1: A forward migration adds `price_date`, `fx_date` and
       `status` to `portfolio_snapshots` and the `invalidate_snapshots`
       trigger family on `transactions`, `prices` and
@@ -385,6 +396,7 @@ invariant" and "The snapshot job"; decisions 20, 21, 22):
       `price_date = '2026-02-18'`.
 
 **Test Scenarios**:
+
 ```
 Given: snapshots exist through 2026-02-27 and a transaction is inserted
        dated 2026-02-12
@@ -411,6 +423,7 @@ without a half-imported file corrupting my figures (root SPEC §9.1)
 
 **Acceptance Criteria** (`docs/milestone-3-plan.md` "CSV import";
 decisions 23, 24):
+
 - [x] AC-007.1: `lib/csv/parse.ts` and `write.ts` implement RFC 4180
       (quoted fields, doubled quotes, CRLF, BOM) with no dependency; a
       `fast-check` property proves `parse(write(rows)) = rows`.
@@ -419,9 +432,9 @@ decisions 23, 24):
       unknown columns are ignored; a missing required column is a
       file-level error.
 - [x] AC-007.3: The dry run writes nothing and shows per row: parsed
-      values, validation errors, the resolved asset or *unresolved*, and
-      *duplicate* when `(asset_id, trade_date, type, quantity,
-      unit_price)` matches an existing transaction.
+      values, validation errors, the resolved asset or _unresolved_, and
+      _duplicate_ when `(asset_id, trade_date, type, quantity, unit_price)`
+      matches an existing transaction.
 - [x] AC-007.4: Unresolved identifiers are created inline from the
       preview through the asset action (pack and kind from the CSV,
       metadata prompted per the pack schema); import never invents an
@@ -437,6 +450,7 @@ decisions 23, 24):
       the app's own export imports as a no-op.
 
 **Test Scenarios**:
+
 ```
 Given: a CSV whose row 7 has quantity "abc"
 When:  commit is attempted
@@ -462,6 +476,7 @@ configure and to wipe (root SPEC §12.3, §9.6; PACKS §12)
 
 **Acceptance Criteria** (`docs/milestone-3-plan.md` Phase 6; decisions 26,
 28, 29):
+
 - [x] AC-008.1: Export produces `finance-finder-YYYY-MM-DD.json` through
       `export_backup()` + `serializeBackup` and `transactions-YYYY-MM-DD.csv`
       through `lib/csv`, and stamps `user_settings.last_export_at`.
@@ -474,8 +489,8 @@ configure and to wipe (root SPEC §12.3, §9.6; PACKS §12)
       redirected to `/login`.
 - [x] AC-008.4: Enabled packs are chosen from the registry with each
       pack's status shown; draft packs are allowed with a banner,
-      `unmaintained` refused; enabling a pack runs `runIngest({ kind:
-      "new_packs" })` after the response.
+      `unmaintained` refused; enabling a pack runs
+      `runIngest({ kind: "new_packs" })` after the response.
 - [x] AC-008.5: Base currency, theme and locale are editable; the base
       currency lock and reset behave as US-004 AC-004.6.
 - [x] AC-008.6: Security: change password, enrol / remove TOTP (QR +
@@ -484,6 +499,7 @@ configure and to wipe (root SPEC §12.3, §9.6; PACKS §12)
       only on the two draft packs and `specs/PERSONAS.md`.
 
 **Test Scenarios**:
+
 ```
 Given: an account with three assets
 When:  the owner exports
@@ -512,6 +528,7 @@ screen 1, §9.2, §9.3, §9.5)
 
 **Acceptance Criteria** (`docs/milestone-4-plan.md` Phase 2; decisions 36,
 39, 40; `docs/milestone-4-execution.md` P2-U3–P2-U5):
+
 - [ ] AC-009.1: `/` renders the §9.2 navigation — the Analysis and Ledger
       groups always fully visible, the theme toggle, sign out — with a
       hairline rule beneath, and the status strip only when something is
@@ -523,7 +540,7 @@ screen 1, §9.2, §9.3, §9.5)
       (SPEC §9.3)
 - [ ] AC-009.3: The headline is the kernel's confident total at today in
       the base currency (`valuePortfolio` over a latest-price ledger read);
-      "—" with *N assets unpriced* when no position is priced; stale and
+      "—" with _N assets unpriced_ when no position is priced; stale and
       unpriced holdings are never summed into it. (SPEC §9.5 row 1, §11)
 - [ ] AC-009.4: Day change comes from the last two snapshot totals and
       period change from the first total in range — signed, coloured with
@@ -540,6 +557,7 @@ screen 1, §9.2, §9.3, §9.5)
       user's locale — English or Brazilian Portuguese. (decision 34)
 
 **Test Scenarios**:
+
 ```
 Given: a fresh instance — one bootstrapped owner, zero rows elsewhere
 When:  the owner opens /
@@ -573,6 +591,7 @@ whether I beat inflation (root SPEC §9 screen 2, §6)
 
 **Acceptance Criteria** (plan Phase 3; decisions 36, 37; runbook P3-U1,
 P3-U2):
+
 - [ ] AC-010.1: A period selector 1M / YTD / 1Y / All (All = from the first
       snapshot); the default is All when history is shorter than a year,
       else 1Y. (plan Phase 3)
@@ -597,6 +616,7 @@ P3-U2):
       §11; plan "Accessibility")
 
 **Test Scenarios**:
+
 ```
 Given: the golden ledger with snapshots on its six valuation dates
 When:  /performance?period=all
@@ -628,6 +648,7 @@ exchange rate, made the difference (root SPEC §9 screens 3–4, §6, §11)
 
 **Acceptance Criteria** (plan Phases 3–4; `MILESTONES.md` §2 decision 15;
 runbook P3-U3, P4-U1):
+
 - [ ] AC-011.1: Allocation by instrument kind, by pack and by currency from
       the latest snapshot rows, plus native-vs-base exposure; shares are
       2-decimal strings summing to exactly 100.00 (largest remainder);
@@ -637,14 +658,16 @@ runbook P3-U3, P4-U1):
       `contribution()`; a partial total is flagged with its reasons; the
       sum shown equals the simple return shown. (SPEC §6)
 - [ ] AC-011.3: `/contribution/[assetId]` shows `attribution()`'s R_native,
-      R_fx and R_base with the identity `(1 + R_base) = (1 + R_native) ×
-      (1 + R_fx)` stated; a base-currency asset shows R_fx = 0 as a stated
-      fact; the §11 BDR gap is stated once on the page. (SPEC §6, §11)
+      R_fx and R_base with the identity
+      `(1 + R_base) = (1 + R_native) × (1 + R_fx)` stated; a base-currency
+      asset shows R_fx = 0 as a stated fact; the §11 BDR gap is stated once
+      on the page. (SPEC §6, §11)
 - [ ] AC-011.4: The §9.5 empty states verbatim: "Nothing to allocate yet."
       → Assets; "Contribution needs history across the period." (SPEC §9.5
       rows 4–5)
 
 **Test Scenarios**:
+
 ```
 Given: the golden asOf snapshot rows
 When:  /allocation
@@ -678,12 +701,12 @@ decision 38)
 
 **Acceptance Criteria** (plan Phase 4; PACKS §5 maturity sentence; runbook
 P4-U2):
+
 - [ ] AC-012.1: The ladder lists every held asset whose kind's
       `metadataSchema` has a `maturity` key, ordered by date, with days to
       go, the current value with its status mark, the contracted value at
       maturity for plain-rate accrual kinds (`valueHolding` at that date),
-      and "final amount depends on the index" for indexed kinds. (decision
-      38)
+      and "final amount depends on the index" for indexed kinds. (decision 38)
 - [ ] AC-012.2: A matured asset still held is marked "matured — record the
       redemption" and never valued as if alive without saying so.
       (decision 14)
@@ -694,6 +717,7 @@ P4-U2):
       schema shape, never a kind id. (decision 42)
 
 **Test Scenarios**:
+
 ```
 Given: the golden ledger at asOf
 When:  /maturities
@@ -727,6 +751,7 @@ ever being wrong or seen by the wrong person (root SPEC §10, §11, §12.3,
 
 **Acceptance Criteria** (plan Phases 2, 5, 7; decisions 34, 40, 47, 48;
 runbook P2-U1, P2-U3, P5-U1–P5-U3, P7-U2):
+
 - [ ] AC-013.1: `app/globals.css` defines exactly the §10 tokens for light
       and dark; `data-theme` on `<html>` comes from the user's setting with
       no flash; `system` follows `prefers-color-scheme`; the nav toggle
@@ -746,7 +771,7 @@ runbook P2-U1, P2-U3, P5-U1–P5-U3, P7-U2):
       copy and no stack, AA contrast for every token pair in both themes,
       reduced motion respected. (plan "Accessibility")
 - [ ] AC-013.6: `<ValueStatus>` marks carried-forward, stale and unpriced on
-      every screen; an unpriced position shows its quantity and *unpriced*,
+      every screen; an unpriced position shows its quantity and _unpriced_,
       never zero. (SPEC §9.5 last paragraph, §11)
 - [ ] AC-013.7: Assets, Transactions, Import, Cash flows, Settings, Login,
       MFA and reset are restyled on the tokens; the asset form is pack →
@@ -758,6 +783,7 @@ runbook P2-U1, P2-U3, P5-U1–P5-U3, P7-U2):
       (decision 34)
 
 **Test Scenarios**:
+
 ```
 Given: the owner sets theme dark and locale pt-BR in Settings
 When:  they reload any page
@@ -792,6 +818,7 @@ ARCHITECTURE §8; `MILESTONES.md` production-data gate)
 
 **Acceptance Criteria** (plan Phases 1, 6–9; decisions 41, 43, 44, 46, 49,
 50, 51; runbook P1-U1–P1-U8, P6-U1–P9-U1):
+
 - [ ] AC-014.1: CI on the GitHub remote runs typecheck, lint, format:check,
       test with coverage thresholds, test:packs, test:db, the
       `lib/database.types.ts` diff, audit, e2e and build, and is green on
@@ -804,18 +831,18 @@ ARCHITECTURE §8; `MILESTONES.md` production-data gate)
       five-year, twenty-asset ledger. (decision 44)
 - [ ] AC-014.4: `pnpm test:e2e` passes the eight journeys of decision 46
       plus the security-boundary journey of decision 40 (every data route
-      redirects when signed out and at AAL1 with a factor). (decisions 40,
-      46)
+      redirects when signed out and at AAL1 with a factor). (decisions 40, 46)
 - [ ] AC-014.5: `packs/br` and `packs/global` are `supported` with fixtures
       at most 90 days old; `pnpm test:packs` reports exactly one skip
       (`global`, no instruments). (PACKS §12; decision 41)
-- [ ] AC-014.6: `docs/DEPLOY.md` and `.env.example` are complete; `pnpm
-      release:check` is green locally and in CI. (ARCHITECTURE §8;
+- [ ] AC-014.6: `docs/DEPLOY.md` and `.env.example` are complete;
+      `pnpm release:check` is green locally and in CI. (ARCHITECTURE §8;
       decision 43)
 - [ ] AC-014.7: The first deploy is recorded in `MILESTONES.md` §4 with
       both crons observed firing (maintainer). (decision 43)
 
 **Test Scenarios**:
+
 ```
 Given: a push to main
 When:  CI runs
@@ -880,35 +907,35 @@ Explicitly NOT building (ARCHITECTURE §2; `docs/milestone-2-plan.md`
 
 How we know this works:
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| Golden reproduction | Every figure within `1e-8` of `expected.json` | `pnpm test:packs`, 1 skip |
-| Kernel purity | 0 banned imports or float calls in `lib/calc/` | `pnpm lint` |
-| Property coverage | Every property named in plan Phases 1–4 has a `fast-check` test | `pnpm test:calc` without `--passWithNoTests` |
-| Recovery | export→delete→restore→export deep-equal modulo `exported_at` | `pnpm test:db` |
-| Release gate (M2) | `release:check` red only on login, draft packs, `PERSONAS.md` | `pnpm release:check` |
-| Trust boundaries (M3) | 0 `getSession` calls; 0 service-role imports outside cron/jobs | `pnpm lint` |
-| Snapshot invariant (M3) | every history-changing write drops snapshots from its date forward | `pnpm test:db` trigger family |
-| Import idempotence (M3) | re-importing a file inserts 0 rows | `fast-check` + `pnpm test:db` |
-| Release gate (M3) | `release:check` red only on draft packs, `PERSONAS.md` | `pnpm release:check` — met 2026-09-20 |
-| Neutrality (M4) | 0 pack/currency/locale literals in `app/` and `lib/` source outside the allowlist | `packs/conformance/kernel-neutrality.test.ts` |
-| Golden with seven kinds (M4) | every figure within `1e-8` after `br.stock` joins | `pnpm test:packs`, 1 skip |
-| Copy completeness (M4) | `en` and `pt-BR` have identical key sets, no empty leaf | `lib/copy/copy.test.ts` |
-| Budgets (M4) | `runSnapshots` ≥ 50 days/s; every screen read < 500 ms p50 | `FF_BUDGETS=1 pnpm test:db` → `docs/performance-budgets.md` |
-| Journeys (M4) | 9 e2e specs green, 0 CSP violations | `pnpm test:e2e` |
-| Coverage (M4) | `lib/calc` ≥ 95 %, the other `lib/` modules ≥ 85 % | `pnpm test:coverage` |
-| Release gate (M4) | `release:check` fully green | `pnpm release:check` in CI |
+| Metric                       | Target                                                                            | How to Measure                                              |
+| ---------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Golden reproduction          | Every figure within `1e-8` of `expected.json`                                     | `pnpm test:packs`, 1 skip                                   |
+| Kernel purity                | 0 banned imports or float calls in `lib/calc/`                                    | `pnpm lint`                                                 |
+| Property coverage            | Every property named in plan Phases 1–4 has a `fast-check` test                   | `pnpm test:calc` without `--passWithNoTests`                |
+| Recovery                     | export→delete→restore→export deep-equal modulo `exported_at`                      | `pnpm test:db`                                              |
+| Release gate (M2)            | `release:check` red only on login, draft packs, `PERSONAS.md`                     | `pnpm release:check`                                        |
+| Trust boundaries (M3)        | 0 `getSession` calls; 0 service-role imports outside cron/jobs                    | `pnpm lint`                                                 |
+| Snapshot invariant (M3)      | every history-changing write drops snapshots from its date forward                | `pnpm test:db` trigger family                               |
+| Import idempotence (M3)      | re-importing a file inserts 0 rows                                                | `fast-check` + `pnpm test:db`                               |
+| Release gate (M3)            | `release:check` red only on draft packs, `PERSONAS.md`                            | `pnpm release:check` — met 2026-09-20                       |
+| Neutrality (M4)              | 0 pack/currency/locale literals in `app/` and `lib/` source outside the allowlist | `packs/conformance/kernel-neutrality.test.ts`               |
+| Golden with seven kinds (M4) | every figure within `1e-8` after `br.stock` joins                                 | `pnpm test:packs`, 1 skip                                   |
+| Copy completeness (M4)       | `en` and `pt-BR` have identical key sets, no empty leaf                           | `lib/copy/copy.test.ts`                                     |
+| Budgets (M4)                 | `runSnapshots` ≥ 50 days/s; every screen read < 500 ms p50                        | `FF_BUDGETS=1 pnpm test:db` → `docs/performance-budgets.md` |
+| Journeys (M4)                | 9 e2e specs green, 0 CSP violations                                               | `pnpm test:e2e`                                             |
+| Coverage (M4)                | `lib/calc` ≥ 95 %, the other `lib/` modules ≥ 85 %                                | `pnpm test:coverage`                                        |
+| Release gate (M4)            | `release:check` fully green                                                       | `pnpm release:check` in CI                                  |
 
 ---
 
 ## Change Log
 
-| Date | Change | Reason |
-|------|--------|--------|
-| 2026-09-05 | Initial spec | Project kickoff |
-| 2026-09-20 | Vision, constraints, US-001 and US-002 filled | Milestone 2 Phase 0 step 6 (`docs/milestone-2-plan.md`) |
-| 2026-09-20 | US-001 status: Phases 0–2 merged | Stale-doc correction alongside the Phase 3–7 grounding in the plan |
-| 2026-09-20 | US-001 and US-002 done; every AC ticked; AC-002.7 restated as canonical-form equality; scenario 1 has four flows | Milestone 2 Phases 3–7 delivered (`docs/milestone-2-plan.md`) |
-| 2026-09-20 | US-003 to US-008 added; out-of-scope and metrics extended for Milestone 3 | Milestone 3 Phase 0 step 5 (`docs/milestone-3-plan.md`) |
-| 2026-09-20 | US-003 to US-008 done; every AC ticked | Milestone 3 Phases 1–7 delivered (`docs/milestone-3-plan.md`) |
-| 2026-09-21 | US-009 to US-014 added; out-of-scope and metrics extended for Milestone 4 | Milestone 4 Phase 0 (`docs/milestone-4-execution.md` P0-U2) |
+| Date       | Change                                                                                                           | Reason                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 2026-09-05 | Initial spec                                                                                                     | Project kickoff                                                    |
+| 2026-09-20 | Vision, constraints, US-001 and US-002 filled                                                                    | Milestone 2 Phase 0 step 6 (`docs/milestone-2-plan.md`)            |
+| 2026-09-20 | US-001 status: Phases 0–2 merged                                                                                 | Stale-doc correction alongside the Phase 3–7 grounding in the plan |
+| 2026-09-20 | US-001 and US-002 done; every AC ticked; AC-002.7 restated as canonical-form equality; scenario 1 has four flows | Milestone 2 Phases 3–7 delivered (`docs/milestone-2-plan.md`)      |
+| 2026-09-20 | US-003 to US-008 added; out-of-scope and metrics extended for Milestone 3                                        | Milestone 3 Phase 0 step 5 (`docs/milestone-3-plan.md`)            |
+| 2026-09-20 | US-003 to US-008 done; every AC ticked                                                                           | Milestone 3 Phases 1–7 delivered (`docs/milestone-3-plan.md`)      |
+| 2026-09-21 | US-009 to US-014 added; out-of-scope and metrics extended for Milestone 4                                        | Milestone 4 Phase 0 (`docs/milestone-4-execution.md` P0-U2)        |

@@ -37,7 +37,10 @@ describe("buildMarketData", () => {
       expect.unreachable();
     } catch (err) {
       expect(isKernelError(err, "invalid_input")).toBe(true);
-      expect((err as Error & { details: Record<string, unknown> }).details).toEqual({ assetId: "a1", date: "2026-02-10" });
+      expect((err as Error & { details: Record<string, unknown> }).details).toEqual({
+        assetId: "a1",
+        date: "2026-02-10",
+      });
     }
     expect(() => buildMarketData([], [point("2026-02-10", "1", 30), point("2026-02-10", "2", 30)])).toThrow();
     // Same date, different tenor is a curve, not a duplicate.
@@ -68,7 +71,11 @@ describe("buildMarketData", () => {
   it("keeps a yield curve's tenors together per date and finds no scalar in it", () => {
     const md = buildMarketData(
       [],
-      [point("2026-02-10", "0.12", 365, "br.di"), point("2026-02-10", "0.11", 30, "br.di"), point("2026-02-09", "0.10", 30, "br.di")],
+      [
+        point("2026-02-10", "0.12", 365, "br.di"),
+        point("2026-02-10", "0.11", 30, "br.di"),
+        point("2026-02-09", "0.10", 30, "br.di"),
+      ],
     );
     expect(md.seriesFor("br.di").map((p) => [p.date, p.tenorDays])).toEqual([
       ["2026-02-09", 30],

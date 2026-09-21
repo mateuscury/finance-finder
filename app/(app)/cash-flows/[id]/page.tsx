@@ -15,7 +15,12 @@ export default async function EditCashFlowPage({ params, searchParams }: PagePro
     <main>
       <h1>Edit cash flow</h1>
       <Notice searchParams={await searchParams} />
-      <CashFlowForm action={updateCashFlowAction.bind(null, id)} baseCurrency={f.currency} values={f} submitLabel="Save" />
+      <CashFlowForm
+        action={updateCashFlowAction.bind(null, id)}
+        baseCurrency={f.currency}
+        values={f}
+        submitLabel="Save"
+      />
     </main>
   );
 }

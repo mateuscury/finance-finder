@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 import { investedFlows, netInvested } from "./positions";
 import type { LedgerTransaction } from "./types";
 
-const t = (id: string, tradeDate: string, type: LedgerTransaction["type"], quantity: string, unitPrice: string, fees = "0", currency = "BRL"): LedgerTransaction => ({
+const t = (
+  id: string,
+  tradeDate: string,
+  type: LedgerTransaction["type"],
+  quantity: string,
+  unitPrice: string,
+  fees = "0",
+  currency = "BRL",
+): LedgerTransaction => ({
   id,
   assetId: "a",
   tradeDate,
@@ -32,6 +40,8 @@ describe("investedFlows", () => {
       ["fee", "2026-02-13", "3"],
     ]);
     expect(netInvested(rows, "BRL", "2026-02-10", "2026-02-13").toString()).toBe("75");
-    expect(() => netInvested([t("x", "2026-02-11", "buy", "1", "1", "0", "USD")], "BRL", "2026-02-10", "2026-02-13")).toThrow(/currency_mismatch/);
+    expect(() =>
+      netInvested([t("x", "2026-02-11", "buy", "1", "1", "0", "USD")], "BRL", "2026-02-10", "2026-02-13"),
+    ).toThrow(/currency_mismatch/);
   });
 });

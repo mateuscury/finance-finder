@@ -1,0 +1,10 @@
+.next
+node_modules
+coverage
+pnpm-lock.yaml
+lib/database.types.ts
+packs/*/fixtures/**
+.github/CODEOWNERS
+test-results
+playwright-report
+docs/review

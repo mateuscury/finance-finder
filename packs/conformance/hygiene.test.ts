@@ -23,7 +23,9 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — hygiene", (_,
         const rel = path.relative(packDir(pack), file);
         if (spec.startsWith(".")) {
           const target = path.resolve(path.dirname(file), spec);
-          expect(target.includes(`${path.sep}lib${path.sep}`), `${rel} imports '${spec}' (lib/ is kernel-only)`).toBe(false);
+          expect(target.includes(`${path.sep}lib${path.sep}`), `${rel} imports '${spec}' (lib/ is kernel-only)`).toBe(
+            false,
+          );
           continue;
         }
         if (spec.startsWith("@/")) {

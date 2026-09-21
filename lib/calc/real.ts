@@ -14,9 +14,18 @@ import { inflationLevelAt } from "./series";
 import { hasValue, unpriced, worseOf, type Observed } from "./staleness";
 import type { MarketData } from "./types";
 
-export function realReturn(nominal: KDecimal, market: MarketData, deflator: SeriesDescriptor, from: IsoDate, to: IsoDate): Observed<KDecimal> {
+export function realReturn(
+  nominal: KDecimal,
+  market: MarketData,
+  deflator: SeriesDescriptor,
+  from: IsoDate,
+  to: IsoDate,
+): Observed<KDecimal> {
   if (deflator.kind.kind !== "inflation_index") {
-    throw new KernelError("unsupported_convention", "a deflator must be an inflation_index series", { seriesId: deflator.id, kind: deflator.kind.kind });
+    throw new KernelError("unsupported_convention", "a deflator must be an inflation_index series", {
+      seriesId: deflator.id,
+      kind: deflator.kind.kind,
+    });
   }
   const start = inflationLevelAt(market, deflator.id, from, deflator.kind.interpolation);
   const end = inflationLevelAt(market, deflator.id, to, deflator.kind.interpolation);

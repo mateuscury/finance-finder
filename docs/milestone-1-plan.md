@@ -14,13 +14,13 @@ either pack supported or make the product safe for real portfolio data.
 
 The final source inventory is exactly five adapters:
 
-| Pack | Source | Consumers |
-|---|---|---|
-| `global` | `global.bcb_ptax` | `global.usdbrl` |
-| `br` | `br.bcb_sgs` | `br.cdi`, `br.selic` |
-| `br` | `br.ibge_sidra` | `br.ipca` |
-| `br` | `br.brapi` | FII prices, `br.ibovespa`, `br.ifix` |
-| `br` | `br.tesouro_transparente` | Tesouro Direto unit prices |
+| Pack     | Source                    | Consumers                            |
+| -------- | ------------------------- | ------------------------------------ |
+| `global` | `global.bcb_ptax`         | `global.usdbrl`                      |
+| `br`     | `br.bcb_sgs`              | `br.cdi`, `br.selic`                 |
+| `br`     | `br.ibge_sidra`           | `br.ipca`                            |
+| `br`     | `br.brapi`                | FII prices, `br.ibovespa`, `br.ifix` |
+| `br`     | `br.tesouro_transparente` | Tesouro Direto unit prices           |
 
 `global.awesomeapi` is removed. The source count stays at five because
 `br.ibge_sidra` replaces it in the inventory.

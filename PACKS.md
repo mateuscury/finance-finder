@@ -29,24 +29,24 @@ the same missing strategy is the threshold for adding one.
 
 ## 2. Kernel / pack boundary
 
-| Concern | Owner | Notes |
-|---|---|---|
-| `transactions` table and position derivation | Kernel | ARCHITECTURE §4.1, untouchable |
-| TWR, MWR/XIRR, contribution, FX attribution | Kernel | `lib/calc/`, pure functions |
-| `Money` / decimal.js discipline | Kernel | ARCHITECTURE §4.4 |
-| RLS policies, auth, `user_id` scoping | Kernel | ARCHITECTURE §4.3 |
-| Valuation strategies (closed set) | Kernel | §5 below |
-| Series kinds and their return math (closed set) | Kernel | §6 below |
-| FX resolution and triangulation | Kernel | §8 below |
-| Screens, design system, charts | Kernel | Packs supply labels only |
-| Database migrations | Kernel | **Packs ship zero migrations** |
-| npm dependencies | Kernel | Packs add none |
-| Which instruments exist in a market | Pack | §4 |
-| Which series exist and what they mean | Pack | §6 |
-| How to fetch prices and series | Pack | §7 |
-| Trading calendar, day-count conventions | Pack | §9 |
-| Instrument-specific fields | Pack | via `metadata` jsonb + zod schema |
-| Currency of denomination | Pack | ISO 4217 |
+| Concern                                         | Owner  | Notes                             |
+| ----------------------------------------------- | ------ | --------------------------------- |
+| `transactions` table and position derivation    | Kernel | ARCHITECTURE §4.1, untouchable    |
+| TWR, MWR/XIRR, contribution, FX attribution     | Kernel | `lib/calc/`, pure functions       |
+| `Money` / decimal.js discipline                 | Kernel | ARCHITECTURE §4.4                 |
+| RLS policies, auth, `user_id` scoping           | Kernel | ARCHITECTURE §4.3                 |
+| Valuation strategies (closed set)               | Kernel | §5 below                          |
+| Series kinds and their return math (closed set) | Kernel | §6 below                          |
+| FX resolution and triangulation                 | Kernel | §8 below                          |
+| Screens, design system, charts                  | Kernel | Packs supply labels only          |
+| Database migrations                             | Kernel | **Packs ship zero migrations**    |
+| npm dependencies                                | Kernel | Packs add none                    |
+| Which instruments exist in a market             | Pack   | §4                                |
+| Which series exist and what they mean           | Pack   | §6                                |
+| How to fetch prices and series                  | Pack   | §7                                |
+| Trading calendar, day-count conventions         | Pack   | §9                                |
+| Instrument-specific fields                      | Pack   | via `metadata` jsonb + zod schema |
+| Currency of denomination                        | Pack   | ISO 4217                          |
 
 ---
 
@@ -140,16 +140,16 @@ export const PACK_API_VERSION = 1;
 
 export interface MarketPack {
   apiVersion: typeof PACK_API_VERSION;
-  id: string;                    // ISO 3166-1 alpha-2, lowercase: 'br', 'uk'
-  name: string;                  // 'Brazil'
-  currency: CurrencyCode;        // primary denomination currency
-  locale: string;                // BCP-47, for number/date formatting only
+  id: string; // ISO 3166-1 alpha-2, lowercase: 'br', 'uk'
+  name: string; // 'Brazil'
+  currency: CurrencyCode; // primary denomination currency
+  locale: string; // BCP-47, for number/date formatting only
   instruments: InstrumentKind[];
   series: SeriesDescriptor[];
   sources: PriceSource[];
   calendar: MarketCalendar;
-  maintainers: string[];         // GitHub handles; generates CODEOWNERS
-  status: 'draft' | 'supported' | 'unmaintained';
+  maintainers: string[]; // GitHub handles; generates CODEOWNERS
+  status: "draft" | "supported" | "unmaintained";
 }
 ```
 
@@ -162,11 +162,11 @@ coordination between contributors.
 
 ```ts
 export interface InstrumentKind {
-  id: string;                       // 'br.tesouro_direto', 'uk.gilt'
+  id: string; // 'br.tesouro_direto', 'uk.gilt'
   label: string;
   valuation: ValuationStrategy;
-  metadataSchema: ZodType;          // validates assets.metadata
-  identifier: IdentifierSpec;       // 'isin' | 'ticker' | 'custom'
+  metadataSchema: ZodType; // validates assets.metadata
+  identifier: IdentifierSpec; // 'isin' | 'ticker' | 'custom'
   quoteCurrency: CurrencyCode;
 }
 ```
@@ -179,10 +179,10 @@ The kernel implements exactly these four. Packs choose one per instrument kind.
 
 ```ts
 export type ValuationStrategy =
-  | { kind: 'market_price';         sourceId: string }
-  | { kind: 'nav_unit_price';       sourceId: string }
-  | { kind: 'accrual';              convention: AccrualConvention }
-  | { kind: 'curve_mark_to_market'; seriesId: string };
+  | { kind: "market_price"; sourceId: string }
+  | { kind: "nav_unit_price"; sourceId: string }
+  | { kind: "accrual"; convention: AccrualConvention }
+  | { kind: "curve_mark_to_market"; seriesId: string };
 ```
 
 **`market_price`** — last observed traded price in native currency. Equities,
@@ -198,11 +198,11 @@ quote. CDB, LCI, LCA, UK fixed-rate bonds and cash ISAs.
 
 ```ts
 export interface AccrualConvention {
-  dayCount: 'BUS/252' | 'ACT/365' | 'ACT/360' | '30/360';
-  compounding: 'daily' | 'monthly' | 'annual';
+  dayCount: "BUS/252" | "ACT/365" | "ACT/360" | "30/360";
+  compounding: "daily" | "monthly" | "annual";
   index?:
-    | { mode: 'percent_of_index';  seriesId: string }  // "110% do CDI"
-    | { mode: 'index_plus_spread'; seriesId: string }; // "IPCA + 6%"
+    | { mode: "percent_of_index"; seriesId: string } // "110% do CDI"
+    | { mode: "index_plus_spread"; seriesId: string }; // "IPCA + 6%"
 }
 ```
 
@@ -239,19 +239,19 @@ kernel constraint, checked in CI, and the reason is stated in the error message.
 
 ```ts
 export type SeriesKind =
-  | { kind: 'rate_daily';      dayCount: DayCount }
-  | { kind: 'rate_annual';     dayCount: DayCount }
-  | { kind: 'index_level' }
-  | { kind: 'inflation_index'; interpolation: 'none' | 'linear_daily' }
-  | { kind: 'fx_rate';         base: CurrencyCode; quote: CurrencyCode }
-  | { kind: 'yield_curve';     tenors: number[] };
+  | { kind: "rate_daily"; dayCount: DayCount }
+  | { kind: "rate_annual"; dayCount: DayCount }
+  | { kind: "index_level" }
+  | { kind: "inflation_index"; interpolation: "none" | "linear_daily" }
+  | { kind: "fx_rate"; base: CurrencyCode; quote: CurrencyCode }
+  | { kind: "yield_curve"; tenors: number[] };
 
 export interface SeriesDescriptor {
   id: string;
   label: string;
   kind: SeriesKind;
   sourceId: string;
-  roles: Array<'benchmark' | 'deflator' | 'accrual_index' | 'discount_curve' | 'fx'>;
+  roles: Array<"benchmark" | "deflator" | "accrual_index" | "discount_curve" | "fx">;
 }
 ```
 
@@ -287,21 +287,21 @@ export interface PriceSource {
   id: string;
   label: string;
   homepage: string;
-  license: string;               // data licence, checked against an allowlist
-  auth: 'none' | 'api_key';
-  envVars?: string[];            // documented; absent key disables the source
+  license: string; // data licence, checked against an allowlist
+  auth: "none" | "api_key";
+  envVars?: string[]; // documented; absent key disables the source
   rateLimit: { requests: number; perSeconds: number };
-  capabilities: Array<'spot' | 'historical' | 'series' | 'fx'>;
+  capabilities: Array<"spot" | "historical" | "series" | "fx">;
   fetch(req: FetchRequest, ctx: FetchContext): Promise<FetchResult>;
 }
 
 export interface FetchResult {
   points: Array<{
-    ref:      string;        // asset identifier or series id
-    date:     string;        // ISO 8601 date
-    value:    string;        // DECIMAL STRING — never a JS number
+    ref: string; // asset identifier or series id
+    date: string; // ISO 8601 date
+    value: string; // DECIMAL STRING — never a JS number
     currency: CurrencyCode | null;
-    tenorDays?: number;      // required for yield_curve; absent for scalar data
+    tenorDays?: number; // required for yield_curve; absent for scalar data
   }>;
   warnings: string[];
 }
@@ -357,10 +357,10 @@ instrument kind; solve after two packs need it.
 
 ```ts
 export interface MarketCalendar {
-  timezone: string;                        // IANA
-  weekend: number[];                       // [0, 6]
-  holidays(year: number): string[];        // ISO dates
-  settlement: 'T+0' | 'T+1' | 'T+2';
+  timezone: string; // IANA
+  weekend: number[]; // [0, 6]
+  holidays(year: number): string[]; // ISO dates
+  settlement: "T+0" | "T+1" | "T+2";
 }
 ```
 
@@ -375,8 +375,8 @@ dependency.
 
 ```ts
 // packs/index.ts — checked in, one line per pack
-import { brPack } from './br';
-import { ukPack } from './uk';
+import { brPack } from "./br";
+import { ukPack } from "./uk";
 
 export const PACKS = [brPack, ukPack] as const;
 ```
@@ -431,11 +431,11 @@ in CI. Pack owners approve changes to their own directory. Changes to
 
 **Pack lifecycle:**
 
-| Status | Meaning | Consequence |
-|---|---|---|
-| `draft` | Incomplete or unvalidated | Tests run; never in default `enabled_packs`; UI banner; blocks `pnpm release:check` |
-| `supported` | ≥1 responsive maintainer, CI green, fixtures refreshed within 90 days | Fully offered |
-| `unmaintained` | CI red 30 days or maintainer unreachable | UI banner; removed after two releases |
+| Status         | Meaning                                                               | Consequence                                                                         |
+| -------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `draft`        | Incomplete or unvalidated                                             | Tests run; never in default `enabled_packs`; UI banner; blocks `pnpm release:check` |
+| `supported`    | ≥1 responsive maintainer, CI green, fixtures refreshed within 90 days | Fully offered                                                                       |
+| `unmaintained` | CI red 30 days or maintainer unreachable                              | UI banner; removed after two releases                                               |
 
 **API versioning:** `PACK_API_VERSION` is an integer. A breaking change bumps it,
 and the same PR updates every in-repo pack. That is only possible because packs
@@ -464,8 +464,8 @@ Goes into a new `packs/global`:
 
 - CoinGecko (crypto is not a national market), AwesomeAPI and PTAX as `fx`
   sources, Yahoo Finance as a multi-market `market_price` source.
-  *AwesomeAPI deferred 2026-09-06: no series consumes it. See `MILESTONES.md`
-  Milestone 1 decisions.*
+  _AwesomeAPI deferred 2026-09-06: no series consumes it. See `MILESTONES.md`
+  Milestone 1 decisions._
 
 Goes into `packs/us`:
 
@@ -496,10 +496,10 @@ Suggested insertion: the kernel and `packs/br` share Milestones 1–3 as
 specified; the canary `packs/uk` and the conformance suite become Milestone 4,
 ahead of any polish work.
 
-*Re-sequenced 2026-09-20 (`MILESTONES.md` §4 decision 32): the conformance
+_Re-sequenced 2026-09-20 (`MILESTONES.md` §4 decision 32): the conformance
 suite shipped with Milestone 1; the canary is Milestone 5, after Brazil
 reaches production. The reason above is preserved by §16 and the
-neutrality test, not by the order.*
+neutrality test, not by the order._
 
 ---
 

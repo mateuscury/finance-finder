@@ -12,12 +12,27 @@ export async function setManualPrice(client: SupabaseClient, input: unknown): Pr
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
   const asset = await client.from("assets").select("native_currency").eq("id", parsed.data.asset_id).maybeSingle();
   if (asset.error || !asset.data) return fail("not_found", ["asset_id"]);
-  const { error } = await client
-    .from("prices")
-    .upsert({ asset_id: parsed.data.asset_id, date: parsed.data.date, price: parsed.data.price, currency: asset.data.native_currency, source_id: "manual" }, { onConflict: "asset_id,date" });
+  const { error } = await client.from("prices").upsert(
+    {
+      asset_id: parsed.data.asset_id,
+      date: parsed.data.date,
+      price: parsed.data.price,
+      currency: asset.data.native_currency,
+      source_id: "manual",
+    },
+    { onConflict: "asset_id,date" },
+  );
   return error ? fail(reasonFor(error)) : ok(undefined);
 }
 
 export async function deleteManualPrice(client: SupabaseClient, assetId: string, date: string): Promise<ActionResult> {
-  return fromAffected(await client.from("prices").delete().eq("asset_id", assetId).eq("date", date).eq("source_id", "manual").select("date"));
+  return fromAffected(
+    await client
+      .from("prices")
+      .delete()
+      .eq("asset_id", assetId)
+      .eq("date", date)
+      .eq("source_id", "manual")
+      .select("date"),
+  );
 }

@@ -30,16 +30,16 @@ finished.
 
 ## Progress
 
-| Phase | Merge unit | Status |
-|---|---|---|
-| 0 — Baseline, decisions, stories, dependencies | (this commit) | merged |
-| 1 — Sessions and login | (this commit) | merged |
-| 2 — Data access layer and ledger reads | (this commit) | merged |
-| 3 — Snapshot invalidation, snapshot job, cron route | (this commit) | merged |
+| Phase                                                    | Merge unit    | Status |
+| -------------------------------------------------------- | ------------- | ------ |
+| 0 — Baseline, decisions, stories, dependencies           | (this commit) | merged |
+| 1 — Sessions and login                                   | (this commit) | merged |
+| 2 — Data access layer and ledger reads                   | (this commit) | merged |
+| 3 — Snapshot invalidation, snapshot job, cron route      | (this commit) | merged |
 | 4 — Asset, transaction, cash-flow and manual-price flows | (this commit) | merged |
-| 5 — CSV import | (this commit) | merged |
-| 6 — Settings: security and your data | (this commit) | merged |
-| 7 — Documentation and gates | (this commit) | merged |
+| 5 — CSV import                                           | (this commit) | merged |
+| 6 — Settings: security and your data                     | (this commit) | merged |
+| 7 — Documentation and gates                              | (this commit) | merged |
 
 ## Why the conventions below are written down first
 
@@ -81,9 +81,9 @@ enforced by lint and the database wherever a rule can be.
   Supabase directly, because the QR must be shown before the factor exists.
   The challenge page at `/login/mfa` is a server-action form. Unenrolment
   requires an AAL2 session. Recovery stays `pnpm bootstrap:user
-  --reset-mfa`.
+--reset-mfa`.
 - **Sign out.** `signOut({ scope: "local" })` from the nav; `scope:
-  "global"` from Settings ("sign out everywhere").
+"global"` from Settings ("sign out everywhere").
 - **Password.** Change from Settings through `updateUser({ password })`
   (Auth's secure-password-change reauthentication applies as configured).
   Reset through `resetPasswordForEmail` with a fixed "if that address has
@@ -120,7 +120,7 @@ enforced by lint and the database wherever a rule can be.
   one place the casts are written.
 - **Aggregate server-side when rows are not needed.** Counts for the
   first-run card and the "N assets unpriced" figure use `count: "exact",
-  head: true`, never a full read.
+head: true`, never a full read.
 
 ### Writes
 
@@ -192,7 +192,7 @@ Supabase-backed implementation with paginated text-cast reads.
   export, property-tested for round-trip. No dependency: the format is
   small and the project prefers reviewed code to a package (decision 23).
 - **Canonical columns** are SPEC §9.1's. A header map `{ canonical →
-  uploaded header }` is applied first; unknown columns are ignored; a
+uploaded header }` is applied first; unknown columns are ignored; a
   missing required column is a file-level error.
 - **Dry run** (`lib/import/dryRun.ts`, pure over rows the action fetched):
   per row, parsed values, zod errors, the resolved asset or `unresolved`,
@@ -249,7 +249,7 @@ as "Decisions taken", with rationale, numbered on from Milestone 2's 18.
     milestone adds is `@supabase/ssr` (pinned to the current release,
     `0.12.7`, with `@supabase/supabase-js` moved to `2.116.0`).
 24. **The CSV column mapping is stored in `user_settings.csv_column_map
-    jsonb null`** (same forward migration as decision 22) and is not part
+jsonb null`** (same forward migration as decision 22) and is not part
     of the backup (`settings` stays the four keys of decision 18).
 25. **Cash flows are entered in the base currency only.** The form offers
     no currency; the action writes `base_currency`. `cash_flows.currency`
@@ -280,7 +280,7 @@ as "Decisions taken", with rationale, numbered on from Milestone 2's 18.
     otherwise.
 29. **Enabling a pack triggers `runIngest({ kind: "new_packs" })` for it
     through `after()`; creating an asset triggers `runIngest({ kind:
-    "assets" })` then `runSnapshots({ kind: "users" })` for that user;
+"assets" })` then `runSnapshots({ kind: "users" })` for that user;
     Refresh triggers `unpriced` + snapshots.** All three run after the
     response under the service role with the remaining route budget
     (decision 30) — "save first, fetch second, never coupled" (SPEC §9.4).
@@ -295,7 +295,7 @@ as "Decisions taken", with rationale, numbered on from Milestone 2's 18.
     algorithm with a fake store), the `dbtest` tier for RLS, triggers,
     RPCs and auth (sign-in, uniform failure, AAL levels, TOTP enrol and
     verify with an RFC 6238 generator written in the test), and `next
-    build`. Rationale: a browser runner is a large dependency that mostly
+build`. Rationale: a browser runner is a large dependency that mostly
     re-proves what the dbtest tier proves; Milestone 5's screens are the
     right moment to add one if the UX work needs it.
 
@@ -329,7 +329,7 @@ as "Decisions taken", with rationale, numbered on from Milestone 2's 18.
   `MILESTONES.md` §3 is complete with corrections; `CLAUDE.md` and
   `lib/*/README.md` describe the tree.
 - `pnpm typecheck && pnpm lint && pnpm test && pnpm test:db && pnpm
-  codeowners --check && pnpm build` pass; `pnpm release:check` fails only
+codeowners --check && pnpm build` pass; `pnpm release:check` fails only
   on the two draft packs and `specs/PERSONAS.md`.
 
 ## Non-goals
@@ -422,6 +422,7 @@ Corrections to the prose above, found while building:
 4. AC-003.5's "sign out everywhere" and AC-003.6's password change land in
    Phase 6 with the other Settings security actions, as the phase list
    already says.
+
 - `lib/auth/session.ts`: `requireUser()`, `requireAal2()` (used by
   unenrol and password change), `currentAal()`.
 - `app/login/page.tsx` + `actions.ts` (`signIn`), `app/login/mfa/page.tsx`
@@ -442,7 +443,7 @@ Corrections to the prose above, found while building:
   (`HoldingAsset` needs the registry to resolve `instrumentKind`;
   `LedgerTransaction`, `ExternalCashFlow`, `PriceObservation`,
   `SeriesObservation`) from text-cast, paginated selects; `readLedger(client,
-  registry)` composes them into a `PortfolioInput` for the signed-in user.
+registry)` composes them into a `PortfolioInput` for the signed-in user.
 - `lib/ledger/queries.ts`: the list reads the pages need (assets with their
   latest price and its source, transactions by page, cash flows) and the
   counts (`assetsUnpriced`, `assets`, `transactions`).
@@ -527,7 +528,7 @@ Corrections to the prose above, found while building:
   `create/update/delete` returning the typed result, revalidating by path.
   Asset create validates `metadata` with the pack's `metadataSchema` and
   the identifier per `IdentifierSpec`; then `after()` → `runIngest({ kind:
-  "assets" })` → `runSnapshots({ kind: "users" })` (decisions 29, 30).
+"assets" })` → `runSnapshots({ kind: "users" })` (decisions 29, 30).
 - Forms on the three pages and on an asset's row for a manual price.
 - Tests: schema tables; action tests with a fake client for every reason
   code; dbtests: cross-user references refused by RLS/FK, manual price not
@@ -537,7 +538,7 @@ Corrections to the prose above, found while building:
 ### Grounding (2026-09-20) — status: merged
 
 1. Each ledger module (`lib/ledger/{assets,transactions,cashFlows,prices,
-   settings}.ts`) takes the user's client and returns an `ActionResult`;
+settings}.ts`) takes the user's client and returns an `ActionResult`;
    the `"use server"` files under `app/(app)/*/actions.ts` only verify the
    session, parse `FormData`, call the module, revalidate and redirect with
    the outcome in the query string (`?saved=1` / `?error=<reason>&fields=`),
@@ -636,9 +637,9 @@ Corrections to the prose above, found while building:
   state and layout; `README.md` status and CSV section; `MILESTONES.md`
   §3 complete with corrections; `specs/SPEC.md` ACs ticked.
 - Gates in order: `pnpm typecheck && pnpm lint && pnpm test && pnpm test:db
-  && pnpm codeowners --check`, `pnpm exec tsx
-  scripts/check-release-readiness.ts` (draft packs + PERSONAS only), `pnpm
-  release:check` end to end.
+&& pnpm codeowners --check`, `pnpm exec tsx
+scripts/check-release-readiness.ts` (draft packs + PERSONAS only), `pnpm
+release:check` end to end.
 
 ## Suggested merge sequence for a solo maintainer
 

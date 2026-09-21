@@ -28,7 +28,8 @@ export interface XirrFlow {
   amount: KDecimal;
 }
 
-export type XirrResult = { status: "ok"; rate: KDecimal } | { status: "null"; reason: "insufficient_flows" | "no_root" };
+export type XirrResult =
+  { status: "ok"; rate: KDecimal } | { status: "null"; reason: "insufficient_flows" | "no_root" };
 
 const NEWTON_START = new KernelDecimal("0.1");
 const NEWTON_MAX_ITERATIONS = 50;
@@ -39,9 +40,22 @@ const NEWTON_TOLERANCE = new KernelDecimal("1e-20");
 const LOWER_BOUND = new KernelDecimal("-0.999999");
 const UPPER_BOUND = new KernelDecimal("1e6");
 const FLAT_DERIVATIVE = new KernelDecimal("1e-30");
-const BISECTION_GRID = ["-0.999999", "-0.99", "-0.9", "-0.75", "-0.5", "-0.25", "0", "0.1", "0.25", "0.5", "1", "2", "5", "10"].map(
-  (s) => new KernelDecimal(s),
-);
+const BISECTION_GRID = [
+  "-0.999999",
+  "-0.99",
+  "-0.9",
+  "-0.75",
+  "-0.5",
+  "-0.25",
+  "0",
+  "0.1",
+  "0.25",
+  "0.5",
+  "1",
+  "2",
+  "5",
+  "10",
+].map((s) => new KernelDecimal(s));
 const BISECTION_MAX_ITERATIONS = 300;
 // Near r = −1 the NPV is steep (|f′| ~ 1e15 for a near-total loss over a few
 // years), so the bracket must close far tighter than the 1e-10 NPV property:
@@ -115,7 +129,10 @@ export function xirr(stream: readonly XirrFlow[]): XirrResult {
     return { status: "null", reason: "insufficient_flows" };
   }
   const origin = stream.reduce((min, f) => (compareDates(f.date, min) < 0 ? f.date : min), stream[0].date);
-  const flows: Timed[] = stream.map((f) => ({ amount: f.amount, years: new KernelDecimal(daysBetween(origin, f.date)).div(365) }));
+  const flows: Timed[] = stream.map((f) => ({
+    amount: f.amount,
+    years: new KernelDecimal(daysBetween(origin, f.date)).div(365),
+  }));
   const rate = newton(flows) ?? bisection(flows);
   return rate === null ? { status: "null", reason: "no_root" } : { status: "ok", rate };
 }
@@ -134,14 +151,16 @@ export interface MwrInput {
 export type MwrResult = XirrResult & { ignored: readonly BaseFlow[] };
 
 export function mwr(input: MwrInput): MwrResult {
-  if (compareDates(input.from, input.to) > 0) throw new KernelError("invalid_input", "mwr needs from ≤ to", { from: input.from, to: input.to });
+  if (compareDates(input.from, input.to) > 0)
+    throw new KernelError("invalid_input", "mwr needs from ≤ to", { from: input.from, to: input.to });
   const startValue = parseDecimal(input.startValue, "startValue");
   const endValue = parseDecimal(input.endValue, "endValue");
   const stream: XirrFlow[] = [];
   const ignored: BaseFlow[] = [];
   if (startValue.gt(0)) stream.push({ date: input.from, amount: startValue.negated() });
   for (const flow of input.flows) {
-    if (inWindow(flow.date, input.from, input.to)) stream.push({ date: flow.date, amount: parseDecimal(flow.amount, "flow").negated() });
+    if (inWindow(flow.date, input.from, input.to))
+      stream.push({ date: flow.date, amount: parseDecimal(flow.amount, "flow").negated() });
     else if (compareDates(flow.date, input.to) > 0) ignored.push(flow);
     // else: dated ≤ from, part of startValue.
   }

@@ -18,7 +18,8 @@ export interface Identity {
   nextLevel: AssuranceLevel;
 }
 
-export type Access = { kind: "unauthenticated" } | { kind: "mfa_required"; identity: Identity } | { kind: "ok"; identity: Identity };
+export type Access =
+  { kind: "unauthenticated" } | { kind: "mfa_required"; identity: Identity } | { kind: "ok"; identity: Identity };
 
 /** The slice of a Supabase client `resolveAccess` reads; a test passes a fake. */
 export interface AuthReader {

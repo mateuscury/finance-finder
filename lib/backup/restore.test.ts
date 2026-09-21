@@ -23,7 +23,21 @@ const base: Backup = {
   exported_at: TS,
   settings: { base_currency: "BRL", enabled_packs: ["br"], locale: "pt-BR", theme: "system" },
   assets: [asset(A)],
-  transactions: [{ id: B, asset_id: A, trade_date: "2026-02-02", type: "buy", quantity: "1", unit_price: "10.50", currency: "BRL", fees: "0", fx_rate: null, note: null, created_at: TS }],
+  transactions: [
+    {
+      id: B,
+      asset_id: A,
+      trade_date: "2026-02-02",
+      type: "buy",
+      quantity: "1",
+      unit_price: "10.50",
+      currency: "BRL",
+      fees: "0",
+      fx_rate: null,
+      note: null,
+      created_at: TS,
+    },
+  ],
   cash_flows: [],
   prices: [{ asset_id: A, date: "2026-02-02", price: "10.500", currency: "BRL", source_id: "br.brapi" }],
 };
@@ -40,7 +54,10 @@ describe("planRestore", () => {
   it("refuses with the fixed reasons the database would raise", () => {
     expect(planRestore({ ...base, version: 3 }, PACKS)).toMatchObject({ ok: false, reason: "unsupported_version" });
     expect(planRestore({ ...base, assets: "nope" }, PACKS)).toMatchObject({ ok: false, reason: "invalid_backup" });
-    expect(planRestore({ ...base, assets: [asset(A), asset(A, { identifier: "OTHER" })] }, PACKS)).toMatchObject({ ok: false, reason: "duplicate_asset_id" });
+    expect(planRestore({ ...base, assets: [asset(A), asset(A, { identifier: "OTHER" })] }, PACKS)).toMatchObject({
+      ok: false,
+      reason: "duplicate_asset_id",
+    });
     expect(planRestore({ ...base, assets: [] }, PACKS)).toMatchObject({ ok: false, reason: "foreign_asset_reference" });
     const foreignPrice = planRestore({ ...base, prices: [{ ...base.prices[0], asset_id: B }] }, PACKS);
     expect(foreignPrice).toMatchObject({ ok: false, reason: "foreign_asset_reference" });
@@ -51,7 +68,11 @@ describe("planRestore", () => {
     const plan = planRestore(
       {
         ...base,
-        assets: [asset(A, { pack_id: "zz", instrument_kind: "zz.thing" }), asset(B, { instrument_kind: "br.nope" }), asset("33333333-3333-4333-8333-333333333333", { instrument_kind: "br.cdb", metadata: {} })],
+        assets: [
+          asset(A, { pack_id: "zz", instrument_kind: "zz.thing" }),
+          asset(B, { instrument_kind: "br.nope" }),
+          asset("33333333-3333-4333-8333-333333333333", { instrument_kind: "br.cdb", metadata: {} }),
+        ],
       },
       PACKS,
     );

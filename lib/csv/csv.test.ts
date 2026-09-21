@@ -5,12 +5,24 @@ import { writeCsv } from "./write";
 
 describe("parseCsv", () => {
   it("reads the canonical example with LF, CRLF and a BOM alike", () => {
-    const body = "date,type,pack,instrument_kind,identifier,quantity,unit_price,currency,fees,note\n2024-03-14,buy,br,br.fii,HGLG11,100,162.40,BRL,2.50,\n2024-06-28,dividend,br,br.fii,HGLG11,0,132.00,BRL,0,June distribution\n";
+    const body =
+      "date,type,pack,instrument_kind,identifier,quantity,unit_price,currency,fees,note\n2024-03-14,buy,br,br.fii,HGLG11,100,162.40,BRL,2.50,\n2024-06-28,dividend,br,br.fii,HGLG11,0,132.00,BRL,0,June distribution\n";
     for (const text of [body, body.replace(/\n/g, "\r\n"), `﻿${body}`]) {
       const r = parseCsv(text);
       expect(r.ok).toBe(true);
       if (!r.ok) return;
-      expect(r.header).toEqual(["date", "type", "pack", "instrument_kind", "identifier", "quantity", "unit_price", "currency", "fees", "note"]);
+      expect(r.header).toEqual([
+        "date",
+        "type",
+        "pack",
+        "instrument_kind",
+        "identifier",
+        "quantity",
+        "unit_price",
+        "currency",
+        "fees",
+        "note",
+      ]);
       expect(r.rows).toEqual([
         ["2024-03-14", "buy", "br", "br.fii", "HGLG11", "100", "162.40", "BRL", "2.50", ""],
         ["2024-06-28", "dividend", "br", "br.fii", "HGLG11", "0", "132.00", "BRL", "0", "June distribution"],

@@ -11,6 +11,11 @@ import type { HoldingValue, ValuationContext } from "./result";
 
 export const NAV_EXTRA_DAYS = 2;
 
-export function valueNavUnitPrice(asset: HoldingAsset, quantity: KDecimal, asOf: IsoDate, ctx: ValuationContext): HoldingValue {
+export function valueNavUnitPrice(
+  asset: HoldingAsset,
+  quantity: KDecimal,
+  asOf: IsoDate,
+  ctx: ValuationContext,
+): HoldingValue {
   return valueAtLatestPrice(asset, quantity, asOf, ctx, ctx.windowDays + NAV_EXTRA_DAYS);
 }

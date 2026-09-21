@@ -101,11 +101,19 @@ export type ParseBackupResult =
 export function parseBackup(input: unknown): ParseBackupResult {
   const version = typeof input === "object" && input !== null ? (input as { version?: unknown }).version : undefined;
   if (version !== BACKUP_VERSION) {
-    return { ok: false, reason: "unsupported_version", issues: [`version ${String(version)} is not ${BACKUP_VERSION}`] };
+    return {
+      ok: false,
+      reason: "unsupported_version",
+      issues: [`version ${String(version)} is not ${BACKUP_VERSION}`],
+    };
   }
   const parsed = BackupSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, reason: "invalid_backup", issues: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`) };
+    return {
+      ok: false,
+      reason: "invalid_backup",
+      issues: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
+    };
   }
   return { ok: true, backup: parsed.data };
 }

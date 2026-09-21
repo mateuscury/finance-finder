@@ -39,7 +39,14 @@ export async function GET(req: Request) {
         ok: summary.ok,
         durationMs: summary.durationMs,
         maxDurationSeconds: CRON_MAX_DURATION_SECONDS,
-        users: summary.users.map((u) => ({ status: u.status, from: u.from, to: u.to, daysBuilt: u.daysBuilt, rowsWritten: u.rowsWritten, errorCode: u.errorCode })),
+        users: summary.users.map((u) => ({
+          status: u.status,
+          from: u.from,
+          to: u.to,
+          daysBuilt: u.daysBuilt,
+          rowsWritten: u.rowsWritten,
+          errorCode: u.errorCode,
+        })),
       },
       { status: 200 },
     );

@@ -11,7 +11,16 @@ import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { PACKS } from "@/packs";
 import { requireAal2, requireUser } from "@/lib/auth/session";
-import { changePassword, confirmTotp, enrolTotp, signOutEverywhere, unenrolTotp, verifyPassword, type Enrolment, type SecurityReason } from "@/lib/auth/security";
+import {
+  changePassword,
+  confirmTotp,
+  enrolTotp,
+  signOutEverywhere,
+  unenrolTotp,
+  verifyPassword,
+  type Enrolment,
+  type SecurityReason,
+} from "@/lib/auth/security";
 import { planRestore } from "@/lib/backup";
 import { deleteUserJob, ingestJob } from "@/lib/jobs";
 import { changeBaseCurrency, setEnabledPacks, updatePreferences } from "@/lib/ledger/settings";
@@ -23,7 +32,10 @@ const SETTINGS = "/settings";
 export async function changeBaseCurrencyAction(formData: FormData): Promise<void> {
   const { client, identity } = await requireUser();
   const { base_currency, confirm_reset } = formValues(formData, ["base_currency", "confirm_reset"] as const);
-  const result = await changeBaseCurrency(client, identity.userId, { base_currency, confirmReset: confirm_reset === "on" });
+  const result = await changeBaseCurrency(client, identity.userId, {
+    base_currency,
+    confirmReset: confirm_reset === "on",
+  });
   if (result.ok) revalidatePath("/");
   redirect(`${SETTINGS}${outcomeQuery(result)}`);
 }
@@ -48,7 +60,8 @@ export async function updatePreferencesAction(formData: FormData): Promise<void>
   redirect(`${SETTINGS}${outcomeQuery(result)}`);
 }
 
-const securityQuery = (r: { ok: true } | { ok: false; reason: SecurityReason }) => (r.ok ? "?saved=1" : `?security=${r.reason}`);
+const securityQuery = (r: { ok: true } | { ok: false; reason: SecurityReason }) =>
+  r.ok ? "?saved=1" : `?security=${r.reason}`;
 
 export async function changePasswordAction(formData: FormData): Promise<void> {
   const session = await requireAal2();
@@ -58,7 +71,9 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
 }
 
 /** Step 1 of enrolment, called from the client widget: returns the QR to render, never via a URL. */
-export async function enrolTotpAction(): Promise<{ ok: true; enrolment: Enrolment } | { ok: false; reason: SecurityReason }> {
+export async function enrolTotpAction(): Promise<
+  { ok: true; enrolment: Enrolment } | { ok: false; reason: SecurityReason }
+> {
   const { client } = await requireUser();
   const result = await enrolTotp(client);
   return result.ok ? { ok: true, enrolment: result.value } : { ok: false, reason: result.reason };
@@ -121,7 +136,14 @@ export async function deleteEverythingAction(formData: FormData): Promise<void> 
   const { phrase, password } = formValues(formData, ["phrase", "password"] as const);
   if (phrase !== "delete everything" || !password || !session.identity.email) redirect(`${SETTINGS}?delete=phrase`);
   const { url, anonKey } = publicSupabaseEnv();
-  const fresh = await verifyPassword(() => createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }), session.identity.email, password);
+  const fresh = await verifyPassword(
+    () =>
+      createClient(url, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      }),
+    session.identity.email,
+    password,
+  );
   if (!fresh) redirect(`${SETTINGS}?delete=password`);
   const { ok } = await deleteUserJob(session.identity.userId);
   if (!ok) redirect(`${SETTINGS}?delete=failed`);

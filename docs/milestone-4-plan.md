@@ -9,10 +9,10 @@ placed here moves to Milestone 5, and this milestone takes what
 §12 owns what "supported" means.
 
 **Status 2026-09-20:** decisions 33–52 confirmed by the maintainer (34
-amended: English *and* Brazilian Portuguese from the start; 40 confirmed on
+amended: English _and_ Brazilian Portuguese from the start; 40 confirmed on
 the condition stated under it) and recorded in `MILESTONES.md` §4. The
 step-by-step runbook a worker follows end to end is
-`docs/milestone-4-execution.md`; this document stays the *why*.
+`docs/milestone-4-execution.md`; this document stays the _why_.
 
 Every merge unit leaves `pnpm test` and `pnpm test:db` green on `main` and
 runs the loop in `.claude/CLAUDE.md`: plan → build → gates →
@@ -38,18 +38,18 @@ second pack will meet. Building `packs/uk` is Milestone 5 (decision 45).
 
 ## Progress
 
-| Phase | Merge unit | Status |
-|---|---|---|
-| 0 — Baseline: decisions, stories, personas, dependencies, `br.stock`, neutrality | — | not started |
-| 1 — Debt paydown and hardening: CI that runs, typed client, coverage, headers, env, the deferred fixes | — | not started |
-| 2 — Foundation and Overview: tokens, fonts, theme, shell, status strip, privacy, formatting, first-run card | — | not started |
-| 3 — Performance and Allocation | — | not started |
-| 4 — Contribution (with attribution) and Maturities | — | not started |
-| 5 — Ledger screens designed: Assets (schema-driven form), Transactions + import, Cash flows, Settings, Login | — | not started |
-| 6 — Multi-year portfolio, performance budgets | — | not started |
-| 7 — Smoke journeys, accessibility pass | — | not started |
-| 8 — Production readiness: packs supported, runbook, release gate | — | not started |
-| 9 — First deploy (maintainer-gated) | — | not started |
+| Phase                                                                                                        | Merge unit | Status      |
+| ------------------------------------------------------------------------------------------------------------ | ---------- | ----------- |
+| 0 — Baseline: decisions, stories, personas, dependencies, `br.stock`, neutrality                             | —          | not started |
+| 1 — Debt paydown and hardening: CI that runs, typed client, coverage, headers, env, the deferred fixes       | —          | not started |
+| 2 — Foundation and Overview: tokens, fonts, theme, shell, status strip, privacy, formatting, first-run card  | —          | not started |
+| 3 — Performance and Allocation                                                                               | —          | not started |
+| 4 — Contribution (with attribution) and Maturities                                                           | —          | not started |
+| 5 — Ledger screens designed: Assets (schema-driven form), Transactions + import, Cash flows, Settings, Login | —          | not started |
+| 6 — Multi-year portfolio, performance budgets                                                                | —          | not started |
+| 7 — Smoke journeys, accessibility pass                                                                       | —          | not started |
+| 8 — Production readiness: packs supported, runbook, release gate                                             | —          | not started |
+| 9 — First deploy (maintainer-gated)                                                                          | —          | not started |
 
 ## Why the conventions below are written down first
 
@@ -111,7 +111,7 @@ SPEC §11 and decision 10, on every screen: a row whose latest input was
 carried forward shows its value with the carried-forward mark and date; a
 stale row shows its last known value with the stale mark and is excluded
 from every confident total; an unpriced position shows its quantity and
-*unpriced* — never a zero, never a confident number off missing data. One
+_unpriced_ — never a zero, never a confident number off missing data. One
 `<ValueStatus>` component renders the mark; the copy is the §9.5 table.
 
 ### The design system (SPEC §10)
@@ -145,7 +145,7 @@ from every confident total; an unpriced position shows its quantity and
 
 - **One instance-defaults module.** `lib/settings/defaults.ts` exports
   `INSTANCE_DEFAULTS = { baseCurrency: "BRL", locale: "pt-BR", enabledPacks:
-  [] }` — the values the database defaults also carry — and is the ONLY
+[] }` — the values the database defaults also carry — and is the ONLY
   place in `app/` and `lib/` a pack id, currency code or locale literal may
   appear. A test, `packs/conformance/kernel-neutrality.test.ts`, scans
   `app/` and `lib/` source (tests and `lib/testing` excluded) for
@@ -171,7 +171,7 @@ from every confident total; an unpriced position shows its quantity and
 
 - Deployment is the maintainer's accounts: Vercel (the two crons in
   `vercel.json`, `maxDuration` 60 without Fluid compute — `lib/cron/
-  budget.ts`) and a hosted Supabase project (`supabase db push` applies the
+budget.ts`) and a hosted Supabase project (`supabase db push` applies the
   nine migrations; the dashboard mirrors `config.toml`'s auth settings —
   signups off, 12-char passwords, TOTP on, the email provider on, the site
   URL and the callback redirect). `docs/DEPLOY.md` is the runbook;
@@ -193,7 +193,7 @@ recorded under `MILESTONES.md` §4.
     driven by a real pack, an independently derived golden fixture and the
     live read/write/snapshot paths under RLS. The larger risk now is
     polishing screens no one has used with a full ledger. Recorded as a
-    reversal of §14's ordering, with §14's *reason* preserved by decisions
+    reversal of §14's ordering, with §14's _reason_ preserved by decisions
     42 and 45.
 33. **Add `br.stock`** — ações, ETFs and BDRs listed on B3, `market_price`
     through `br.brapi`, `ticker` identifier, `FiiMetadata`-like
@@ -250,7 +250,7 @@ recorded under `MILESTONES.md` §4.
     exercised: RLS on every user table, `httpOnly` cookie sessions verified
     by `getUser()`, AAL2 before any data page for an enrolled owner, the
     service role confined to cron and `lib/jobs`, value-free logs, and the
-    decision 51 headers. Privacy mode is a convenience *inside* those
+    decision 51 headers. Privacy mode is a convenience _inside_ those
     boundaries, never a substitute — so Phase 7's journeys include one that
     requests every data route unauthenticated and at AAL1 with a factor,
     and asserts the redirect, never a render.
@@ -269,7 +269,7 @@ recorded under `MILESTONES.md` §4.
     `NEXT_PUBLIC_SITE_URL` is the Vercel production URL.
 44. **Performance budgets are measured, not assumed:** a synthetic
     five-year, twenty-asset BR ledger generator (`lib/testing/synthetic.
-    ts`), a dbtest that times `runSnapshots` (days built per second) and
+ts`), a dbtest that times `runSnapshots` (days built per second) and
     each screen's read path, and `docs/performance-budgets.md` recording
     the numbers and the thresholds (`runSnapshots` ≥ 50 days/s; any screen
     read < 500 ms at p50 on the local stack). Optimisation happens only
@@ -287,6 +287,7 @@ recorded under `MILESTONES.md` §4.
     has been driven by a browser yet; the UK milestone will not touch
     screens, so this is the last cheap moment. Cost: a large
     devDependency with browser binaries; kept out of the default test run.
+
 ## Technical debt inventory — paid early (Phase 1)
 
 Every deferred fix, advisory and latent finding from Milestones 1–3, plus
@@ -296,52 +297,52 @@ written on a typed client, under CI that actually runs, behind headers,
 with the reads they will stress already bounded. Items marked **M** need
 the maintainer.
 
-| ID | Debt | Source | Fix | Phase |
-|---|---|---|---|---|
-| D-01 | **No git remote; CI has never run.** `.github/workflows/ci.yml` exists; `git remote -v` is empty | tree | **M**: create the GitHub repository, push `main`, confirm the workflow is green. Everything below assumes CI exists | 1 |
-| D-02 | CI runs `test` and `test:packs` but not `test:db`; no audit, no format check | `ci.yml` | Add a job with the Supabase CLI action: `supabase start -x logflare,studio,vector`, env from `supabase status -o env`, `pnpm test:db`; `pnpm audit --audit-level=high`; `pnpm format:check`; later `test:e2e` (decision 46) | 1 |
-| D-03 | **Untyped Supabase client**: `pnpm db:types` exists but `lib/database.types.ts` does not; nine `as XRow` casts | tree | Decision 49: generate and commit the types, `SupabaseClient<Database>` everywhere, CI diff-checks the file against the local stack; drop the casts where the parser types the `::text` selects | 1 |
-| D-04 | No coverage thresholds although `@vitest/coverage-v8` is installed | `package.json` | `pnpm test:coverage`: `lib/calc` ≥ 95 % lines and branches, `lib/ledger` + `lib/jobs` + `lib/import` + `lib/csv` ≥ 85 %; CI enforces | 1 |
-| D-05 | No security headers; `next.config.ts` is empty | SPEC §12.1 posture | Decision 51: CSP with a per-request nonce from `proxy.ts` (Next's guide), HSTS, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, minimal `Permissions-Policy`, `nosniff`, `poweredByHeader: false`; `img-src 'self' data:` for the TOTP QR; fonts self-hosted so no external origin | 1 |
-| D-06 | Environment validated lazily, module by module | `lib/supabase/*`, `lib/cron/*` | `lib/env.ts`: one zod parse per runtime (public / server / cron) at first use, failing with variable names; every module reads through it | 1 |
-| D-07 | Dependencies drifting (next 16.3.5, react 19.3, vitest 5.0.1, fast-check 4.10, tsx, types) | `pnpm outdated` | Bump patch and minor now under the full gate; record the currency policy in `CLAUDE.md`: patch freely, minor with the gate, major as a decision; `pnpm outdated` monthly | 1 |
-| D-08 | No formatter; style is by hand | tree | Decision 50: Prettier, `format` / `format:check`, one formatting-only commit | 1 |
-| D-09 | `lib/packs/ingest.ts` carries its own `addDays` | M2 plan Phase 1 ("leave it") | Import `lib/calc/dates` (that direction is allowed) | 1 |
-| D-10 | The nulls-first comparator is written twice (`snapshots-store.listUsers`, `ingest.ts` source order) | M3 CQ-016 | `lib/util/order.ts` `nullsFirst(key)` | 1 |
-| D-11 | `listUsers` is N+1: two `limit(1)` reads per user | M3 Phase 3 grounding | Read view `snapshot_markers(user_id, last_snapshot_date, earliest_trade_date)`, one paginated select (decision 52 allows read views) | 1 |
-| D-12 | `store.ts listAssets` `unpriced` reads every price row to diff | M1 comment "should become a view" | Read `asset_latest_prices` for the candidate ids instead — one row per asset | 1 |
-| D-13 | `readLedger` reads every price and series row on every call; the analysis screens will call it per request | M3 Phase 2 | `pricesFrom` / `seriesFrom` options and a `latestPricesOnly` mode for point valuations; Overview reads snapshots + `asset_latest_prices`, not a full valuation | 1 (minimal), 6 (if budgets fail) |
-| D-14 | Import duplicate detection reads every transaction | M3 Phase 5 | Bound the read to the file's `[min, max]` trade date | 1 |
-| D-15 | UI copy scattered: `form.ts REASON_COPY`, three maps on Settings, one on Import | M3 CQ-021 | `lib/copy/{types,en,pt-BR,index}.ts`: one `Copy` type, two complete dictionaries, `copyFor(locale)`; the four maps and the shared strings move in Phase 1, each screen's own strings as it is designed (Phases 2–5) — decision 34 as amended | 1 |
-| D-16 | A check-constraint failure inside `restore_backup` surfaces as a raw Postgres error | M2 CQ-010 | Forward migration: `exception when others` → `restore_refused: invalid_rows`; `planRestore` already refuses everything the RPC would | 1 |
-| D-17 | Two concurrent restores into one empty account both pass the emptiness check | M2 "what I might have missed" | Same migration: `pg_advisory_xact_lock(hashtext(auth.uid()::text))` first | 1 |
-| D-18 | `writeDay` upserts a whole day in one request; a 1,000-asset day would exceed sane body sizes | M3 Phase 3 CQ | Chunk at 500 rows; a partial day is rebuilt next run because the marker is `max(date)` — document that | 1 |
-| D-19 | Cron runs leave no record beyond the HTTP response | SPEC §12 allows counts and codes | Both cron routes `console.log` the summary JSON (counts and codes only) so Vercel's log retains runs; no table | 1 |
-| D-20 | Test utilities live beside source (`lib/calc/valuation/testkit.ts`, `lib/ledger/fake-client.ts`) | tree | `fake-client.ts` moves to `lib/testing/`. `testkit.ts` STAYS: `lib/calc` tests are lint-banned from `lib/testing` so `test:calc` can never reach the database harness, and the kit is kernel-pure test support (amended while writing the runbook) | 1 |
-| D-21 | Doc drift: ARCHITECTURE §3 says `@supabase/ssr` *planned* (installed), Tailwind/shadcn, react-hook-form, date-fns, RTL *planned*; SPEC §12.1 lists AwesomeAPI (removed); README's privacy section says export, tested restore and confirmed deletion are "not present in this scaffold yet" (they are) | tree | ARCHITECTURE §3 is rewritten in Phase 0 (the decisions are confirmed, and Phase 0 installs against it); the SPEC and README lines in Phase 1; the §3 table stays the one place *planned* means anything | 0 (§3), 1 (rest) |
-| D-22 | `verifyTotp` challenges `totp[0]`; Auth permits up to ten verified factors | M3 Phase 1 | Enrolment already clears leftovers and the UI enrols one; document "one factor" in `lib/auth/README.md`; refuse a second enrolment while one is verified | 1 |
-| D-23 | `parseCsv` builds fields character by character; a 4 MB file is seconds of CPU inside a server action | M3 Phase 5 | Measure in Phase 6's budgets; index-scan rewrite only if the 20k-row synthetic file exceeds 500 ms | 6 |
-| D-24 | The "two calendars per pack" kernel question (B3 closes 24/31 Dec, ANBIMA does not) | `packs/br/README.md` Quirks | A `PACK_API_VERSION` question; recorded in PACKS §16 for the canary, where the LSE/bank-holiday split is the same question | 0 (document) |
-| D-25 | `to_char` format ×5 in the backup migration; stale/ok tail ×3 in valuation | M2 CQ-009, CQ-003 | Accepted; recorded here so the acceptance is deliberate | — |
-| D-26 | Fixtures recorded 2026-09-06; PACKS §12 wants ≤ 90 days for `supported` | tree | Re-record in Phase 8 (decision 41), and again whenever a fixture is older than 60 days in CI's monthly reminder | 8 |
-| D-27 | `lib/cron/budget.ts` assumes no Fluid compute; raising it needs the deployed project's setting | M1 | Confirm on the Vercel project in Phase 9; raise both literals if enabled | 9 |
-| D-28 | `transactions.fx_rate` is stored, display-only, never populated | M3 non-goal | Stays; documented on the form ("optional, display only") | — |
+| ID   | Debt                                                                                                                                                                                                                                                                                                   | Source                            | Fix                                                                                                                                                                                                                                                                                          | Phase                            |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| D-01 | **No git remote; CI has never run.** `.github/workflows/ci.yml` exists; `git remote -v` is empty                                                                                                                                                                                                       | tree                              | **M**: create the GitHub repository, push `main`, confirm the workflow is green. Everything below assumes CI exists                                                                                                                                                                          | 1                                |
+| D-02 | CI runs `test` and `test:packs` but not `test:db`; no audit, no format check                                                                                                                                                                                                                           | `ci.yml`                          | Add a job with the Supabase CLI action: `supabase start -x logflare,studio,vector`, env from `supabase status -o env`, `pnpm test:db`; `pnpm audit --audit-level=high`; `pnpm format:check`; later `test:e2e` (decision 46)                                                                  | 1                                |
+| D-03 | **Untyped Supabase client**: `pnpm db:types` exists but `lib/database.types.ts` does not; nine `as XRow` casts                                                                                                                                                                                         | tree                              | Decision 49: generate and commit the types, `SupabaseClient<Database>` everywhere, CI diff-checks the file against the local stack; drop the casts where the parser types the `::text` selects                                                                                               | 1                                |
+| D-04 | No coverage thresholds although `@vitest/coverage-v8` is installed                                                                                                                                                                                                                                     | `package.json`                    | `pnpm test:coverage`: `lib/calc` ≥ 95 % lines and branches, `lib/ledger` + `lib/jobs` + `lib/import` + `lib/csv` ≥ 85 %; CI enforces                                                                                                                                                         | 1                                |
+| D-05 | No security headers; `next.config.ts` is empty                                                                                                                                                                                                                                                         | SPEC §12.1 posture                | Decision 51: CSP with a per-request nonce from `proxy.ts` (Next's guide), HSTS, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, minimal `Permissions-Policy`, `nosniff`, `poweredByHeader: false`; `img-src 'self' data:` for the TOTP QR; fonts self-hosted so no external origin | 1                                |
+| D-06 | Environment validated lazily, module by module                                                                                                                                                                                                                                                         | `lib/supabase/*`, `lib/cron/*`    | `lib/env.ts`: one zod parse per runtime (public / server / cron) at first use, failing with variable names; every module reads through it                                                                                                                                                    | 1                                |
+| D-07 | Dependencies drifting (next 16.3.5, react 19.3, vitest 5.0.1, fast-check 4.10, tsx, types)                                                                                                                                                                                                             | `pnpm outdated`                   | Bump patch and minor now under the full gate; record the currency policy in `CLAUDE.md`: patch freely, minor with the gate, major as a decision; `pnpm outdated` monthly                                                                                                                     | 1                                |
+| D-08 | No formatter; style is by hand                                                                                                                                                                                                                                                                         | tree                              | Decision 50: Prettier, `format` / `format:check`, one formatting-only commit                                                                                                                                                                                                                 | 1                                |
+| D-09 | `lib/packs/ingest.ts` carries its own `addDays`                                                                                                                                                                                                                                                        | M2 plan Phase 1 ("leave it")      | Import `lib/calc/dates` (that direction is allowed)                                                                                                                                                                                                                                          | 1                                |
+| D-10 | The nulls-first comparator is written twice (`snapshots-store.listUsers`, `ingest.ts` source order)                                                                                                                                                                                                    | M3 CQ-016                         | `lib/util/order.ts` `nullsFirst(key)`                                                                                                                                                                                                                                                        | 1                                |
+| D-11 | `listUsers` is N+1: two `limit(1)` reads per user                                                                                                                                                                                                                                                      | M3 Phase 3 grounding              | Read view `snapshot_markers(user_id, last_snapshot_date, earliest_trade_date)`, one paginated select (decision 52 allows read views)                                                                                                                                                         | 1                                |
+| D-12 | `store.ts listAssets` `unpriced` reads every price row to diff                                                                                                                                                                                                                                         | M1 comment "should become a view" | Read `asset_latest_prices` for the candidate ids instead — one row per asset                                                                                                                                                                                                                 | 1                                |
+| D-13 | `readLedger` reads every price and series row on every call; the analysis screens will call it per request                                                                                                                                                                                             | M3 Phase 2                        | `pricesFrom` / `seriesFrom` options and a `latestPricesOnly` mode for point valuations; Overview reads snapshots + `asset_latest_prices`, not a full valuation                                                                                                                               | 1 (minimal), 6 (if budgets fail) |
+| D-14 | Import duplicate detection reads every transaction                                                                                                                                                                                                                                                     | M3 Phase 5                        | Bound the read to the file's `[min, max]` trade date                                                                                                                                                                                                                                         | 1                                |
+| D-15 | UI copy scattered: `form.ts REASON_COPY`, three maps on Settings, one on Import                                                                                                                                                                                                                        | M3 CQ-021                         | `lib/copy/{types,en,pt-BR,index}.ts`: one `Copy` type, two complete dictionaries, `copyFor(locale)`; the four maps and the shared strings move in Phase 1, each screen's own strings as it is designed (Phases 2–5) — decision 34 as amended                                                 | 1                                |
+| D-16 | A check-constraint failure inside `restore_backup` surfaces as a raw Postgres error                                                                                                                                                                                                                    | M2 CQ-010                         | Forward migration: `exception when others` → `restore_refused: invalid_rows`; `planRestore` already refuses everything the RPC would                                                                                                                                                         | 1                                |
+| D-17 | Two concurrent restores into one empty account both pass the emptiness check                                                                                                                                                                                                                           | M2 "what I might have missed"     | Same migration: `pg_advisory_xact_lock(hashtext(auth.uid()::text))` first                                                                                                                                                                                                                    | 1                                |
+| D-18 | `writeDay` upserts a whole day in one request; a 1,000-asset day would exceed sane body sizes                                                                                                                                                                                                          | M3 Phase 3 CQ                     | Chunk at 500 rows; a partial day is rebuilt next run because the marker is `max(date)` — document that                                                                                                                                                                                       | 1                                |
+| D-19 | Cron runs leave no record beyond the HTTP response                                                                                                                                                                                                                                                     | SPEC §12 allows counts and codes  | Both cron routes `console.log` the summary JSON (counts and codes only) so Vercel's log retains runs; no table                                                                                                                                                                               | 1                                |
+| D-20 | Test utilities live beside source (`lib/calc/valuation/testkit.ts`, `lib/ledger/fake-client.ts`)                                                                                                                                                                                                       | tree                              | `fake-client.ts` moves to `lib/testing/`. `testkit.ts` STAYS: `lib/calc` tests are lint-banned from `lib/testing` so `test:calc` can never reach the database harness, and the kit is kernel-pure test support (amended while writing the runbook)                                           | 1                                |
+| D-21 | Doc drift: ARCHITECTURE §3 says `@supabase/ssr` _planned_ (installed), Tailwind/shadcn, react-hook-form, date-fns, RTL _planned_; SPEC §12.1 lists AwesomeAPI (removed); README's privacy section says export, tested restore and confirmed deletion are "not present in this scaffold yet" (they are) | tree                              | ARCHITECTURE §3 is rewritten in Phase 0 (the decisions are confirmed, and Phase 0 installs against it); the SPEC and README lines in Phase 1; the §3 table stays the one place _planned_ means anything                                                                                      | 0 (§3), 1 (rest)                 |
+| D-22 | `verifyTotp` challenges `totp[0]`; Auth permits up to ten verified factors                                                                                                                                                                                                                             | M3 Phase 1                        | Enrolment already clears leftovers and the UI enrols one; document "one factor" in `lib/auth/README.md`; refuse a second enrolment while one is verified                                                                                                                                     | 1                                |
+| D-23 | `parseCsv` builds fields character by character; a 4 MB file is seconds of CPU inside a server action                                                                                                                                                                                                  | M3 Phase 5                        | Measure in Phase 6's budgets; index-scan rewrite only if the 20k-row synthetic file exceeds 500 ms                                                                                                                                                                                           | 6                                |
+| D-24 | The "two calendars per pack" kernel question (B3 closes 24/31 Dec, ANBIMA does not)                                                                                                                                                                                                                    | `packs/br/README.md` Quirks       | A `PACK_API_VERSION` question; recorded in PACKS §16 for the canary, where the LSE/bank-holiday split is the same question                                                                                                                                                                   | 0 (document)                     |
+| D-25 | `to_char` format ×5 in the backup migration; stale/ok tail ×3 in valuation                                                                                                                                                                                                                             | M2 CQ-009, CQ-003                 | Accepted; recorded here so the acceptance is deliberate                                                                                                                                                                                                                                      | —                                |
+| D-26 | Fixtures recorded 2026-09-06; PACKS §12 wants ≤ 90 days for `supported`                                                                                                                                                                                                                                | tree                              | Re-record in Phase 8 (decision 41), and again whenever a fixture is older than 60 days in CI's monthly reminder                                                                                                                                                                              | 8                                |
+| D-27 | `lib/cron/budget.ts` assumes no Fluid compute; raising it needs the deployed project's setting                                                                                                                                                                                                         | M1                                | Confirm on the Vercel project in Phase 9; raise both literals if enabled                                                                                                                                                                                                                     | 9                                |
+| D-28 | `transactions.fx_rate` is stored, display-only, never populated                                                                                                                                                                                                                                        | M3 non-goal                       | Stays; documented on the form ("optional, display only")                                                                                                                                                                                                                                     | —                                |
 
 ## Decisions to confirm before implementation (continued)
 
-Four of these contradict a *planned* row in `ARCHITECTURE.md` §3, which
+Four of these contradict a _planned_ row in `ARCHITECTURE.md` §3, which
 says to propose in chat before installing — this is the proposal.
 
 47. **Styling is plain CSS on the SPEC §10 tokens, with CSS Modules where a
     component needs scoping; no Tailwind, no shadcn/ui.** §3 marks both
-    *planned* for "the dashboard build-out". SPEC §10 is a bespoke editorial
+    _planned_ for "the dashboard build-out". SPEC §10 is a bespoke editorial
     system of nine tokens and two typefaces across ten screens; shadcn
     brings Radix, Tailwind and a house style that is not that one, and
     Tailwind's utility classes would carry the tokens in class names rather
     than in one stylesheet the neutrality test and the theme can reason
     about. ARCHITECTURE §3 is amended.
 48. **Forms stay native `<form action>` with server actions; react-hook-form
-    is not adopted.** §3 marks it *planned*. Every form built so far is
+    is not adopted.** §3 marks it _planned_. Every form built so far is
     progressively enhanced and needs no client state; `useActionState`
     covers pending and error display where a form wants it. Amended.
 49. **A typed Supabase client** from `pnpm db:types` (committed
@@ -351,7 +352,7 @@ says to propose in chat before installing — this is the proposal.
     cannot type a `::text` cast.
 50. **Prettier is the formatter**, checked in CI; **CI also runs `test:db`**
     through the Supabase CLI action, `pnpm audit --audit-level=high`, and
-    coverage thresholds (D-04). React Testing Library (§3 *planned*) is not
+    coverage thresholds (D-04). React Testing Library (§3 _planned_) is not
     adopted: pure view models are unit-tested and the browser is covered by
     decision 46's journeys.
 51. **Security headers with a nonce-based CSP** from `proxy.ts`, per Next's
@@ -365,6 +366,7 @@ says to propose in chat before installing — this is the proposal.
     `snapshot_markers` view and D-16/17's `restore_backup` hardening are
     migrations, and a view is the right answer to a read PostgREST cannot
     express (as `asset_latest_prices` was).
+
 ## Definition of done
 
 - The ten screens of SPEC §9 exist under `app/(app)/` with the §10 design
@@ -373,13 +375,13 @@ says to propose in chat before installing — this is the proposal.
   screen, privacy mode, `loading.tsx`/`error.tsx`, and phone-width layouts.
 - `lib/format/` formats every value from decimal strings (unit-tested
   against `Intl` separators for `pt-BR` and `en-GB`); `lib/calc/
-  benchmark.ts` exists with its properties; `lib/ledger/snapshots.ts`
+benchmark.ts` exists with its properties; `lib/ledger/snapshots.ts`
   reads time series as text.
 - `br.stock` is registered with fixtures, a README row and a golden row;
   `expected.json` is regenerated by the script and the kernel still
   matches to `1e-8`.
 - `packs/conformance/kernel-neutrality.test.ts` passes; `lib/settings/
-  defaults.ts` is the only literal site; `PACKS.md` §16 exists.
+defaults.ts` is the only literal site; `PACKS.md` §16 exists.
 - `docs/performance-budgets.md` records measured numbers within the
   thresholds of decision 44.
 - Every Phase-1 row of the debt inventory is closed: CI green on the
@@ -443,7 +445,7 @@ says to propose in chat before installing — this is the proposal.
    `pnpm test:e2e` script and `playwright.config.ts` pointing at the local
    stack; `release:check` gains `pnpm test:e2e`.
 4. `lib/settings/defaults.ts` + `packs/conformance/kernel-neutrality.test.
-   ts`; move today's five literals behind it (`app/layout.tsx` `lang`, the
+ts`; move today's five literals behind it (`app/layout.tsx` `lang`, the
    currency defaults in the asset and transaction forms, the import
    preview's prefill, `readSettings`'s fallback row). The test allows
    exactly one non-pack use of the word: `signOut({ scope: "global" })` is
@@ -451,7 +453,7 @@ says to propose in chat before installing — this is the proposal.
    from the float ban (and nothing else).
 5. `br.stock` in `packs/br/instruments.ts`; a stock ticker in the brapi
    catalog (`success`/`empty` spot and historical); `pnpm fixtures:record
-   --source br.brapi` (live, with the maintainer's token; redaction as in
+--source br.brapi` (live, with the maintainer's token; redaction as in
    Milestone 1); README coverage row with the BDR note; one `br.stock`
    asset, buy and price rows in `portfolio.json`; `derive_expected.py`
    re-run; conformance green.
@@ -504,7 +506,7 @@ now, CI.
   vs the last trading day, disabled sources from `ingest_cursors`) and the
   strip component with Refresh (moved from `/assets`).
 - Overview: the §9.3 first-run card from row counts; headline (latest
-  confident total, or "—" with *N assets unpriced*), day and period change
+  confident total, or "—" with _N assets unpriced_), day and period change
   from snapshot totals, the sparkline, the allocation donut by kind, top
   movers by per-asset day change; every §9.5 empty state.
 - Tests: `lib/format` against `Intl` for two locales and long values;

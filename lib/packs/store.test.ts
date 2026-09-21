@@ -68,11 +68,7 @@ describe("createIngestStore — listAssets scopes", () => {
     // the whole portfolio instead of just the gaps.
     const { client } = fakeClient({
       assets: ASSETS,
-      prices: [
-        { asset_id: "a1" },
-        { asset_id: "a1" },
-        { asset_id: "a3" },
-      ],
+      prices: [{ asset_id: "a1" }, { asset_id: "a1" }, { asset_id: "a3" }],
     });
     const rows = await createIngestStore(client).listAssets({ kind: "unpriced" }, ["br"]);
     expect(rows.map((r) => r.assetId)).toEqual(["a2"]);

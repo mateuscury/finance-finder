@@ -47,7 +47,11 @@ export const TransactionInputSchema = z
     // transactions_quantity_by_type_check, in the same words.
     const want = t.type === "buy" ? isPositive : t.type === "sell" ? isNegative : isZero;
     if (!want(t.quantity)) {
-      ctx.addIssue({ code: "custom", path: ["quantity"], message: t.type === "buy" ? "must be positive" : t.type === "sell" ? "must be negative" : "must be 0" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["quantity"],
+        message: t.type === "buy" ? "must be positive" : t.type === "sell" ? "must be negative" : "must be 0",
+      });
     }
   });
 export type TransactionInput = z.infer<typeof TransactionInputSchema>;

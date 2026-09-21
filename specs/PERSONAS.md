@@ -12,6 +12,7 @@
 ### Marina — the self-hosting investor
 
 **Profile**:
+
 - **Role**: Salaried professional in São Paulo who invests her own savings
   through one or two brokers; no advisor, no fund manager
 - **Age range**: 30–45
@@ -30,6 +31,7 @@ FIIs, a handful of ações and one BDR, a Nubank account she treats as
 external cash flows. Base currency BRL. Everything quoted in BRL.
 
 **Goals**:
+
 1. One honest number: what the whole portfolio is worth tonight, in reais,
    with anything stale or unpriced marked as such rather than folded in
 2. Know whether she is beating the CDI and inflation — not in a spreadsheet
@@ -38,6 +40,7 @@ external cash flows. Base currency BRL. Everything quoted in BRL.
    catch a CDB that matured and was never redeemed
 
 **Pain Points**:
+
 - Broker apps show each account alone; her spreadsheet shows the total but
   she stopped updating the prices in March
 - Every tool she tried wanted her broker password, an app-store account, or
@@ -46,6 +49,7 @@ external cash flows. Base currency BRL. Everything quoted in BRL.
   lost money on a holiday when nothing had traded
 
 **Typical Day**:
+
 > 21:45. Marina opens the app on her phone after dinner. The headline is
 > tonight's total; the day change is green with an arrow. She scrolls to
 > see which FII moved. Her partner is on the sofa next to her, so she taps
@@ -56,6 +60,7 @@ external cash flows. Base currency BRL. Everything quoted in BRL.
 **Key Scenarios**:
 
 #### Scenario 1: Evening check on the phone
+
 ```
 Context: 400 px viewport, dark theme, pt-BR, after the nightly ingest
 Action: Opens /
@@ -66,6 +71,7 @@ Success: Answers "how much and which way" in under five seconds with no
 ```
 
 #### Scenario 2: Import a broker CSV after switching brokers
+
 ```
 Context: Laptop; a CSV whose headers differ from the canonical ones; some
          tickers she does not hold yet; some rows already in the ledger
@@ -78,6 +84,7 @@ Success: Commit writes exactly the new rows; re-importing the same file
 ```
 
 #### Scenario 3: Show the screen to a partner
+
 ```
 Context: Phone, someone looking over her shoulder
 Action: Taps the privacy toggle
@@ -88,6 +95,7 @@ Success: The mask survives navigation and reload on this device; nothing
 ```
 
 #### Scenario 4: Notice a matured CDB
+
 ```
 Context: A CDB matured last month; the broker credited the account but she
          never recorded the sell
@@ -103,6 +111,7 @@ Success: She records the redemption from the link; Contribution and the
 ### Tomás — the pack contributor
 
 **Profile**:
+
 - **Role**: Software developer in another market (Lisbon, London, Buenos
   Aires) who wants the same tool for his own country
 - **Age range**: 25–40
@@ -114,6 +123,7 @@ Success: She records the redemption from the link; Contribution and the
   a few sessions with an objective gate telling him when it is done
 
 **Goals**:
+
 1. Add his market as data — instruments, series, sources, a calendar —
    without touching a valuation formula
 2. See his instrument kinds appear in the asset form, his benchmarks in the
@@ -122,6 +132,7 @@ Success: She records the redemption from the link; Contribution and the
    §16) before he starts
 
 **Pain Points**:
+
 - Projects where "add a country" means editing an enum in six files
 - Golden numbers that were tuned to the implementation rather than derived
   independently, so a mismatch tells him nothing
@@ -129,6 +140,7 @@ Success: She records the redemption from the link; Contribution and the
   by accident in production
 
 **Typical Day**:
+
 > Tomás reads `PACKS.md` §1 and §16, copies the shape of `packs/br`, writes
 > one instrument kind and one series with a source adapter against
 > `ctx.http`, records fixtures, derives a small golden portfolio by hand,
@@ -139,6 +151,7 @@ Success: She records the redemption from the link; Contribution and the
 **Key Scenarios**:
 
 #### Scenario 1: Read the seam before writing code
+
 ```
 Context: PACKS.md §16 lists what the second pack will meet
 Action: Reads the list, maps each item to his market
@@ -149,6 +162,7 @@ Success: He knows which items are pack work and which would be a
 ```
 
 #### Scenario 2: Conformance is the review
+
 ```
 Context: A draft pack with fixtures and a golden portfolio
 Action: pnpm test:packs
@@ -160,6 +174,7 @@ Success: Green means mergeable as a pack PR; nothing in lib/ or app/ had to
 ```
 
 #### Scenario 3: The form and the toggles just work
+
 ```
 Context: His pack enabled on a local instance
 Action: Opens /assets, /performance, /maturities
@@ -176,6 +191,7 @@ Success: No screen names his pack; the neutrality test still passes
 People we are **NOT** designing for (to maintain focus):
 
 ### The tax filer
+
 - **Why not**: Tax and fiscal reporting are excluded permanently
   (ARCHITECTURE §2); per-jurisdiction liability multiplies faster than any
   feature
@@ -184,12 +200,14 @@ People we are **NOT** designing for (to maintain focus):
   figure, not a fiscal one.
 
 ### The day trader
+
 - **Why not**: Daily snapshots, nightly ingest, no order execution and no
   broker credentials (ARCHITECTURE §2)
 - **Implication**: No intraday prices, no order book, no alerts, no
   real-time anything. Refresh is a catch-up control, not a ticker.
 
 ### The multi-tenant SaaS operator
+
 - **Why not**: Single owner by posture; the schema is multi-user-ready but
   signups are a deliberate configuration change (ARCHITECTURE §4.7, §4.9)
 - **Implication**: No admin screens, no billing, no per-tenant branding, no
@@ -201,14 +219,16 @@ People we are **NOT** designing for (to maintain focus):
 ## Persona Usage Guide
 
 When implementing features, ask:
+
 1. Which persona does this serve? (Marina for every screen; Tomás for
    every contract the registry or the conformance suite exposes)
 2. How would Marina discover this on her phone in the evening?
-3. Does the copy read naturally in pt-BR *and* English, at her tech comfort?
+3. Does the copy read naturally in pt-BR _and_ English, at her tech comfort?
 4. Does it fit the evening check / monthly import rhythm, or does it demand
    attention she will not give?
 
 When testing:
+
 1. Walk through each relevant persona's scenarios (the Milestone 4 e2e
    journeys are Marina's scenarios in order)
 2. Use her language patterns in test inputs (broker CSV headers in

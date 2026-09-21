@@ -28,15 +28,32 @@ export async function GET(_request: Request, { params }: RouteContext<"/settings
 
   if (format === "json") {
     return new NextResponse(serializeBackup(parsed.backup), {
-      headers: { "content-type": "application/json; charset=utf-8", "content-disposition": `attachment; filename="finance-finder-${today}.json"` },
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "content-disposition": `attachment; filename="finance-finder-${today}.json"`,
+      },
     });
   }
   const assets = new Map(parsed.backup.assets.map((a) => [a.id, a] as const));
   const rows = parsed.backup.transactions.map((t) => {
     const a = assets.get(t.asset_id);
-    return [t.trade_date, t.type, a?.pack_id ?? "", a?.instrument_kind ?? "", a?.identifier ?? "", t.quantity, t.unit_price, t.currency, t.fees, t.note ?? ""];
+    return [
+      t.trade_date,
+      t.type,
+      a?.pack_id ?? "",
+      a?.instrument_kind ?? "",
+      a?.identifier ?? "",
+      t.quantity,
+      t.unit_price,
+      t.currency,
+      t.fees,
+      t.note ?? "",
+    ];
   });
   return new NextResponse(writeCsv([...CANONICAL_COLUMNS], rows), {
-    headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="transactions-${today}.csv"` },
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": `attachment; filename="transactions-${today}.csv"`,
+    },
   });
 }

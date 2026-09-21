@@ -18,7 +18,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <button type="submit">Sign in</button>
       </form>
       <p>
-        Single-owner instance — the account is created with <code>pnpm bootstrap:user</code>. <Link href="/login/reset">Forgot your password?</Link>
+        Single-owner instance — the account is created with <code>pnpm bootstrap:user</code>.{" "}
+        <Link href="/login/reset">Forgot your password?</Link>
       </p>
     </main>
   );

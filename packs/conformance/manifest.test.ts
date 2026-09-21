@@ -99,9 +99,7 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential i
       } else if (v.kind === "curve_mark_to_market") {
         expect(series, `${i.id} → series '${v.seriesId}'`).toContain(v.seriesId);
         const s = [...seriesInScope(pack).values()].find((x) => x.id === v.seriesId);
-        expect(s?.kind.kind, `${i.id} discounts off '${v.seriesId}', which must be a yield_curve`).toBe(
-          "yield_curve",
-        );
+        expect(s?.kind.kind, `${i.id} discounts off '${v.seriesId}', which must be a yield_curve`).toBe("yield_curve");
       } else if (v.kind === "accrual" && v.convention.index) {
         expect(series, `${i.id} → accrual index '${v.convention.index.seriesId}'`).toContain(
           v.convention.index.seriesId,
@@ -111,9 +109,7 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — referential i
   });
 
   it("every source a series or instrument uses declares a matching capability", () => {
-    const allSources = new Map(
-      PACKS.flatMap((p) => p.sources).map((s) => [s.id, s] as const),
-    );
+    const allSources = new Map(PACKS.flatMap((p) => p.sources).map((s) => [s.id, s] as const));
     for (const s of pack.series) {
       const src = allSources.get(s.sourceId);
       const needed = s.kind.kind === "fx_rate" ? "fx" : "series";
@@ -158,7 +154,10 @@ describe("curve_mark_to_market metadata constraint (PACKS.md §5)", () => {
           `(PACKS.md §5). Issues: ${r.success ? "" : JSON.stringify(r.error.issues)}`,
       ).toBe(true);
       expect(kind.metadataSchema.safeParse({}).success, `${id} accepted {}`).toBe(false);
-      expect(kind.metadataSchema.safeParse({ ...sample, maturity: undefined }).success, `${id} accepted a missing maturity`).toBe(false);
+      expect(
+        kind.metadataSchema.safeParse({ ...sample, maturity: undefined }).success,
+        `${id} accepted a missing maturity`,
+      ).toBe(false);
     }
   });
 });

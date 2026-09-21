@@ -94,11 +94,11 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
     `invalid_metadata`. Support matrix (decision 13); every other cell throws
     `unsupported_convention`:
 
-    | mode | `daily` | `monthly` / `annual` |
-    |---|---|---|
-    | plain | `(1+r)^yearFraction(dayCount)` | `(1+r)^(months/12)`, `dayCount` unused |
-    | `percent_of_index` | `Π(1 + r·i_d)` via `compoundRate`; `rate_daily`/`rate_annual` index whose day count equals the convention's | — |
-    | `index_plus_spread` | `level(asOf)/level(openedOn) × (1+r)^yearFraction` | level ratio × `(1+r)^(months/12)` |
+    | mode                | `daily`                                                                                                     | `monthly` / `annual`                   |
+    | ------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+    | plain               | `(1+r)^yearFraction(dayCount)`                                                                              | `(1+r)^(months/12)`, `dayCount` unused |
+    | `percent_of_index`  | `Π(1 + r·i_d)` via `compoundRate`; `rate_daily`/`rate_annual` index whose day count equals the convention's | —                                      |
+    | `index_plus_spread` | `level(asOf)/level(openedOn) × (1+r)^yearFraction`                                                          | level ratio × `(1+r)^(months/12)`      |
 
   - `curve-mtm.ts` — `Σ CF × discountFactor` off `curveAt`; `bondCashFlows`
     counts coupons back from `maturity` (each computed from maturity, never
@@ -112,7 +112,7 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
   `ok` + `carried_forward`; `excluded` lists `stale` rows with their
   last-known base value and `unpriced` assets with the reason. Also
   `stalenessWindowFor(input, packId, date)` and `toBase(input, money, date,
-  packId)` — the one converter every base-currency figure goes through
+packId)` — the one converter every base-currency figure goes through
   (decision 15). `PortfolioInput.calendars` is a pack-id → calendar map the
   caller builds: the kernel never imports the registry.
 
@@ -136,7 +136,7 @@ and never looks up a price itself.
   negative and positive amount) or `no_root`. The guarantee is that the root
   lies within ±1e-12 of the rate — an absolute NPV bound is meaningless near
   a total loss, where `|NPV′|` exceeds 1e21. `mwr({ from, to, startValue,
-  flows, endValue })` builds the stream: `−startValue` when positive, flows
+flows, endValue })` builds the stream: `−startValue` when positive, flows
   in `(from, to]` negated, `+endValue`; flows after `to` are `ignored`.
 - `contribution.ts` — `gain_i = V_i(to) − V_i(from) − netInvested_i`,
   `D = V(from) + Σ flows in (from, to]`, `c_i = gain_i / D`, so `Σ c_i` is

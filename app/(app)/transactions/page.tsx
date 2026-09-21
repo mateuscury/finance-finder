@@ -22,7 +22,9 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
       <Notice searchParams={params} />
       {typeof params.imported === "string" ? (
         <p role="status">
-          Imported {params.imported} transactions{typeof params.skipped === "string" && params.skipped !== "0" ? `, skipped ${params.skipped} duplicates` : ""}.
+          Imported {params.imported} transactions
+          {typeof params.skipped === "string" && params.skipped !== "0" ? `, skipped ${params.skipped} duplicates` : ""}
+          .
         </p>
       ) : null}
       {result.total === 0 ? (

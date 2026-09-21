@@ -35,6 +35,11 @@ export function valueAtLatestPrice(
   return { status: o.status, native, unitValue, priceDate: o.observedOn };
 }
 
-export function valueMarketPrice(asset: HoldingAsset, quantity: KDecimal, asOf: IsoDate, ctx: ValuationContext): HoldingValue {
+export function valueMarketPrice(
+  asset: HoldingAsset,
+  quantity: KDecimal,
+  asOf: IsoDate,
+  ctx: ValuationContext,
+): HoldingValue {
   return valueAtLatestPrice(asset, quantity, asOf, ctx, ctx.windowDays);
 }

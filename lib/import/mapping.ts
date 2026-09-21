@@ -4,14 +4,35 @@
  * ignored, a missing required column is a file-level error.
  */
 
-export const CANONICAL_COLUMNS = ["date", "type", "pack", "instrument_kind", "identifier", "quantity", "unit_price", "currency", "fees", "note"] as const;
+export const CANONICAL_COLUMNS = [
+  "date",
+  "type",
+  "pack",
+  "instrument_kind",
+  "identifier",
+  "quantity",
+  "unit_price",
+  "currency",
+  "fees",
+  "note",
+] as const;
 export type CanonicalColumn = (typeof CANONICAL_COLUMNS)[number];
-export const REQUIRED_COLUMNS: readonly CanonicalColumn[] = ["date", "type", "pack", "instrument_kind", "identifier", "quantity", "unit_price", "currency"];
+export const REQUIRED_COLUMNS: readonly CanonicalColumn[] = [
+  "date",
+  "type",
+  "pack",
+  "instrument_kind",
+  "identifier",
+  "quantity",
+  "unit_price",
+  "currency",
+];
 
 /** canonical column → the uploaded header that carries it. */
 export type ColumnMap = Partial<Record<CanonicalColumn, string>>;
 
-export type MappingResult = { ok: true; indexOf: Record<CanonicalColumn, number | null> } | { ok: false; missing: CanonicalColumn[] };
+export type MappingResult =
+  { ok: true; indexOf: Record<CanonicalColumn, number | null> } | { ok: false; missing: CanonicalColumn[] };
 
 /**
  * Resolves each canonical column to an index in `header`. A canonical name

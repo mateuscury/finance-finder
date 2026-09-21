@@ -11,7 +11,12 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/supabase/env";
 
 const Credentials = z.object({ email: z.string().trim().min(1), password: z.string().min(1) });
-const Code = z.object({ code: z.string().trim().regex(/^\d{6}$/) });
+const Code = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/),
+});
 const Email = z.object({ email: z.string().trim().min(1) });
 const NewPassword = z.object({ password: z.string().min(12), confirm: z.string() });
 
@@ -35,7 +40,9 @@ export async function verifyTotp(formData: FormData): Promise<void> {
   const supabase = await createServerSupabase();
   const factors = await supabase.auth.mfa.listFactors();
   const factor = factors.data?.totp[0]; // `totp` lists verified factors only
-  const failed = !factor || (await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data.code })).error !== null;
+  const failed =
+    !factor ||
+    (await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data.code })).error !== null;
   redirect(failed ? "/login/mfa?failed=1" : "/");
 }
 
@@ -45,7 +52,9 @@ export async function requestPasswordReset(formData: FormData): Promise<void> {
   if (parsed.success) {
     const supabase = await createServerSupabase();
     const next = encodeURIComponent("/login/reset?step=complete");
-    await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo: `${siteUrl()}/auth/callback?next=${next}` });
+    await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+      redirectTo: `${siteUrl()}/auth/callback?next=${next}`,
+    });
   }
   redirect("/login/reset?sent=1");
 }

@@ -29,7 +29,10 @@ const lines = [
   `/pnpm-lock.yaml            ${KERNEL_OWNER}`,
   "",
   "# Packs — owned by their maintainers",
-  ...PACKS.map((p) => `/packs/${p.id}/${" ".repeat(Math.max(1, 20 - p.id.length))}${p.maintainers.map((m) => `@${m.replace(/^@/, "")}`).join(" ")}`),
+  ...PACKS.map(
+    (p) =>
+      `/packs/${p.id}/${" ".repeat(Math.max(1, 20 - p.id.length))}${p.maintainers.map((m) => `@${m.replace(/^@/, "")}`).join(" ")}`,
+  ),
   "",
 ];
 const content = lines.join("\n");

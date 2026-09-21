@@ -19,7 +19,11 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const REQUIRED_ENV = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"] as const;
+const REQUIRED_ENV = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+] as const;
 
 /** Names only, never values (SPEC §12). */
 export function requireDbEnv(): { url: string; serviceRoleKey: string; anonKey: string } {
@@ -109,9 +113,9 @@ export async function createThrowawayUser(admin: SupabaseClient): Promise<Throwa
       if (!alive) return;
       const removed = await admin.auth.admin.deleteUser(userId);
       // A test that deleted the user itself (the "delete everything" path) has already done this.
-      if (removed.error && removed.error.status !== 404) throw new Error(`dbtest: could not delete the throwaway user (${removed.error.message})`);
+      if (removed.error && removed.error.status !== 404)
+        throw new Error(`dbtest: could not delete the throwaway user (${removed.error.message})`);
       alive = false;
     },
   };
 }
-

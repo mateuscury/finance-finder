@@ -75,7 +75,8 @@ export interface SeriesDbRow {
   tenor_days: number;
 }
 
-export const TRANSACTION_SELECT = "id,asset_id,trade_date,type,quantity::text,unit_price::text,currency,fees::text,fx_rate::text";
+export const TRANSACTION_SELECT =
+  "id,asset_id,trade_date,type,quantity::text,unit_price::text,currency,fees::text,fx_rate::text";
 export const CASH_FLOW_SELECT = "id,date,amount::text,currency";
 export const PRICE_SELECT = "asset_id,date,price::text,currency,source_id";
 export const SERIES_SELECT = "series_id,date,value::text,tenor_days";
@@ -95,9 +96,25 @@ export const toTransaction = (r: TransactionDbRow): LedgerTransaction => ({
   fees: r.fees,
   fxRate: r.fx_rate,
 });
-export const toCashFlow = (r: CashFlowDbRow): ExternalCashFlow => ({ id: r.id, date: r.date, amount: r.amount, currency: r.currency });
-export const toPrice = (r: PriceDbRow): PriceObservation => ({ assetId: r.asset_id, date: r.date, price: r.price, currency: r.currency, sourceId: r.source_id });
-export const toSeries = (r: SeriesDbRow): SeriesObservation => ({ seriesId: r.series_id, date: r.date, value: r.value, tenorDays: r.tenor_days });
+export const toCashFlow = (r: CashFlowDbRow): ExternalCashFlow => ({
+  id: r.id,
+  date: r.date,
+  amount: r.amount,
+  currency: r.currency,
+});
+export const toPrice = (r: PriceDbRow): PriceObservation => ({
+  assetId: r.asset_id,
+  date: r.date,
+  price: r.price,
+  currency: r.currency,
+  sourceId: r.source_id,
+});
+export const toSeries = (r: SeriesDbRow): SeriesObservation => ({
+  seriesId: r.series_id,
+  date: r.date,
+  value: r.value,
+  tenorDays: r.tenor_days,
+});
 
 /** An asset whose kind this build does not register: kept, shown as unpriced (decision 4). */
 export interface UnresolvedAsset {
@@ -108,16 +125,32 @@ export interface UnresolvedAsset {
   name: string;
 }
 
-export function resolveAssets(rows: readonly AssetDbRow[], registry: readonly MarketPack[]): { assets: HoldingAsset[]; unresolved: UnresolvedAsset[] } {
+export function resolveAssets(
+  rows: readonly AssetDbRow[],
+  registry: readonly MarketPack[],
+): { assets: HoldingAsset[]; unresolved: UnresolvedAsset[] } {
   const assets: HoldingAsset[] = [];
   const unresolved: UnresolvedAsset[] = [];
   for (const r of rows) {
     const kind = registry.find((p) => p.id === r.pack_id)?.instruments.find((k) => k.id === r.instrument_kind);
     if (!kind) {
-      unresolved.push({ id: r.id, packId: r.pack_id, instrumentKind: r.instrument_kind, identifier: r.identifier, name: r.name });
+      unresolved.push({
+        id: r.id,
+        packId: r.pack_id,
+        instrumentKind: r.instrument_kind,
+        identifier: r.identifier,
+        name: r.name,
+      });
       continue;
     }
-    assets.push({ id: r.id, packId: r.pack_id, instrumentKind: kind, identifier: r.identifier, nativeCurrency: r.native_currency, metadata: r.metadata });
+    assets.push({
+      id: r.id,
+      packId: r.pack_id,
+      instrumentKind: kind,
+      identifier: r.identifier,
+      nativeCurrency: r.native_currency,
+      metadata: r.metadata,
+    });
   }
   return { assets, unresolved };
 }
@@ -144,7 +177,16 @@ export async function readSettings(client: SupabaseClient, userId?: string): Pro
   const { data, error } = await q.maybeSingle();
   if (error) throw new Error(`ledger: settings (${error.code ?? "unknown"})`);
   // A bootstrapped account always has a row; a restored one may not yet.
-  return (data as SettingsRow | null) ?? { base_currency: INSTANCE_DEFAULTS.baseCurrency, enabled_packs: [...INSTANCE_DEFAULTS.enabledPacks], locale: INSTANCE_DEFAULTS.locale, theme: INSTANCE_DEFAULTS.theme, last_export_at: null, csv_column_map: null };
+  return (
+    (data as SettingsRow | null) ?? {
+      base_currency: INSTANCE_DEFAULTS.baseCurrency,
+      enabled_packs: [...INSTANCE_DEFAULTS.enabledPacks],
+      locale: INSTANCE_DEFAULTS.locale,
+      theme: INSTANCE_DEFAULTS.theme,
+      last_export_at: null,
+      csv_column_map: null,
+    }
+  );
 }
 
 export interface ReadLedgerOptions {
@@ -161,12 +203,18 @@ export interface ReadLedgerOptions {
 /** Prices have no user_id; under the service role they are read by the user's asset ids, in chunks. */
 async function readPrices(client: SupabaseClient, assetIds: string[] | null): Promise<PriceObservation[]> {
   if (assetIds === null) {
-    return (await readAll<PriceDbRow>((from, to) => client.from("prices").select(PRICE_SELECT).order("asset_id").order("date").range(from, to))).map(toPrice);
+    return (
+      await readAll<PriceDbRow>((from, to) =>
+        client.from("prices").select(PRICE_SELECT).order("asset_id").order("date").range(from, to),
+      )
+    ).map(toPrice);
   }
   const out: PriceObservation[] = [];
   for (let i = 0; i < assetIds.length; i += 100) {
     const chunk = assetIds.slice(i, i + 100);
-    const rows = await readAll<PriceDbRow>((from, to) => client.from("prices").select(PRICE_SELECT).in("asset_id", chunk).order("asset_id").order("date").range(from, to));
+    const rows = await readAll<PriceDbRow>((from, to) =>
+      client.from("prices").select(PRICE_SELECT).in("asset_id", chunk).order("asset_id").order("date").range(from, to),
+    );
     out.push(...rows.map(toPrice));
   }
   return out;
@@ -177,7 +225,11 @@ async function readPrices(client: SupabaseClient, assetIds: string[] | null): Pr
  * narrows the series read; by default it is the earliest trade date less
  * the lookback, which is what a full valuation needs.
  */
-export async function readLedger(client: SupabaseClient, registry: readonly MarketPack[], options: ReadLedgerOptions = {}): Promise<LedgerRead> {
+export async function readLedger(
+  client: SupabaseClient,
+  registry: readonly MarketPack[],
+  options: ReadLedgerOptions = {},
+): Promise<LedgerRead> {
   const { userId } = options;
   const settings = await readSettings(client, userId);
   const assetRows = await readAll<AssetDbRow>((from, to) => {
@@ -202,13 +254,24 @@ export async function readLedger(client: SupabaseClient, registry: readonly Mark
   const packIds = new Set([...(settings.enabled_packs ?? []), ...assets.map((a) => a.packId)]);
   const packs = resolveActivation(registry, [...packIds]).packs;
   const seriesIds = packs.flatMap((p) => p.series.map((s) => s.id));
-  const earliest = transactions.reduce<IsoDate | null>((min, t) => (min === null || t.tradeDate < min ? t.tradeDate : min), null);
+  const earliest = transactions.reduce<IsoDate | null>(
+    (min, t) => (min === null || t.tradeDate < min ? t.tradeDate : min),
+    null,
+  );
   const seriesFrom = options.seriesFrom ?? (earliest === null ? null : addDays(earliest, -SERIES_LOOKBACK_DAYS));
   let series: SeriesObservation[] = [];
   if (seriesIds.length > 0 && seriesFrom !== null) {
     series = (
       await readAll<SeriesDbRow>((from, to) =>
-        client.from("series_points").select(SERIES_SELECT).in("series_id", seriesIds).gte("date", seriesFrom).order("series_id").order("date").order("tenor_days").range(from, to),
+        client
+          .from("series_points")
+          .select(SERIES_SELECT)
+          .in("series_id", seriesIds)
+          .gte("date", seriesFrom)
+          .order("series_id")
+          .order("date")
+          .order("tenor_days")
+          .range(from, to),
       )
     ).map(toSeries);
   }

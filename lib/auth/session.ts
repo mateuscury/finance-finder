@@ -30,6 +30,7 @@ export const requireUser = cache(async (): Promise<Session> => {
 /** For actions that change the account's security posture (SPEC §9.6). */
 export async function requireAal2(): Promise<Session | { reason: "aal2_required" }> {
   const session = await requireUser();
-  if (session.identity.nextLevel === "aal2" && session.identity.currentLevel !== "aal2") return { reason: "aal2_required" };
+  if (session.identity.nextLevel === "aal2" && session.identity.currentLevel !== "aal2")
+    return { reason: "aal2_required" };
   return session;
 }

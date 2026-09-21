@@ -37,6 +37,7 @@ Additional gates:
 ### WHEN User Says "Full QA" or "Audit"
 
 Run all 5 gates in sequence:
+
 1. qa-spec-fidelity
 2. qa-code-quality
 3. qa-utility
@@ -50,12 +51,14 @@ Produce combined report.
 ## 🚨 Drift Prevention Rules
 
 **STOP and check spec** when you find yourself:
+
 - Saying "While I'm here, I'll also..."
 - Adding features not explicitly in acceptance criteria
 - Making assumptions about what users "probably want"
 - Building flexibility "for future use"
 
 **ASK user** before:
+
 - Adding anything not in spec
 - Changing accepted implementation approach
 - Removing functionality (even if it seems redundant)
@@ -82,12 +85,12 @@ project/
 
 All skills are invoked via slash commands. The skill system resolves paths automatically.
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| Spec Fidelity | `/qa-spec-fidelity` | Verify implementation matches spec |
-| Code Quality | `/qa-code-quality` | Check internal code standards |
-| Utility | `/qa-utility` | Test functionality works |
-| Maintainability | `/qa-maintainability` | Ensure long-term readability |
-| UX | `/qa-ux` | Validate user experience |
-| All Skills | `/qa-all` | Run comprehensive QA pass |
-| Templates | `/qa-templates` | Get project setup templates |
+| Skill           | Command               | Purpose                            |
+| --------------- | --------------------- | ---------------------------------- |
+| Spec Fidelity   | `/qa-spec-fidelity`   | Verify implementation matches spec |
+| Code Quality    | `/qa-code-quality`    | Check internal code standards      |
+| Utility         | `/qa-utility`         | Test functionality works           |
+| Maintainability | `/qa-maintainability` | Ensure long-term readability       |
+| UX              | `/qa-ux`              | Validate user experience           |
+| All Skills      | `/qa-all`             | Run comprehensive QA pass          |
+| Templates       | `/qa-templates`       | Get project setup templates        |

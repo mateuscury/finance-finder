@@ -20,7 +20,9 @@ describe("readAll", () => {
   it("returns an empty list on an empty first page and throws the PostgREST message on error", async () => {
     expect(await readAll<number>(() => Promise.resolve({ data: [], error: null }))).toEqual([]);
     expect(await readAll<number>(() => Promise.resolve({ data: null, error: null }))).toEqual([]);
-    await expect(readAll<number>(() => Promise.resolve({ data: null, error: { message: "boom" } }))).rejects.toThrow(/paginate: boom/);
+    await expect(readAll<number>(() => Promise.resolve({ data: null, error: { message: "boom" } }))).rejects.toThrow(
+      /paginate: boom/,
+    );
   });
 
   it("stops exactly at a page boundary when the last page is full and the next is empty", async () => {

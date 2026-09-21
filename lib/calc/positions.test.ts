@@ -7,7 +7,12 @@ import { addDays } from "./dates";
 
 let seq = 0;
 function txn(
-  overrides: Partial<LedgerTransaction> & { type: TransactionType; quantity: string; unitPrice: string; tradeDate: string },
+  overrides: Partial<LedgerTransaction> & {
+    type: TransactionType;
+    quantity: string;
+    unitPrice: string;
+    tradeDate: string;
+  },
 ): LedgerTransaction {
   seq += 1;
   return {
@@ -20,8 +25,9 @@ function txn(
   };
 }
 
-const lotsAsStrings = (lots: readonly { openedOn: string; quantity: { toFixed(): string }; unitPrice: { toFixed(): string } }[]) =>
-  lots.map((l) => [l.openedOn, l.quantity.toFixed(), l.unitPrice.toFixed()]);
+const lotsAsStrings = (
+  lots: readonly { openedOn: string; quantity: { toFixed(): string }; unitPrice: { toFixed(): string } }[],
+) => lots.map((l) => [l.openedOn, l.quantity.toFixed(), l.unitPrice.toFixed()]);
 
 describe("ordering", () => {
   it("processes buy < dividend = interest = fee < sell on the same day, then by id", () => {
@@ -84,12 +90,24 @@ describe("lotsAt", () => {
   });
 
   it("validates shape like the ledger's check constraints", () => {
-    expect(() => lotsAt([txn({ type: "buy", quantity: "-1", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31")).toThrow();
-    expect(() => lotsAt([txn({ type: "sell", quantity: "1", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31")).toThrow();
-    expect(() => lotsAt([txn({ type: "fee", quantity: "1", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31")).toThrow();
-    expect(() => lotsAt([txn({ type: "buy", quantity: "1", unitPrice: "0", tradeDate: "2026-01-01" })], "2026-12-31")).toThrow();
-    expect(() => lotsAt([txn({ type: "buy", quantity: "1", unitPrice: "1", fees: "-1", tradeDate: "2026-01-01" })], "2026-12-31")).toThrow();
-    expect(() => lotsAt([txn({ type: "buy", quantity: "1e2", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31")).toThrow();
+    expect(() =>
+      lotsAt([txn({ type: "buy", quantity: "-1", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31"),
+    ).toThrow();
+    expect(() =>
+      lotsAt([txn({ type: "sell", quantity: "1", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31"),
+    ).toThrow();
+    expect(() =>
+      lotsAt([txn({ type: "fee", quantity: "1", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31"),
+    ).toThrow();
+    expect(() =>
+      lotsAt([txn({ type: "buy", quantity: "1", unitPrice: "0", tradeDate: "2026-01-01" })], "2026-12-31"),
+    ).toThrow();
+    expect(() =>
+      lotsAt([txn({ type: "buy", quantity: "1", unitPrice: "1", fees: "-1", tradeDate: "2026-01-01" })], "2026-12-31"),
+    ).toThrow();
+    expect(() =>
+      lotsAt([txn({ type: "buy", quantity: "1e2", unitPrice: "1", tradeDate: "2026-01-01" })], "2026-12-31"),
+    ).toThrow();
     expect(() =>
       lotsAt(
         [
@@ -116,11 +134,31 @@ const validLedger = fc
       const date = addDays("2026-01-01", i);
       const id = `p${String(i).padStart(3, "0")}`;
       if (isBuy || running === 0) {
-        rows.push({ id, assetId: "a1", tradeDate: date, type: "buy", quantity: String(q), unitPrice: String(100 + i), currency: "BRL", fees: "0", fxRate: null });
+        rows.push({
+          id,
+          assetId: "a1",
+          tradeDate: date,
+          type: "buy",
+          quantity: String(q),
+          unitPrice: String(100 + i),
+          currency: "BRL",
+          fees: "0",
+          fxRate: null,
+        });
         running += q;
       } else {
         const sell = q > running ? running : q;
-        rows.push({ id, assetId: "a1", tradeDate: date, type: "sell", quantity: String(-sell), unitPrice: String(100 + i), currency: "BRL", fees: "0", fxRate: null });
+        rows.push({
+          id,
+          assetId: "a1",
+          tradeDate: date,
+          type: "sell",
+          quantity: String(-sell),
+          unitPrice: String(100 + i),
+          currency: "BRL",
+          fees: "0",
+          fxRate: null,
+        });
         running -= sell;
       }
     });
@@ -130,9 +168,12 @@ const validLedger = fc
 describe("properties", () => {
   it("positions are independent of input order", () => {
     fc.assert(
-      fc.property(validLedger.chain((rows) => fc.tuple(fc.constant(rows), fc.shuffledSubarray(rows, { minLength: rows.length }))), ([rows, shuffled]) => {
-        expect(lotsAsStrings(lotsAt(shuffled, "2026-12-31"))).toEqual(lotsAsStrings(lotsAt(rows, "2026-12-31")));
-      }),
+      fc.property(
+        validLedger.chain((rows) => fc.tuple(fc.constant(rows), fc.shuffledSubarray(rows, { minLength: rows.length }))),
+        ([rows, shuffled]) => {
+          expect(lotsAsStrings(lotsAt(shuffled, "2026-12-31"))).toEqual(lotsAsStrings(lotsAt(rows, "2026-12-31")));
+        },
+      ),
     );
   });
 

@@ -11,7 +11,11 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
     if (entry.isDirectory()) {
       if (entry.name === "node_modules" || entry.name === ".next" || entry.name === "testing") continue;
       sourceFiles(full, out);
-    } else if (/\.(ts|tsx)$/.test(entry.name) && !/\.(test|dbtest)\.ts$/.test(entry.name) && entry.name !== "database.types.ts") {
+    } else if (
+      /\.(ts|tsx)$/.test(entry.name) &&
+      !/\.(test|dbtest)\.ts$/.test(entry.name) &&
+      entry.name !== "database.types.ts"
+    ) {
       out.push(full);
     }
   }

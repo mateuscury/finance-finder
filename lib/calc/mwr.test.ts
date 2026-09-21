@@ -7,7 +7,10 @@ import { mwr, xirr, type XirrFlow } from "./mwr";
 const flow = (date: string, amount: string): XirrFlow => ({ date, amount: new KernelDecimal(amount) });
 const npv = (stream: XirrFlow[], rate: KDecimal) => {
   const origin = stream.map((f) => f.date).sort()[0];
-  return stream.reduce((s, f) => s.plus(f.amount.times(ONE.plus(rate).pow(new KernelDecimal(-daysBetween(origin, f.date)).div(365)))), new KernelDecimal(0));
+  return stream.reduce(
+    (s, f) => s.plus(f.amount.times(ONE.plus(rate).pow(new KernelDecimal(-daysBetween(origin, f.date)).div(365)))),
+    new KernelDecimal(0),
+  );
 };
 /**
  * The root lies within ±ε of `rate`: NPV changes sign across the interval, or is
@@ -57,14 +60,20 @@ describe("xirr", () => {
   });
 
   it("is null with insufficient_flows without one negative and one positive amount", () => {
-    expect(xirr([flow("2026-01-01", "100"), flow("2027-01-01", "110")])).toEqual({ status: "null", reason: "insufficient_flows" });
+    expect(xirr([flow("2026-01-01", "100"), flow("2027-01-01", "110")])).toEqual({
+      status: "null",
+      reason: "insufficient_flows",
+    });
     expect(xirr([flow("2026-01-01", "-100")])).toEqual({ status: "null", reason: "insufficient_flows" });
     expect(xirr([])).toEqual({ status: "null", reason: "insufficient_flows" });
   });
 
   it("is null with no_root when NPV never changes sign", () => {
     // −100(x² − x + 1) with x = (1 + r)^−1 is negative for every r.
-    expect(xirr([flow("2026-01-01", "-100"), flow("2027-01-01", "100"), flow("2028-01-01", "-100")])).toEqual({ status: "null", reason: "no_root" });
+    expect(xirr([flow("2026-01-01", "-100"), flow("2027-01-01", "100"), flow("2028-01-01", "-100")])).toEqual({
+      status: "null",
+      reason: "no_root",
+    });
   });
 
   const amount = fc.integer({ min: 100, max: 100000000 }).map((n) => new KernelDecimal(n).div(100));
@@ -85,28 +94,47 @@ describe("xirr", () => {
   });
 
   const stream = fc
-    .tuple(amount, fc.array(fc.tuple(fc.integer({ min: 1, max: 1500 }), fc.integer({ min: -30000, max: 30000 })), { maxLength: 4 }), ratio, days, start)
+    .tuple(
+      amount,
+      fc.array(fc.tuple(fc.integer({ min: 1, max: 1500 }), fc.integer({ min: -30000, max: 30000 })), { maxLength: 4 }),
+      ratio,
+      days,
+      start,
+    )
     .map(([d, mids, k, n, d0]) => {
-      const s = [flow(d0, d.negated().toFixed()), ...mids.map(([off, amt]) => flow(addDays(d0, off), new KernelDecimal(amt).div(100).toFixed())), flow(addDays(d0, 1500 + n), d.times(k).toFixed())];
+      const s = [
+        flow(d0, d.negated().toFixed()),
+        ...mids.map(([off, amt]) => flow(addDays(d0, off), new KernelDecimal(amt).div(100).toFixed())),
+        flow(addDays(d0, 1500 + n), d.times(k).toFixed()),
+      ];
       return s;
     });
 
   // Three 40-digit solves per run: fewer runs, longer budget.
-  it("property: the root lies within ±1e-12 of the solution, invariant to scaling amounts and shifting dates", { timeout: 60_000 }, () => {
-    fc.assert(
-      fc.property(stream, fc.integer({ min: 2, max: 1000 }), fc.integer({ min: -2000, max: 2000 }), (s, scale, shift) => {
-        const r = xirr(s);
-        if (r.status !== "ok") return; // no_root streams are legitimately null
-        expect(rootWithin(s, r.rate)).toBe(true);
-        const scaled = xirr(s.map((f) => ({ ...f, amount: f.amount.times(scale) })));
-        const shifted = xirr(s.map((f) => ({ ...f, date: addDays(f.date, shift) })));
-        if (scaled.status !== "ok" || shifted.status !== "ok") throw new Error("expected ok");
-        expect(scaled.rate.minus(r.rate).abs().lt("1e-10")).toBe(true);
-        expect(shifted.rate.minus(r.rate).abs().lt("1e-10")).toBe(true);
-      }),
-      { numRuns: 30 },
-    );
-  });
+  it(
+    "property: the root lies within ±1e-12 of the solution, invariant to scaling amounts and shifting dates",
+    { timeout: 60_000 },
+    () => {
+      fc.assert(
+        fc.property(
+          stream,
+          fc.integer({ min: 2, max: 1000 }),
+          fc.integer({ min: -2000, max: 2000 }),
+          (s, scale, shift) => {
+            const r = xirr(s);
+            if (r.status !== "ok") return; // no_root streams are legitimately null
+            expect(rootWithin(s, r.rate)).toBe(true);
+            const scaled = xirr(s.map((f) => ({ ...f, amount: f.amount.times(scale) })));
+            const shifted = xirr(s.map((f) => ({ ...f, date: addDays(f.date, shift) })));
+            if (scaled.status !== "ok" || shifted.status !== "ok") throw new Error("expected ok");
+            expect(scaled.rate.minus(r.rate).abs().lt("1e-10")).toBe(true);
+            expect(shifted.rate.minus(r.rate).abs().lt("1e-10")).toBe(true);
+          },
+        ),
+        { numRuns: 30 },
+      );
+    },
+  );
 });
 
 describe("mwr", () => {
@@ -134,10 +162,16 @@ describe("mwr", () => {
   });
 
   it("a ledger with no deposits recorded is null with insufficient_flows (decision 2)", () => {
-    expect(mwr({ from: "2026-01-01", to: "2027-01-01", startValue: "0", flows: [], endValue: "1100" })).toEqual({ status: "null", reason: "insufficient_flows", ignored: [] });
+    expect(mwr({ from: "2026-01-01", to: "2027-01-01", startValue: "0", flows: [], endValue: "1100" })).toEqual({
+      status: "null",
+      reason: "insufficient_flows",
+      ignored: [],
+    });
   });
 
   it("rejects from > to", () => {
-    expect(() => mwr({ from: "2027-01-01", to: "2026-01-01", startValue: "0", flows: [], endValue: "0" })).toThrow(/invalid_input/);
+    expect(() => mwr({ from: "2027-01-01", to: "2026-01-01", startValue: "0", flows: [], endValue: "0" })).toThrow(
+      /invalid_input/,
+    );
   });
 });

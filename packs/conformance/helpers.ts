@@ -62,7 +62,8 @@ export function packSourceFiles(pack: MarketPack): string[] {
 export function importSpecifiers(file: string): string[] {
   const src = fs.readFileSync(file, "utf8");
   const specs: string[] = [];
-  const re = /(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s+type\s*\(?['"]([^'"]+)['"]/g;
+  const re =
+    /(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)|import\s+type\s*\(?['"]([^'"]+)['"]/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(src))) specs.push(m[1] ?? m[2] ?? m[3]);
   // `import("./types").X` type-position imports

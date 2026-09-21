@@ -54,15 +54,13 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
           .order("ref")
           .range(from, to),
       );
-      return rows.map(
-        (r): WatermarkRow => ({
-          capability: r.capability as WatermarkRow["capability"],
-          ref: r.ref,
-          targetFrom: r.target_from,
-          lastDate: r.last_date,
-          unavailableBefore: r.unavailable_before,
-        }),
-      );
+      return rows.map((r): WatermarkRow => ({
+        capability: r.capability as WatermarkRow["capability"],
+        ref: r.ref,
+        targetFrom: r.target_from,
+        lastDate: r.last_date,
+        unavailableBefore: r.unavailable_before,
+      }));
     },
 
     async listAssets(scope: IngestScope, packIds: string[]) {
@@ -104,21 +102,25 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
         for (let i = 0; i < candidateIds.length; i += PAGE) {
           const chunk = candidateIds.slice(i, i + PAGE);
           const priced = await readAll<{ asset_id: string }>((from, to) =>
-            client.from("prices").select("asset_id").in("asset_id", chunk).order("asset_id").order("date").range(from, to),
+            client
+              .from("prices")
+              .select("asset_id")
+              .in("asset_id", chunk)
+              .order("asset_id")
+              .order("date")
+              .range(from, to),
           );
           for (const row of priced) pricedIds.add(row.asset_id);
         }
         selected = rows.filter((r) => !pricedIds.has(r.id));
       }
 
-      return selected.map(
-        (r): AssetRow => ({
-          assetId: r.id,
-          packId: r.pack_id,
-          instrumentKind: r.instrument_kind,
-          identifier: r.identifier,
-        }),
-      );
+      return selected.map((r): AssetRow => ({
+        assetId: r.id,
+        packId: r.pack_id,
+        instrumentKind: r.instrument_kind,
+        identifier: r.identifier,
+      }));
     },
 
     async earliestTradeDates(identifiers) {

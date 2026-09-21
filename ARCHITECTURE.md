@@ -78,26 +78,26 @@ What is installed is authoritative (`package.json`, `pnpm-lock.yaml`). This
 table is the one place a choice is recorded as agreed; a row that names a
 milestone is scheduled there and not installed before it.
 
-| Layer | Choice | State |
-|---|---|---|
-| Framework | Next.js (App Router) | 16.3.x installed — read `AGENTS.md`: APIs differ from older Next.js |
-| UI runtime | React | 19.x installed |
-| Language | TypeScript (strict) | 5.x installed |
-| Runtime | Node.js | 22.x (`engines: >=22`; CI uses 22) |
-| Package manager | pnpm | 10.x (`packageManager` field) — never npm/yarn |
-| Styling | Plain CSS on the `SPEC.md` §10 tokens (`app/globals.css`), CSS Modules where a component needs scoping | No utility framework, no component library (`MILESTONES.md` §4 decision 47) |
-| Database & auth | Supabase (Postgres 17, per `supabase/config.toml`) via CLI migrations in `supabase/migrations/`; email + password, TOTP MFA optional, signups disabled | `@supabase/supabase-js` 2.116 + `@supabase/ssr` 0.12.7 installed; cookie sessions through `proxy.ts` and `lib/auth/session.ts` |
-| Charts | Recharts | installed in Milestone 4 Phase 0, exact-pinned; the only place a decimal string becomes a `number` is `app/(app)/_charts/**` (decision 35) |
-| Money math | decimal.js | 10.6.x installed; kernel only — packs pass strings |
-| Date math | UTC helpers in `lib/calc/dates.ts` | no date library |
-| Forms | Native `<form action>` + server actions + zod | react-hook-form is not adopted (decision 48) |
-| Validation | zod | **4.x** installed (`z.iso.date()`, `z.url()` are v4 APIs) |
-| UI copy | `lib/copy/<locale>.ts` dictionaries sharing one `Copy` type; English and pt-BR | selected by `user_settings.locale` (decision 34) |
-| Formatter | Prettier | Milestone 4 Phase 1, checked in CI (decision 50) |
-| Security headers | Nonce-based CSP set by `proxy.ts`; HSTS, `frame-ancestors 'none'`, `no-referrer` in `next.config.ts` | Milestone 4 Phase 1 (decision 51) |
-| Hosting | Vercel | Hobby tier |
-| Cron | Vercel Cron via `vercel.json` | **Two jobs by design**, not by platform cap (Hobby currently allows up to 100 entries, each at most daily) |
-| Testing | Vitest 5 + fast-check 4; `*.dbtest.ts` against the local stack; Playwright (`pnpm test:e2e`) | Playwright installed in Milestone 4 Phase 0; React Testing Library is not adopted — pure view models are unit-tested, the browser is covered by the journeys (decision 50) |
+| Layer            | Choice                                                                                                                                                 | State                                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework        | Next.js (App Router)                                                                                                                                   | 16.3.x installed — read `AGENTS.md`: APIs differ from older Next.js                                                                                                        |
+| UI runtime       | React                                                                                                                                                  | 19.x installed                                                                                                                                                             |
+| Language         | TypeScript (strict)                                                                                                                                    | 5.x installed                                                                                                                                                              |
+| Runtime          | Node.js                                                                                                                                                | 22.x (`engines: >=22`; CI uses 22)                                                                                                                                         |
+| Package manager  | pnpm                                                                                                                                                   | 10.x (`packageManager` field) — never npm/yarn                                                                                                                             |
+| Styling          | Plain CSS on the `SPEC.md` §10 tokens (`app/globals.css`), CSS Modules where a component needs scoping                                                 | No utility framework, no component library (`MILESTONES.md` §4 decision 47)                                                                                                |
+| Database & auth  | Supabase (Postgres 17, per `supabase/config.toml`) via CLI migrations in `supabase/migrations/`; email + password, TOTP MFA optional, signups disabled | `@supabase/supabase-js` 2.116 + `@supabase/ssr` 0.12.7 installed; cookie sessions through `proxy.ts` and `lib/auth/session.ts`                                             |
+| Charts           | Recharts                                                                                                                                               | installed in Milestone 4 Phase 0, exact-pinned; the only place a decimal string becomes a `number` is `app/(app)/_charts/**` (decision 35)                                 |
+| Money math       | decimal.js                                                                                                                                             | 10.6.x installed; kernel only — packs pass strings                                                                                                                         |
+| Date math        | UTC helpers in `lib/calc/dates.ts`                                                                                                                     | no date library                                                                                                                                                            |
+| Forms            | Native `<form action>` + server actions + zod                                                                                                          | react-hook-form is not adopted (decision 48)                                                                                                                               |
+| Validation       | zod                                                                                                                                                    | **4.x** installed (`z.iso.date()`, `z.url()` are v4 APIs)                                                                                                                  |
+| UI copy          | `lib/copy/<locale>.ts` dictionaries sharing one `Copy` type; English and pt-BR                                                                         | selected by `user_settings.locale` (decision 34)                                                                                                                           |
+| Formatter        | Prettier                                                                                                                                               | Milestone 4 Phase 1, checked in CI (decision 50)                                                                                                                           |
+| Security headers | Nonce-based CSP set by `proxy.ts`; HSTS, `frame-ancestors 'none'`, `no-referrer` in `next.config.ts`                                                   | Milestone 4 Phase 1 (decision 51)                                                                                                                                          |
+| Hosting          | Vercel                                                                                                                                                 | Hobby tier                                                                                                                                                                 |
+| Cron             | Vercel Cron via `vercel.json`                                                                                                                          | **Two jobs by design**, not by platform cap (Hobby currently allows up to 100 entries, each at most daily)                                                                 |
+| Testing          | Vitest 5 + fast-check 4; `*.dbtest.ts` against the local stack; Playwright (`pnpm test:e2e`)                                                           | Playwright installed in Milestone 4 Phase 0; React Testing Library is not adopted — pure view models are unit-tested, the browser is covered by the journeys (decision 50) |
 
 **Do not add libraries without asking first.** If a problem seems to need a new
 dependency, propose it in chat before touching `package.json`. Milestone 4
@@ -118,7 +118,7 @@ one of these, re-read the rationale before deviating, and ask.
 the `transactions` table by summing signed quantities per asset on every read.
 Correcting any historical transaction automatically corrects every downstream
 number. No `positions` table, no denormalized balance table. The one exception is
-`portfolio_snapshots`, which stores daily *valuations* (not positions) for
+`portfolio_snapshots`, which stores daily _valuations_ (not positions) for
 time-series and contribution; it is write-once and fully reproducible from
 transactions + prices + series.
 
@@ -180,7 +180,7 @@ delete cascades from `auth.users`. Full text in `SPEC.md` §12.
 
 ## 5. File structure
 
-Directories that exist today are unmarked; *(Milestone 4)* marks routes and
+Directories that exist today are unmarked; _(Milestone 4)_ marks routes and
 modules scheduled by `docs/milestone-4-plan.md` and not yet created.
 
 ```
@@ -273,6 +273,7 @@ nav; light and dark are both first-class, neither an afterthought. Full tokens i
 ## 8. Common tasks
 
 **First-time local setup.**
+
 1. Clone; `pnpm install` (Node 22, pnpm 10 — see `packageManager`).
 2. Copy `.env.example` → `.env.local`; fill Supabase credentials.
 3. `pnpm db:start` — local Supabase via Docker; applies `supabase/migrations/`.
@@ -323,18 +324,18 @@ cron or the in-app Refresh — rebuilds it within the time budget, resumably.
 
 ## 9. Glossary
 
-| Term | Meaning |
-|---|---|
-| **Base currency** | The currency all aggregated views render in. A user setting; default BRL. |
-| **Native currency** | The currency an instrument is denominated/quoted in. |
-| **Pack** | A market module (`packs/<id>`) supplying a country's instruments, series, sources, and calendar. Data and mappings only, never math. |
-| **Instrument kind** | A pack-declared instrument type mapped to one kernel valuation strategy (e.g. `br.tesouro_direto` → `curve_mark_to_market`). |
-| **Series** | A time-series of market data (rate, index level, inflation index, FX, or curve) supplied by a pack and consumed by the kernel. |
-| **TWR** | Time-Weighted Return. Geometric chain of sub-period returns, neutralizing cash-flow timing. Used for benchmark comparison. |
-| **MWR / XIRR** | Money-Weighted Return / Extended IRR on the user's actual cash-flow stream. "What did I personally earn." |
-| **Contribution** | Per-asset share of total return: `weight_i × return_i`; sums to portfolio return. |
-| **Attribution** | Decomposition of return into sources — here, asset-driven vs FX-driven for foreign-currency holdings. |
-| **MTM** | Mark-to-Market. Valuing at current observable price. |
-| **Accrual** | Valuing a fixed-income holding by accumulating contracted interest day by day. |
-| **Curve MTM** | Present value of remaining cash flows discounted off a published curve. Government bonds. |
-| **CDI / IPCA / SONIA / CPIH** | Examples of pack-supplied series; the kernel treats them by their *kind*, not their name. |
+| Term                          | Meaning                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Base currency**             | The currency all aggregated views render in. A user setting; default BRL.                                                            |
+| **Native currency**           | The currency an instrument is denominated/quoted in.                                                                                 |
+| **Pack**                      | A market module (`packs/<id>`) supplying a country's instruments, series, sources, and calendar. Data and mappings only, never math. |
+| **Instrument kind**           | A pack-declared instrument type mapped to one kernel valuation strategy (e.g. `br.tesouro_direto` → `curve_mark_to_market`).         |
+| **Series**                    | A time-series of market data (rate, index level, inflation index, FX, or curve) supplied by a pack and consumed by the kernel.       |
+| **TWR**                       | Time-Weighted Return. Geometric chain of sub-period returns, neutralizing cash-flow timing. Used for benchmark comparison.           |
+| **MWR / XIRR**                | Money-Weighted Return / Extended IRR on the user's actual cash-flow stream. "What did I personally earn."                            |
+| **Contribution**              | Per-asset share of total return: `weight_i × return_i`; sums to portfolio return.                                                    |
+| **Attribution**               | Decomposition of return into sources — here, asset-driven vs FX-driven for foreign-currency holdings.                                |
+| **MTM**                       | Mark-to-Market. Valuing at current observable price.                                                                                 |
+| **Accrual**                   | Valuing a fixed-income holding by accumulating contracted interest day by day.                                                       |
+| **Curve MTM**                 | Present value of remaining cash flows discounted off a published curve. Government bonds.                                            |
+| **CDI / IPCA / SONIA / CPIH** | Examples of pack-supplied series; the kernel treats them by their _kind_, not their name.                                            |

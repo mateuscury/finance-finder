@@ -7,11 +7,17 @@ import { createCashFlow, deleteCashFlow, updateCashFlow } from "@/lib/ledger/cas
 import { readSettings } from "@/lib/ledger/rows";
 import { formValues, outcomeQuery } from "@/app/(app)/_lib/form";
 
-const baseCurrency = async (client: Awaited<ReturnType<typeof requireUser>>["client"]): Promise<string> => (await readSettings(client)).base_currency;
+const baseCurrency = async (client: Awaited<ReturnType<typeof requireUser>>["client"]): Promise<string> =>
+  (await readSettings(client)).base_currency;
 
 export async function createCashFlowAction(formData: FormData): Promise<void> {
   const { client, identity } = await requireUser();
-  const result = await createCashFlow(client, identity.userId, await baseCurrency(client), formValues(formData, ["date", "amount", "note"] as const));
+  const result = await createCashFlow(
+    client,
+    identity.userId,
+    await baseCurrency(client),
+    formValues(formData, ["date", "amount", "note"] as const),
+  );
   if (result.ok) {
     revalidatePath("/cash-flows");
     revalidatePath("/");
@@ -21,7 +27,12 @@ export async function createCashFlowAction(formData: FormData): Promise<void> {
 
 export async function updateCashFlowAction(cashFlowId: string, formData: FormData): Promise<void> {
   const { client } = await requireUser();
-  const result = await updateCashFlow(client, cashFlowId, await baseCurrency(client), formValues(formData, ["date", "amount", "note"] as const));
+  const result = await updateCashFlow(
+    client,
+    cashFlowId,
+    await baseCurrency(client),
+    formValues(formData, ["date", "amount", "note"] as const),
+  );
   if (result.ok) {
     revalidatePath("/cash-flows");
     redirect("/cash-flows?saved=1");

@@ -288,7 +288,9 @@ export async function runIngest(options: RunIngestOptions): Promise<IngestSummar
     // slow source cannot consume the whole invocation.
     const share = Math.floor((remaining - reserveMs) / (sources.length - i));
     const sourceDeadline = now().getTime() + Math.max(1, share);
-    summaries.push(await runSource({ pack, source, sourceDeadline, today, store, httpFactory, env, assets, now, scope }));
+    summaries.push(
+      await runSource({ pack, source, sourceDeadline, today, store, httpFactory, env, assets, now, scope }),
+    );
   }
 
   return {
@@ -360,7 +362,9 @@ async function runSource(args: RunSourceArgs): Promise<SourceSummary> {
   // --- build work items ------------------------------------------------------
   const seriesRefs = pack.series.filter((s) => s.sourceId === source.id);
   const instrumentKinds = pack.instruments.filter(
-    (i) => (i.valuation.kind === "market_price" || i.valuation.kind === "nav_unit_price") && i.valuation.sourceId === source.id,
+    (i) =>
+      (i.valuation.kind === "market_price" || i.valuation.kind === "nav_unit_price") &&
+      i.valuation.sourceId === source.id,
   );
   const kindIds = new Set(instrumentKinds.map((k) => k.id));
   // One market ref can be held by several users; one fetched quote writes a
@@ -475,7 +479,10 @@ async function runSource(args: RunSourceArgs): Promise<SourceSummary> {
 
         if (item.capability === "spot") {
           // `spot` has no interval; advance only to a date actually returned.
-          const dates = validation.accepted.filter((p) => p.ref === ref).map((p) => p.date).sort();
+          const dates = validation.accepted
+            .filter((p) => p.ref === ref)
+            .map((p) => p.date)
+            .sort();
           if (dates.length === 0) continue;
           commitWatermarks.push({
             capability: item.capability,

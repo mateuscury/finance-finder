@@ -11,25 +11,55 @@ const kernelInfraPaths = [
   { name: "react-dom", message: "lib/calc is pure: no framework imports." },
 ];
 const kernelInfraPatterns = [
-  { group: ["next/*", "react/*", "react-dom/*", "@supabase/*"], message: "lib/calc is pure: no framework or database imports." },
+  {
+    group: ["next/*", "react/*", "react-dom/*", "@supabase/*"],
+    message: "lib/calc is pure: no framework or database imports.",
+  },
   {
     group: [
-      "@/lib/packs", "@/lib/packs/*", "**/lib/packs/**",
-      "@/lib/supabase", "@/lib/supabase/*", "**/lib/supabase/**",
-      "@/lib/cron", "@/lib/cron/*", "**/lib/cron/**",
-      "@/lib/testing", "@/lib/testing/*", "**/lib/testing/**",
-      "@/app/*", "**/app/**",
+      "@/lib/packs",
+      "@/lib/packs/*",
+      "**/lib/packs/**",
+      "@/lib/supabase",
+      "@/lib/supabase/*",
+      "**/lib/supabase/**",
+      "@/lib/cron",
+      "@/lib/cron/*",
+      "**/lib/cron/**",
+      "@/lib/testing",
+      "@/lib/testing/*",
+      "**/lib/testing/**",
+      "@/app/*",
+      "**/app/**",
     ],
-    message: "lib/calc is pure: it never reaches the pack runtime, the store, the crons, the routes or the database harness.",
+    message:
+      "lib/calc is pure: it never reaches the pack runtime, the store, the crons, the routes or the database harness.",
   },
 ];
 const kernelPackPaths = [
-  { name: "@/packs", message: "The kernel knows the pack CONTRACT, never the registry or a specific pack (PACKS.md §1). Take a registry as a parameter." },
-  { name: "@/packs/index", message: "The kernel knows the pack CONTRACT, never the registry or a specific pack (PACKS.md §1). Take a registry as a parameter." },
+  {
+    name: "@/packs",
+    message:
+      "The kernel knows the pack CONTRACT, never the registry or a specific pack (PACKS.md §1). Take a registry as a parameter.",
+  },
+  {
+    name: "@/packs/index",
+    message:
+      "The kernel knows the pack CONTRACT, never the registry or a specific pack (PACKS.md §1). Take a registry as a parameter.",
+  },
 ];
 const kernelPackPatterns = [
   {
-    group: ["@/packs/br", "@/packs/br/*", "**/packs/br/**", "@/packs/global", "@/packs/global/*", "**/packs/global/**", "@/packs/conformance/*", "**/packs/conformance/**"],
+    group: [
+      "@/packs/br",
+      "@/packs/br/*",
+      "**/packs/br/**",
+      "@/packs/global",
+      "@/packs/global/*",
+      "**/packs/global/**",
+      "@/packs/conformance/*",
+      "**/packs/conformance/**",
+    ],
     message: "The kernel knows the pack CONTRACT, never a specific pack (PACKS.md §1).",
   },
 ];
@@ -39,16 +69,19 @@ const kernelPackPatterns = [
 const floatBans = [
   {
     selector: "CallExpression[callee.name='parseFloat']",
-    message: "Values are decimal strings, never a float. Parse with zod DecimalStringSchema and hand strings to lib/calc.",
+    message:
+      "Values are decimal strings, never a float. Parse with zod DecimalStringSchema and hand strings to lib/calc.",
   },
   {
     selector: "CallExpression[callee.name='Number']",
-    message: "Values are decimal strings, never a float. Parse with zod DecimalStringSchema and hand strings to lib/calc.",
+    message:
+      "Values are decimal strings, never a float. Parse with zod DecimalStringSchema and hand strings to lib/calc.",
   },
 ];
 const noGetSession = {
   selector: "CallExpression[callee.property.name='getSession']",
-  message: "Identity comes from getUser(), verified against Auth. getSession() trusts the cookie unverified (SPEC §9.6).",
+  message:
+    "Identity comes from getUser(), verified against Auth. getSession() trusts the cookie unverified (SPEC §9.6).",
 };
 
 const eslintConfig = defineConfig([
@@ -65,13 +98,30 @@ const eslintConfig = defineConfig([
     // a server action may invoke a runner with a scope it derived through the
     // user's own RLS client, never build the client itself.
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["app/api/cron/**", "lib/jobs/**", "lib/supabase/service.ts", "lib/testing/**", "**/*.dbtest.ts", "scripts/**"],
+    ignores: [
+      "app/api/cron/**",
+      "lib/jobs/**",
+      "lib/supabase/service.ts",
+      "lib/testing/**",
+      "**/*.dbtest.ts",
+      "scripts/**",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
         {
-          paths: [{ name: "@/lib/supabase/service", message: "Service-role clients are built only in app/api/cron/** and lib/jobs/** (ARCHITECTURE §4.3)." }],
-          patterns: [{ group: ["**/lib/supabase/service"], message: "Service-role clients are built only in app/api/cron/** and lib/jobs/** (ARCHITECTURE §4.3)." }],
+          paths: [
+            {
+              name: "@/lib/supabase/service",
+              message: "Service-role clients are built only in app/api/cron/** and lib/jobs/** (ARCHITECTURE §4.3).",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/lib/supabase/service"],
+              message: "Service-role clients are built only in app/api/cron/** and lib/jobs/** (ARCHITECTURE §4.3).",
+            },
+          ],
         },
       ],
     },
@@ -117,7 +167,10 @@ const eslintConfig = defineConfig([
             { name: "decimal.js", message: "Values cross the pack boundary as strings; the kernel owns decimal math." },
           ],
           patterns: [
-            { group: ["**/lib/**", "@/lib/**"], message: "lib/ is kernel-only. Packs supply data, not math (PACKS.md §1)." },
+            {
+              group: ["**/lib/**", "@/lib/**"],
+              message: "lib/ is kernel-only. Packs supply data, not math (PACKS.md §1).",
+            },
           ],
         },
       ],
@@ -166,7 +219,8 @@ const eslintConfig = defineConfig([
         },
         {
           selector: "CallExpression[callee.object.name='Decimal'][callee.property.name='set']",
-          message: "Never configure the global Decimal (action at a distance). Use the kernel-private clone from lib/calc/decimal.ts.",
+          message:
+            "Never configure the global Decimal (action at a distance). Use the kernel-private clone from lib/calc/decimal.ts.",
         },
       ],
     },

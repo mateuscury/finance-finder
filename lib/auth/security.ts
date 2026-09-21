@@ -6,7 +6,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-export type SecurityReason = "invalid_input" | "aal2_required" | "wrong_password" | "auth_failed" | "no_factor" | "code_rejected";
+export type SecurityReason =
+  "invalid_input" | "aal2_required" | "wrong_password" | "auth_failed" | "no_factor" | "code_rejected";
 export type SecurityResult<T = undefined> = { ok: true; value: T } | { ok: false; reason: SecurityReason };
 
 const NewPassword = z
@@ -32,14 +33,23 @@ export interface Enrolment {
 export async function enrolTotp(client: SupabaseClient): Promise<SecurityResult<Enrolment>> {
   const factors = await client.auth.mfa.listFactors();
   // `totp` lists verified factors only; unverified leftovers of an abandoned enrolment are in `all`.
-  for (const f of factors.data?.all ?? []) if (f.factor_type === "totp" && f.status === "unverified") await client.auth.mfa.unenroll({ factorId: f.id });
+  for (const f of factors.data?.all ?? [])
+    if (f.factor_type === "totp" && f.status === "unverified") await client.auth.mfa.unenroll({ factorId: f.id });
   const { data, error } = await client.auth.mfa.enroll({ factorType: "totp", friendlyName: "Finance Finder" });
   if (error || !data) return { ok: false, reason: "auth_failed" };
   return { ok: true, value: { factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret } };
 }
 
 export async function confirmTotp(client: SupabaseClient, input: unknown): Promise<SecurityResult> {
-  const parsed = z.object({ factorId: z.string().min(1), code: z.string().trim().regex(/^\d{6}$/) }).safeParse(input);
+  const parsed = z
+    .object({
+      factorId: z.string().min(1),
+      code: z
+        .string()
+        .trim()
+        .regex(/^\d{6}$/),
+    })
+    .safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid_input" };
   const { error } = await client.auth.mfa.challengeAndVerify(parsed.data);
   return error ? { ok: false, reason: "code_rejected" } : { ok: true, value: undefined };
@@ -63,7 +73,11 @@ export async function signOutEverywhere(client: SupabaseClient): Promise<Securit
 }
 
 /** A fresh password check for destructive actions, against a throwaway client so the session is untouched. */
-export async function verifyPassword(makeClient: () => SupabaseClient, email: string, password: string): Promise<boolean> {
+export async function verifyPassword(
+  makeClient: () => SupabaseClient,
+  email: string,
+  password: string,
+): Promise<boolean> {
   const { error } = await makeClient().auth.signInWithPassword({ email, password });
   return error === null;
 }

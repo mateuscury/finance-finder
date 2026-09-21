@@ -13,7 +13,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { compareGolden, GoldenFixtureSchema, runGolden, type GoldenFixture } from "@/lib/calc/golden";
 import { valuePortfolio } from "@/lib/calc/portfolio";
-import { assertStackReachable, createDbTestClient, createThrowawayUser, type ThrowawayUserHandle } from "@/lib/testing/db";
+import {
+  assertStackReachable,
+  createDbTestClient,
+  createThrowawayUser,
+  type ThrowawayUserHandle,
+} from "@/lib/testing/db";
 import { loadGoldenFixture, removeGoldenSeries, seedGoldenPortfolio } from "@/lib/testing/golden";
 import { countLedger, listAssets, listCashFlows, listTransactions } from "./queries";
 import { readLedger, toPortfolioInput } from "./rows";
@@ -46,14 +51,27 @@ const N = {
 function toGolden(read: Awaited<ReturnType<typeof readLedger>>, goldenIdOf: Map<string, string>): GoldenFixture {
   const identifierOf = new Map(read.assets.map((a) => [a.id, a.identifier] as const));
   const prices: GoldenFixture["prices"] = {};
-  for (const p of read.prices) (prices[identifierOf.get(p.assetId)!] ??= []).push({ date: p.date, price: p.price, currency: p.currency, sourceId: p.sourceId });
+  for (const p of read.prices)
+    (prices[identifierOf.get(p.assetId)!] ??= []).push({
+      date: p.date,
+      price: p.price,
+      currency: p.currency,
+      sourceId: p.sourceId,
+    });
   const series: GoldenFixture["series"] = {};
-  for (const s of read.series) (series[s.seriesId] ??= []).push({ date: s.date, value: s.value, tenorDays: s.tenorDays });
+  for (const s of read.series)
+    (series[s.seriesId] ??= []).push({ date: s.date, value: s.value, tenorDays: s.tenorDays });
   return GoldenFixtureSchema.parse({
     baseCurrency: read.settings.base_currency,
     asOf: fixture.asOf,
     valuationDates: fixture.valuationDates,
-    assets: read.assets.map((a) => ({ id: goldenIdOf.get(a.id), instrumentKind: a.instrumentKind.id, identifier: a.identifier, nativeCurrency: a.nativeCurrency, metadata: a.metadata })),
+    assets: read.assets.map((a) => ({
+      id: goldenIdOf.get(a.id),
+      instrumentKind: a.instrumentKind.id,
+      identifier: a.identifier,
+      nativeCurrency: a.nativeCurrency,
+      metadata: a.metadata,
+    })),
     transactions: read.transactions.map((t) => ({ ...t, assetId: goldenIdOf.get(t.assetId) })),
     cashFlows: read.cashFlows,
     prices,
@@ -80,10 +98,17 @@ describe("readLedger under RLS", () => {
     // The kernel on the live read path, straight from PortfolioInput…
     const input = toPortfolioInput(read);
     const valued = valuePortfolio(input, fixture.asOf);
-    expect(valued.totalBase.toString().slice(0, 12)).toBe(String((expected.valuation as { total: string }).total).slice(0, 12));
+    expect(valued.totalBase.toString().slice(0, 12)).toBe(
+      String((expected.valuation as { total: string }).total).slice(0, 12),
+    );
     // …and through the golden runner, to 1e-8.
     const mismatches = compareGolden(runGolden(toGolden(read, goldenIdOf), PACKS), expected);
-    expect(mismatches, mismatches.map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`).join("\n")).toEqual([]);
+    expect(
+      mismatches,
+      mismatches
+        .map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`)
+        .join("\n"),
+    ).toEqual([]);
   });
 
   it("the page queries see the same rows; another user sees nothing", async () => {
@@ -105,7 +130,11 @@ describe("readLedger under RLS", () => {
     expect(txns.rows[0].trade_date).toBe("2026-02-18");
     expect(txns.rows[0].identifier).toBe("HGLG11");
     expect((await listCashFlows(client, 1)).total).toBe(N.cashFlows);
-    expect(await countLedger(client)).toEqual({ assets: N.assets, transactions: N.transactions, cashFlows: N.cashFlows });
+    expect(await countLedger(client)).toEqual({
+      assets: N.assets,
+      transactions: N.transactions,
+      cashFlows: N.cashFlows,
+    });
 
     const stranger = await (await newUser()).signIn();
     expect(await countLedger(stranger)).toEqual({ assets: 0, transactions: 0, cashFlows: 0 });

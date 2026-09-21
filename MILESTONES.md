@@ -397,7 +397,7 @@ depend on. Rationale in full in the plan's "Decisions to confirm" section.
 24. **The CSV column mapping lives in `user_settings.csv_column_map jsonb`**
     and is not part of the backup.
 25. **Cash flows are entered in the base currency only.** `cash_flows.
-    currency` stays for a multi-currency ledger later; the kernel already
+currency` stays for a multi-currency ledger later; the kernel already
     converts at the flow date.
 26. **Base currency locks at the first transaction; the reset is one
     explicit action** (`confirmReset: true`), after which the decision 20
@@ -464,7 +464,7 @@ gate and the done-when for each).
 ### Decisions taken 2026-09-20 (confirmed on the plan's recommendation)
 
 Numbered on from 32. Each changes a checked-in contract, a dependency, a
-doc that says *planned*, or a behaviour a screen will depend on. Rationale
+doc that says _planned_, or a behaviour a screen will depend on. Rationale
 in full in `docs/milestone-4-plan.md` "Decisions to confirm".
 
 33. **`br.stock` joins `packs/br`** — ações, ETFs and BDRs on B3,
@@ -474,7 +474,7 @@ in full in `docs/milestone-4-plan.md` "Decisions to confirm".
     script. Poupança and fundos stay out (new source, licence review).
 34. **UI copy ships in English and Brazilian Portuguese from the start**
     (the maintainer amended the plan's "English only"). `user_settings.
-    locale` selects copy and formatting; `lib/copy/{en,pt-BR}.ts` share one
+locale` selects copy and formatting; `lib/copy/{en,pt-BR}.ts` share one
     `Copy` type so the two dictionaries cannot drift; `lib/copy/index.ts`
     is the second allowed site for a locale literal; the instance default
     applies before sign-in. PACKS §15's translation question is closed: a
@@ -511,21 +511,21 @@ in full in `docs/milestone-4-plan.md` "Decisions to confirm".
 44. **Performance budgets are measured** on a synthetic five-year,
     twenty-asset ledger: `runSnapshots` ≥ 50 days/s, every screen read
     < 500 ms p50 on the local stack; recorded in `docs/performance-budgets.
-    md`; optimisation only where a budget fails.
+md`; optimisation only where a budget fails.
 45. **The multi-country placeholder is PACKS §16 + decision 42 + the
     registry-driven form** — no stub pack, no kernel type change.
 46. **Playwright smoke journeys** (`pnpm test:e2e`, a tier like `dbtest`,
     required by `release:check`): eight journeys plus the decision 40
     security-boundary journey.
 47. **Styling is plain CSS on the SPEC §10 tokens with CSS Modules; no
-    Tailwind, no shadcn/ui.** ARCHITECTURE §3's *planned* row is reversed.
+    Tailwind, no shadcn/ui.** ARCHITECTURE §3's _planned_ row is reversed.
 48. **Forms stay native `<form action>` with server actions; react-hook-form
     is not adopted.** ARCHITECTURE §3 amended.
 49. **A typed Supabase client** from `pnpm db:types`: `lib/database.types.
-    ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
+ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
     every factory.
 50. **Prettier is the formatter; CI also runs `test:db`, `pnpm audit
-    --audit-level=high` and coverage thresholds.** React Testing Library is
+--audit-level=high` and coverage thresholds.** React Testing Library is
     not adopted (pure view models + the journeys).
 51. **Security headers with a nonce-based CSP** set by `proxy.ts`; HSTS in
     production; `frame-ancestors 'none'`; `Referrer-Policy: no-referrer`.
@@ -543,4 +543,3 @@ in full in `docs/milestone-4-plan.md` "Decisions to confirm".
   (decision 25), `curve_mark_to_market` with `indexation` (decision 7),
   rate series on a day count other than `BUS/252`, and every item in
   `PACKS.md` §16.
-

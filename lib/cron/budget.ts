@@ -24,9 +24,6 @@ export const CRON_MAX_DURATION_SECONDS = 60;
 export const CRON_RESERVE_MS = 10_000;
 
 /** What `runIngest` is allowed to spend fetching and validating. */
-export function ingestBudgetMs(
-  maxDurationSeconds = CRON_MAX_DURATION_SECONDS,
-  reserveMs = CRON_RESERVE_MS,
-): number {
+export function ingestBudgetMs(maxDurationSeconds = CRON_MAX_DURATION_SECONDS, reserveMs = CRON_RESERVE_MS): number {
   return maxDurationSeconds * 1000 - reserveMs;
 }

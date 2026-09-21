@@ -8,7 +8,8 @@ export default async function MfaPage({ searchParams }: PageProps<"/login/mfa">)
       <h1>Second factor</h1>
       <form action={verifyTotp}>
         <label>
-          Code from your authenticator <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" required />
+          Code from your authenticator{" "}
+          <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" required />
         </label>
         {failed ? <p role="alert">That code was not accepted.</p> : null}
         <button type="submit">Verify</button>

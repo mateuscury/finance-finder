@@ -28,4 +28,3 @@ describe("pack boundary schemas", () => {
     expect(SeriesKindSchema.safeParse({ kind: "yield_curve", tenors: [21, 252, 252] }).success).toBe(false);
   });
 });
-

@@ -87,8 +87,7 @@ describe("planWindow", () => {
 });
 
 describe("capability selection", () => {
-  const src = (capabilities: PriceSource["capabilities"]): PriceSource =>
-    ({ id: "br.x", capabilities }) as PriceSource;
+  const src = (capabilities: PriceSource["capabilities"]): PriceSource => ({ id: "br.x", capabilities }) as PriceSource;
 
   it("prefers fx for an fx series and series otherwise", () => {
     expect(capabilityForSeries(src(["fx", "historical"]), true)).toBe("fx");
@@ -146,7 +145,12 @@ function makeStore(over: Partial<IngestStore> = {}) {
     earliestTradeDates: async () => ({}),
     commitChunk: async (payload) => {
       commits.push(payload);
-      return { prices_written: payload.prices.length, manual_protected: 0, series_written: payload.series_points.length, watermarks_advanced: payload.watermarks.length };
+      return {
+        prices_written: payload.prices.length,
+        manual_protected: 0,
+        series_written: payload.series_points.length,
+        watermarks_advanced: payload.watermarks.length,
+      };
     },
     ...over,
   };
@@ -208,7 +212,13 @@ describe("runIngest — watermark advancement", () => {
     const { run, commits } = base(source);
     await run();
     expect(commits[0].watermarks).toEqual([
-      { capability: "series", ref: "br.cdi", target_from: expect.any(String), last_date: commits[0].watermarks[0].last_date, unavailable_before: null },
+      {
+        capability: "series",
+        ref: "br.cdi",
+        target_from: expect.any(String),
+        last_date: commits[0].watermarks[0].last_date,
+        unavailable_before: null,
+      },
     ]);
     expect(commits[0].watermarks[0].last_date).toBe(TODAY);
   });
@@ -234,7 +244,12 @@ describe("runIngest — watermark advancement", () => {
         points: [{ ref: "br.cdi", date: "2026-09-02", value: "0.0004", currency: null }],
         warnings: ["history before the plan limit is unavailable"],
         coverage: [
-          { ref: "br.cdi", requested: { from: req.from!, to: req.to! }, returned: { from: "2026-09-02", to: "2026-09-02" }, complete: false },
+          {
+            ref: "br.cdi",
+            requested: { from: req.from!, to: req.to! },
+            returned: { from: "2026-09-02", to: "2026-09-02" },
+            complete: false,
+          },
         ],
       }),
     });
@@ -257,7 +272,14 @@ describe("runIngest — watermark advancement", () => {
           { ref: "br.cdi", date: "2026-09-02", value: "0.0009", currency: null },
         ],
         warnings: [],
-        coverage: [{ ref: "br.cdi", requested: { from: req.from!, to: req.to! }, returned: { from: "2026-09-02", to: "2026-09-02" }, complete: true }],
+        coverage: [
+          {
+            ref: "br.cdi",
+            requested: { from: req.from!, to: req.to! },
+            returned: { from: "2026-09-02", to: "2026-09-02" },
+            complete: true,
+          },
+        ],
       }),
     });
     const { run, commits } = base(source);
@@ -311,7 +333,13 @@ describe("runIngest — scheduling and safety", () => {
         id,
         fetch: async (req) => {
           order.push(id);
-          return { points: [], warnings: [], coverage: [{ ref: req.refs[0], requested: { from: req.from!, to: req.to! }, returned: null, complete: true }] };
+          return {
+            points: [],
+            warnings: [],
+            coverage: [
+              { ref: req.refs[0], requested: { from: req.from!, to: req.to! }, returned: null, complete: true },
+            ],
+          };
         },
       });
     const pack = makePack({
@@ -393,7 +421,14 @@ describe("runIngest — scheduling and safety", () => {
       fetch: async (req) => ({
         points: [{ ref: "HGLG11", date: "2026-09-04", value: "148.3", currency: "BRL" }],
         warnings: [],
-        coverage: [{ ref: "HGLG11", requested: { from: req.from!, to: req.to! }, returned: { from: "2026-09-04", to: "2026-09-04" }, complete: true }],
+        coverage: [
+          {
+            ref: "HGLG11",
+            requested: { from: req.from!, to: req.to! },
+            returned: { from: "2026-09-04", to: "2026-09-04" },
+            complete: true,
+          },
+        ],
       }),
     });
     const pack = makePack({ id: "br", instruments: [instrument], sources: [source] });
@@ -489,7 +524,12 @@ describe("runIngest — an unreachable backfill must not loop forever", () => {
             points: [{ ref: "HGLG11", date: maxDate(from, floor), value: "148.3", currency: "BRL" }],
             warnings: [],
             coverage: [
-              { ref: "HGLG11", requested: { from, to }, returned: { from: maxDate(from, floor), to: maxDate(from, floor) }, complete: true },
+              {
+                ref: "HGLG11",
+                requested: { from, to },
+                returned: { from: maxDate(from, floor), to: maxDate(from, floor) },
+                complete: true,
+              },
             ],
           };
         }
@@ -497,7 +537,9 @@ describe("runIngest — an unreachable backfill must not loop forever", () => {
         return {
           points: [],
           warnings: ["history before the plan limit is unavailable"],
-          coverage: [{ ref: "HGLG11", requested: { from, to }, returned: null, complete: false, unavailableBefore: floor }],
+          coverage: [
+            { ref: "HGLG11", requested: { from, to }, returned: null, complete: false, unavailableBefore: floor },
+          ],
         };
       },
     });
@@ -537,12 +579,20 @@ describe("runIngest — an unreachable backfill must not loop forever", () => {
             targetFrom: w.target_from,
             lastDate: restarted
               ? w.last_date
-              : [existing?.lastDate ?? null, w.last_date].filter((d): d is string => d !== null).sort().pop() ?? null,
+              : ([existing?.lastDate ?? null, w.last_date]
+                  .filter((d): d is string => d !== null)
+                  .sort()
+                  .pop() ?? null),
             unavailableBefore: w.unavailable_before,
           };
           stored = [...stored.filter((s) => !(s.ref === w.ref && s.capability === w.capability)), next];
         }
-        return { prices_written: payload.prices.length, manual_protected: 0, series_written: payload.series_points.length, watermarks_advanced: payload.watermarks.length };
+        return {
+          prices_written: payload.prices.length,
+          manual_protected: 0,
+          series_written: payload.series_points.length,
+          watermarks_advanced: payload.watermarks.length,
+        };
       },
     };
 

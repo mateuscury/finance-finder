@@ -186,7 +186,10 @@ export function createPackHttp(options: CreatePackHttpOptions): PackHttpHandle {
     bucket.take();
   }
 
-  async function performLive(url: string, headers: Record<string, string>): Promise<{ status: number; headers: Record<string, string>; body: string }> {
+  async function performLive(
+    url: string,
+    headers: Record<string, string>,
+  ): Promise<{ status: number; headers: Record<string, string>; body: string }> {
     const timeLeft = remaining();
     if (timeLeft <= 0) throw new AbortedError();
     const controller = new AbortController();

@@ -49,15 +49,20 @@ import { findSeries, type HoldingValue, type ValuationContext } from "./result";
 export const AccrualMetadataSchema = z.object({ rate: DecimalStringSchema });
 
 type LotFactor =
-  | { status: ValueStatus; factor: KDecimal; observedOn: IsoDate }
-  | { status: "unpriced"; reason: UnpricedReason };
+  { status: ValueStatus; factor: KDecimal; observedOn: IsoDate } | { status: "unpriced"; reason: UnpricedReason };
 
 function unsupported(message: string, details: Record<string, string | number | null>): KernelError {
   return new KernelError("unsupported_convention", message, details);
 }
 
 /** `(1 + rate)` raised to the elapsed time the granularity recognises. */
-function rateFactor(rate: KDecimal, convention: AccrualConvention, ctx: ValuationContext, from: IsoDate, to: IsoDate): KDecimal {
+function rateFactor(
+  rate: KDecimal,
+  convention: AccrualConvention,
+  ctx: ValuationContext,
+  from: IsoDate,
+  to: IsoDate,
+): KDecimal {
   const growth = ONE.plus(rate);
   switch (convention.compounding) {
     case "daily":
@@ -77,7 +82,12 @@ function descriptorFor(ctx: ValuationContext, seriesId: string, assetId: string)
   return d;
 }
 
-function levelFor(ctx: ValuationContext, descriptor: SeriesDescriptor, date: IsoDate, assetId: string): Observed<KDecimal> {
+function levelFor(
+  ctx: ValuationContext,
+  descriptor: SeriesDescriptor,
+  date: IsoDate,
+  assetId: string,
+): Observed<KDecimal> {
   const kind = descriptor.kind;
   if (kind.kind === "inflation_index") return inflationLevelAt(ctx.market, descriptor.id, date, kind.interpolation);
   if (kind.kind === "index_level") return levelAt(ctx.market, descriptor.id, date, ctx.windowDays);
@@ -141,10 +151,18 @@ function lotFactor(
   return { status: worseOf(start.status, end.status), factor, observedOn: end.observedOn };
 }
 
-export function valueAccrual(asset: HoldingAsset, lots: readonly Lot[], asOf: IsoDate, ctx: ValuationContext): HoldingValue {
+export function valueAccrual(
+  asset: HoldingAsset,
+  lots: readonly Lot[],
+  asOf: IsoDate,
+  ctx: ValuationContext,
+): HoldingValue {
   const strategy = asset.instrumentKind.valuation;
   if (strategy.kind !== "accrual") {
-    throw new KernelError("invalid_input", "valueAccrual needs an accrual strategy", { assetId: asset.id, kind: strategy.kind });
+    throw new KernelError("invalid_input", "valueAccrual needs an accrual strategy", {
+      assetId: asset.id,
+      kind: strategy.kind,
+    });
   }
   const metadata = AccrualMetadataSchema.safeParse(asset.metadata);
   if (!metadata.success) return unpriced("invalid_metadata");

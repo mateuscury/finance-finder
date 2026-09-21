@@ -6,7 +6,7 @@ derived through the user's own RLS client — the asset ids it just created,
 its own user id — never a form value.
 
 - **`index.ts`** — `ingestJob(scope, spentMs)`, `snapshotsJob(scope,
-  spentMs)`, `priceThenSnapshot(...)` (asset creation, Refresh),
+spentMs)`, `priceThenSnapshot(...)` (asset creation, Refresh),
   `remainingBudgetMs` (the route's 60 s less what the action spent), and
   `deleteUserJob` — the one deliberately user-triggered service-role write.
 - **`snapshots.ts`** — `runSnapshots`, shaped like `runIngest`: per user,

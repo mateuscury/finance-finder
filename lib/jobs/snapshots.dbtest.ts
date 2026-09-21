@@ -8,7 +8,12 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { KernelDecimal } from "@/lib/calc/decimal";
-import { assertStackReachable, createDbTestClient, createThrowawayUser, type ThrowawayUserHandle } from "@/lib/testing/db";
+import {
+  assertStackReachable,
+  createDbTestClient,
+  createThrowawayUser,
+  type ThrowawayUserHandle,
+} from "@/lib/testing/db";
 import { loadGoldenFixture, removeGoldenSeries, seedGoldenPortfolio } from "@/lib/testing/golden";
 import { runSnapshots } from "./snapshots";
 import { createSnapshotStore } from "./snapshots-store";
@@ -37,7 +42,17 @@ async function snapshotDates(userId: string): Promise<string[]> {
 
 async function fakeSnapshots(userId: string, assetId: string, dates: string[]): Promise<void> {
   const { error } = await admin.from("portfolio_snapshots").insert(
-    dates.map((date) => ({ user_id: userId, asset_id: assetId, date, quantity: "1", price_native: "1", base_currency: "BRL", market_value_base: "1", price_date: date, status: "ok" })),
+    dates.map((date) => ({
+      user_id: userId,
+      asset_id: assetId,
+      date,
+      quantity: "1",
+      price_native: "1",
+      base_currency: "BRL",
+      market_value_base: "1",
+      price_date: date,
+      status: "ok",
+    })),
   );
   if (error) throw new Error(`seed snapshots: ${error.message}`);
 }
@@ -57,7 +72,20 @@ describe("invalidate_snapshots triggers", () => {
 
     // INSERT dated 02-13 → A keeps 02-10 and 02-12 only.
     const clientA = await a.signIn();
-    const ins = await clientA.from("transactions").insert({ user_id: a.userId, asset_id: fiiA, trade_date: "2026-02-13", type: "buy", quantity: "1", unit_price: "150", currency: "BRL", fees: "0" }).select("id").single();
+    const ins = await clientA
+      .from("transactions")
+      .insert({
+        user_id: a.userId,
+        asset_id: fiiA,
+        trade_date: "2026-02-13",
+        type: "buy",
+        quantity: "1",
+        unit_price: "150",
+        currency: "BRL",
+        fees: "0",
+      })
+      .select("id")
+      .single();
     expect(ins.error).toBeNull();
     expect(await snapshotDates(a.userId)).toEqual(["2026-02-10", "2026-02-12"]);
     expect(await snapshotDates(b.userId)).toEqual(DATES);
@@ -83,9 +111,17 @@ describe("invalidate_snapshots triggers", () => {
     await fakeSnapshots(a.userId, fii, DATES);
 
     const clientA = await a.signIn();
-    const manual = await clientA.from("prices").insert({ asset_id: fii, date: "2026-02-20", price: "155.5", currency: "BRL", source_id: "manual" });
+    const manual = await clientA
+      .from("prices")
+      .insert({ asset_id: fii, date: "2026-02-20", price: "155.5", currency: "BRL", source_id: "manual" });
     expect(manual.error).toBeNull();
-    expect(await snapshotDates(a.userId)).toEqual(["2026-02-10", "2026-02-12", "2026-02-13", "2026-02-18", "2026-02-19"]);
+    expect(await snapshotDates(a.userId)).toEqual([
+      "2026-02-10",
+      "2026-02-12",
+      "2026-02-13",
+      "2026-02-18",
+      "2026-02-19",
+    ]);
 
     // The nightly cron writes with the service role and a pack source id: same rule.
     await fakeSnapshots(a.userId, fii, ["2026-02-20", "2026-02-27"]);
@@ -101,7 +137,9 @@ describe("invalidate_snapshots triggers", () => {
     const clientA = await a.signIn();
     expect((await clientA.from("user_settings").update({ theme: "dark" }).eq("user_id", a.userId)).error).toBeNull();
     expect(await snapshotDates(a.userId)).toEqual(DATES);
-    expect((await clientA.from("user_settings").update({ base_currency: "USD" }).eq("user_id", a.userId)).error).toBeNull();
+    expect(
+      (await clientA.from("user_settings").update({ base_currency: "USD" }).eq("user_id", a.userId)).error,
+    ).toBeNull();
     expect(await snapshotDates(a.userId)).toEqual([]);
   });
 
@@ -109,7 +147,15 @@ describe("invalidate_snapshots triggers", () => {
     const a = await newUser();
     const seed = await seedGoldenPortfolio(admin, a.userId, fixture);
     const clientA = await a.signIn();
-    const res = await clientA.from("portfolio_snapshots").insert({ user_id: a.userId, asset_id: seed.uuidOf.get("fii")!, date: "2026-02-10", quantity: "1", price_native: "1", base_currency: "BRL", market_value_base: "1" });
+    const res = await clientA.from("portfolio_snapshots").insert({
+      user_id: a.userId,
+      asset_id: seed.uuidOf.get("fii")!,
+      date: "2026-02-10",
+      quantity: "1",
+      price_native: "1",
+      base_currency: "BRL",
+      market_value_base: "1",
+    });
     expect(res.error).not.toBeNull();
   });
 });
@@ -121,7 +167,13 @@ describe("runSnapshots over the golden portfolio", () => {
     const store = createSnapshotStore(admin, PACKS);
     const at = (iso: string) => () => new Date(`${iso}T23:00:00Z`);
 
-    const first = await runSnapshots({ scope: { kind: "users", userIds: [a.userId] }, budgetMs: 50_000, reserveMs: 0, now: at("2026-02-27"), store });
+    const first = await runSnapshots({
+      scope: { kind: "users", userIds: [a.userId] },
+      budgetMs: 50_000,
+      reserveMs: 0,
+      now: at("2026-02-27"),
+      store,
+    });
     expect(first.users).toHaveLength(1);
     expect(first.users[0]).toMatchObject({ status: "complete", from: "2026-01-15", to: "2026-02-27", daysBuilt: 30 });
 
@@ -132,28 +184,73 @@ describe("runSnapshots over the golden portfolio", () => {
       .order("date")
       .order("asset_id");
     expect(error).toBeNull();
-    const rows = (data ?? []) as Array<{ asset_id: string; date: string; market_value_base: string; status: string; price_date: string; fx_date: string | null; fx_rate: string | null; carried_forward: boolean }>;
+    const rows = (data ?? []) as Array<{
+      asset_id: string;
+      date: string;
+      market_value_base: string;
+      status: string;
+      price_date: string;
+      fx_date: string | null;
+      fx_rate: string | null;
+      carried_forward: boolean;
+    }>;
 
     const valuations = expected.valuations as Record<string, string>;
     for (const [date, total] of Object.entries(valuations)) {
-      const sum = rows.filter((r) => r.date === date && r.status !== "stale").reduce((s, r) => s.plus(r.market_value_base), new KernelDecimal(0));
+      const sum = rows
+        .filter((r) => r.date === date && r.status !== "stale")
+        .reduce((s, r) => s.plus(r.market_value_base), new KernelDecimal(0));
       expect(sum.minus(total).abs().lt("1e-8"), `${date}: ${sum.toFixed()} vs ${total}`).toBe(true);
     }
     const fii19 = rows.find((r) => r.date === "2026-02-19" && r.asset_id === seed.uuidOf.get("fii"))!;
-    expect(fii19).toMatchObject({ status: "carried_forward", price_date: "2026-02-18", carried_forward: true, fx_date: null, fx_rate: null });
+    expect(fii19).toMatchObject({
+      status: "carried_forward",
+      price_date: "2026-02-18",
+      carried_forward: true,
+      fx_date: null,
+      fx_rate: null,
+    });
     expect(rows.some((r) => r.date === "2026-02-16")).toBe(false); // Carnival
 
     // Caught up: nothing to do.
-    const again = await runSnapshots({ scope: { kind: "users", userIds: [a.userId] }, budgetMs: 50_000, reserveMs: 0, now: at("2026-02-27"), store });
+    const again = await runSnapshots({
+      scope: { kind: "users", userIds: [a.userId] },
+      budgetMs: 50_000,
+      reserveMs: 0,
+      now: at("2026-02-27"),
+      store,
+    });
     expect(again.users[0].status).toBe("nothing_to_do");
 
     // A backdated transaction: the trigger drops rows from 02-12 on, the job rebuilds them.
-    const backdated = await admin.from("transactions").insert({ id: randomUUID(), user_id: a.userId, asset_id: seed.uuidOf.get("fii")!, trade_date: "2026-02-12", type: "buy", quantity: "10", unit_price: "152", currency: "BRL", fees: "0" });
+    const backdated = await admin.from("transactions").insert({
+      id: randomUUID(),
+      user_id: a.userId,
+      asset_id: seed.uuidOf.get("fii")!,
+      trade_date: "2026-02-12",
+      type: "buy",
+      quantity: "10",
+      unit_price: "152",
+      currency: "BRL",
+      fees: "0",
+    });
     expect(backdated.error).toBeNull();
     expect((await snapshotDates(a.userId)).every((d) => d < "2026-02-12")).toBe(true);
-    const rebuilt = await runSnapshots({ scope: { kind: "users", userIds: [a.userId] }, budgetMs: 50_000, reserveMs: 0, now: at("2026-02-27"), store });
+    const rebuilt = await runSnapshots({
+      scope: { kind: "users", userIds: [a.userId] },
+      budgetMs: 50_000,
+      reserveMs: 0,
+      now: at("2026-02-27"),
+      store,
+    });
     expect(rebuilt.users[0]).toMatchObject({ status: "complete", from: "2026-02-12", to: "2026-02-27" });
-    const fii27 = await admin.from("portfolio_snapshots").select("quantity::text").eq("user_id", a.userId).eq("asset_id", seed.uuidOf.get("fii")!).eq("date", "2026-02-27").single();
+    const fii27 = await admin
+      .from("portfolio_snapshots")
+      .select("quantity::text")
+      .eq("user_id", a.userId)
+      .eq("asset_id", seed.uuidOf.get("fii")!)
+      .eq("date", "2026-02-27")
+      .single();
     expect((fii27.data as { quantity: string }).quantity).toBe("130.0000000000");
   });
 });

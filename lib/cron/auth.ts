@@ -17,4 +17,3 @@ export function isCronAuthorized(request: Request, secret = process.env.CRON_SEC
   const providedBytes = Buffer.from(provided, "utf8");
   return expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes);
 }
-

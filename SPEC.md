@@ -25,6 +25,7 @@ The principles in `ARCHITECTURE.md` §4 restated with the trade-offs that drove
 them. Re-read the relevant one before deviating.
 
 ### 1.1 Event-sourced ledger (no positions table)
+
 Positions derive from `transactions` on every read; the only denormalized state
 is `portfolio_snapshots`, a deterministic function of transactions + prices +
 series. **Why:** a `positions` table updated per transaction creates a sync-bug
@@ -35,6 +36,7 @@ compute per read, mitigated by the snapshot cache and the modest size of a
 personal ledger.
 
 ### 1.2 Native storage, base-currency display, decompose at read
+
 `prices.price` is native currency. Aggregations convert at read time using the
 same-day FX series. **Why:** storing pre-converted values loses the information
 needed to answer "how much of my gain was FX?" The decomposition
@@ -43,6 +45,7 @@ recoverable. **Cost:** every base-currency read joins the FX series for the date
 small, well-indexed, acceptable.
 
 ### 1.3 RLS everywhere; service role only in cron
+
 Every user-data table has `user_id` and an RLS policy. `series_points` and
 `ingest_cursors` are global tables with no `user_id` and no RLS; the migration
 revokes write privileges from `anon`/`authenticated` so only cron (service role)
@@ -51,11 +54,13 @@ RLS is the single mechanism that makes the codebase multi-user-ready without
 auditing every query.
 
 ### 1.4 Money is decimal
+
 All monetary math uses `decimal.js` via `lib/calc/money.ts`. The pack boundary passes
 values as strings so a stray `parseFloat` can't enter. **Why:** floats silently
 corrupt money.
 
 ### 1.5 Packs supply data, never math
+
 The kernel owns a closed set of four valuation strategies and six series kinds.
 Instruments and benchmarks from any country map onto those. **Why:** this is what
 lets a UK contributor add gilts and SONIA without touching `lib/calc/` — and what
@@ -240,10 +245,10 @@ no more; adding a fifth is a reviewed kernel change (`PACKS.md` §5).
 
 ```ts
 type ValuationStrategy =
-  | { kind: 'market_price';         sourceId: string }
-  | { kind: 'nav_unit_price';       sourceId: string }
-  | { kind: 'accrual';              convention: AccrualConvention }
-  | { kind: 'curve_mark_to_market'; seriesId: string };
+  | { kind: "market_price"; sourceId: string }
+  | { kind: "nav_unit_price"; sourceId: string }
+  | { kind: "accrual"; convention: AccrualConvention }
+  | { kind: "curve_mark_to_market"; seriesId: string };
 ```
 
 - **market_price** — last observed traded price (equities, ETFs, FIIs, crypto).
@@ -266,12 +271,12 @@ type ValuationStrategy =
 
 ```ts
 type SeriesKind =
-  | { kind: 'rate_daily';      dayCount: DayCount }
-  | { kind: 'rate_annual';     dayCount: DayCount }
-  | { kind: 'index_level' }
-  | { kind: 'inflation_index'; interpolation: 'none' | 'linear_daily' }
-  | { kind: 'fx_rate';         base: CurrencyCode; quote: CurrencyCode }
-  | { kind: 'yield_curve';     tenors: number[] };
+  | { kind: "rate_daily"; dayCount: DayCount }
+  | { kind: "rate_annual"; dayCount: DayCount }
+  | { kind: "index_level" }
+  | { kind: "inflation_index"; interpolation: "none" | "linear_daily" }
+  | { kind: "fx_rate"; base: CurrencyCode; quote: CurrencyCode }
+  | { kind: "yield_curve"; tenors: number[] };
 ```
 
 The kernel owns one cumulative-return function per kind: `rate_daily` compounds,
@@ -380,8 +385,8 @@ run rebuilds them. Never patch a snapshot in place.
 
 **Triggers.** The nightly cron (all users); after an import commit and after
 an asset's first price arrives (§9.4); and the Refresh control (§9.2). If the
-time budget runs out mid-rebuild, the status strip shows *history rebuilding
-A → B of today* derived from the gap between the marker and the last business
+time budget runs out mid-rebuild, the status strip shows _history rebuilding
+A → B of today_ derived from the gap between the marker and the last business
 day, and the next trigger continues from where it stopped. Real portfolios
 have years × assets of daily rows; this is why the job is resumable rather
 than synchronous.
@@ -464,18 +469,18 @@ writes `transactions` only.
 Two groups, always fully visible — a screen with no data yet still teaches
 what the product does. Hiding routes until data exists is forbidden.
 
-| Group | Routes |
-|---|---|
+| Group        | Routes                                                                          |
+| ------------ | ------------------------------------------------------------------------------- |
 | **Analysis** | `/` Overview · `/performance` · `/allocation` · `/contribution` · `/maturities` |
-| **Ledger** | `/assets` · `/transactions` · `/cash-flows` |
-| — | `/settings`, theme toggle (ARCHITECTURE §7), sign out; `/login` unauthenticated |
+| **Ledger**   | `/assets` · `/transactions` · `/cash-flows`                                     |
+| —            | `/settings`, theme toggle (ARCHITECTURE §7), sign out; `/login` unauthenticated |
 
 Top nav, hairline rule beneath, collapsing to a menu on narrow viewports
 (mobile browsers are in scope, native apps are not — ARCHITECTURE §2).
 
 **Status strip.** One line under the nav, present only when something is
-pending: *N assets unpriced* (§9.4), *history rebuilding 2019-03-01 → 2021-07-14
-of 2026-09-05* (§8), *source br.brapi disabled: BRAPI_TOKEN not set*. Each item
+pending: _N assets unpriced_ (§9.4), _history rebuilding 2019-03-01 → 2021-07-14
+of 2026-09-05_ (§8), _source br.brapi disabled: BRAPI_TOKEN not set_. Each item
 links to the screen that resolves it. It carries a single **Refresh** control
 (§9.4) and nothing else — it is a status line, not a toolbar.
 
@@ -487,12 +492,12 @@ renders a setup card above its normal content** — there is no wizard route and
 no "onboarding complete" flag. Every step is derived from row counts, so the
 card disappears the moment the data exists and reappears if it is ever deleted.
 
-| Step | Done when | Copy |
-|---|---|---|
-| 1. Base currency | `user_settings.updated_at > created_at` **or** any transaction exists | "Base currency: BRL — change it before your first transaction; it locks after (§11)." → Settings |
-| 2. First asset | `count(assets) > 0` | "Add what you hold: pack → instrument kind → identifier." → Assets |
-| 3. First transaction | `count(transactions) > 0` | "Enter one by hand, or import a CSV of your history." → Transactions |
-| 4. Priced | every asset has ≥ 1 `prices` row | Fills in automatically (§9.4); if a source is disabled or failing, says so and offers manual entry. |
+| Step                 | Done when                                                             | Copy                                                                                                |
+| -------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1. Base currency     | `user_settings.updated_at > created_at` **or** any transaction exists | "Base currency: BRL — change it before your first transaction; it locks after (§11)." → Settings    |
+| 2. First asset       | `count(assets) > 0`                                                   | "Add what you hold: pack → instrument kind → identifier." → Assets                                  |
+| 3. First transaction | `count(transactions) > 0`                                             | "Enter one by hand, or import a CSV of your history." → Transactions                                |
+| 4. Priced            | every asset has ≥ 1 `prices` row                                      | Fills in automatically (§9.4); if a source is disabled or failing, says so and offers manual entry. |
 
 Steps are ordered but never gated: a user may import a CSV before touching
 Settings. Step 1 exists precisely so the base-currency lock is never a
@@ -512,9 +517,9 @@ the asset form into a network error surface:
    (`lib/packs/ingest.ts`) scoped to the sources that price this asset's
    instrument kind, under the service role. A brapi 429 can therefore never
    fail "save asset".
-2. **Outcome is shown on the asset, not the form.** The row goes *Fetching…* →
-   *162.40 BRL · br.brapi · today* or → *Unpriced — br.brapi: 429 at 10:03.
-   Retry · Enter a price*. The reason comes from `ingest_cursors.last_error`,
+2. **Outcome is shown on the asset, not the form.** The row goes _Fetching…_ →
+   _162.40 BRL · br.brapi · today_ or → _Unpriced — br.brapi: 429 at 10:03.
+   Retry · Enter a price_. The reason comes from `ingest_cursors.last_error`,
    which is per source — the true granularity — so no schema change.
 
 The same scoped fetch runs for every asset created from a CSV import preview
@@ -530,24 +535,24 @@ it is not a third cron and adds no scheduled job.
 
 ### 9.5 Empty states
 
-Every derived screen, with no data, names what it *will* show and links to the
+Every derived screen, with no data, names what it _will_ show and links to the
 action that unblocks it. Never a blank chart; never a fake zero.
 
-| Screen | Needs | Empty copy → link |
-|---|---|---|
-| Overview headline | ≥ 1 priced position | "—" with *N assets unpriced* → Assets |
-| Overview sparkline / day change | ≥ 2 snapshots | "History starts after tonight's snapshot." |
-| Performance | ≥ 2 snapshots **and** ≥ 1 `benchmark` series ingested | "Needs two days of history to plot a return." / "Benchmarks arrive with the nightly ingest." |
-| Allocation | ≥ 1 priced position | "Nothing to allocate yet." → Assets |
-| Contribution | snapshots spanning the chosen period | "Contribution needs history across the period." |
-| Maturities | ≥ 1 asset whose kind has maturity metadata | "No fixed-income holdings yet. Add a Tesouro Direto, CDB, LCI…" → Assets |
-| Assets | — | "Add what you hold." + "or import a CSV — unknown identifiers can be created from the preview." |
-| Transactions | — | "No transactions yet." + Add · Import CSV |
-| Cash flows | — | "Deposits and withdrawals are what separate your return from your contributions." + Add |
-| Login | — | Email + password only. No signup link. One line: "Single-owner instance — the account is created with `pnpm bootstrap:user`." |
+| Screen                          | Needs                                                 | Empty copy → link                                                                                                             |
+| ------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Overview headline               | ≥ 1 priced position                                   | "—" with _N assets unpriced_ → Assets                                                                                         |
+| Overview sparkline / day change | ≥ 2 snapshots                                         | "History starts after tonight's snapshot."                                                                                    |
+| Performance                     | ≥ 2 snapshots **and** ≥ 1 `benchmark` series ingested | "Needs two days of history to plot a return." / "Benchmarks arrive with the nightly ingest."                                  |
+| Allocation                      | ≥ 1 priced position                                   | "Nothing to allocate yet." → Assets                                                                                           |
+| Contribution                    | snapshots spanning the chosen period                  | "Contribution needs history across the period."                                                                               |
+| Maturities                      | ≥ 1 asset whose kind has maturity metadata            | "No fixed-income holdings yet. Add a Tesouro Direto, CDB, LCI…" → Assets                                                      |
+| Assets                          | —                                                     | "Add what you hold." + "or import a CSV — unknown identifiers can be created from the preview."                               |
+| Transactions                    | —                                                     | "No transactions yet." + Add · Import CSV                                                                                     |
+| Cash flows                      | —                                                     | "Deposits and withdrawals are what separate your return from your contributions." + Add                                       |
+| Login                           | —                                                     | Email + password only. No signup link. One line: "Single-owner instance — the account is created with `pnpm bootstrap:user`." |
 
 A position with quantity but no price renders with its quantity and
-*unpriced*, never a value of zero; a stale one renders its last value with the
+_unpriced_, never a value of zero; a stale one renders its last value with the
 stale mark (§11). Both rules apply on every screen, not only Overview.
 
 ### 9.6 Login & sessions
@@ -572,7 +577,7 @@ attempt throttling is Supabase Auth's own.
 **Sessions.** Cookie-based via `@supabase/ssr`: `httpOnly`, `Secure`,
 `SameSite=Lax`. Server code establishes identity with `getUser()` (verified
 against Auth) — never `getSession()`, which trusts the cookie unverified.
-Tokens refresh at the request layer. Settings offers *sign out everywhere*
+Tokens refresh at the request layer. Settings offers _sign out everywhere_
 (global scope). No "remember this device" beyond the refresh token's own life.
 
 **What auth never does.** No OAuth providers by default (each is a third party
@@ -637,21 +642,21 @@ is the accent. Currency and percentage axes formatted per the user's `locale`.
 The promise, stated plainly so nobody infers a stronger one:
 
 > **You run the server, and the server sees your data.** Your portfolio lives
-> as plaintext rows in *your own* Supabase project, encrypted at rest and in
-> transit by Supabase. The app that reads it runs on *your own* Vercel account.
+> as plaintext rows in _your own_ Supabase project, encrypted at rest and in
+> transit by Supabase. The app that reads it runs on _your own_ Vercel account.
 > Nothing is end-to-end encrypted, because the kernel computes on the server
 > (§6, §8). No one else — including this project's maintainers — has a copy.
 
 ### 12.1 What leaves an instance
 
-| Leaves to | Carries | Never carries |
-|---|---|---|
+| Leaves to                                                          | Carries                                                               | Never carries                                              |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------- |
 | Pack sources (brapi, BCB SGS, Tesouro Transparente, AwesomeAPI, …) | ticker / series codes, the source's API token, the project user-agent | quantities, prices paid, values, currency totals, identity |
-| Vercel | the app, its logs, env vars (including the service-role key) | — |
-| Supabase | everything, at rest + TLS | — |
-| Anyone else | **nothing** | — |
+| Vercel                                                             | the app, its logs, env vars (including the service-role key)          | —                                                          |
+| Supabase                                                           | everything, at rest + TLS                                             | —                                                          |
+| Anyone else                                                        | **nothing**                                                           | —                                                          |
 
-Sources therefore learn *what* a self-hoster holds, never *how much*. That is
+Sources therefore learn _what_ a self-hoster holds, never _how much_. That is
 disclosed in `README.md` and in Settings. A source whose terms would let it
 learn more is a licence question (`packs/LICENSES.md`), not a pack decision.
 

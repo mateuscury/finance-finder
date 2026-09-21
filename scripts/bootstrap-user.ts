@@ -175,4 +175,3 @@ async function createOwner(): Promise<void> {
 
 const resetRequested = process.argv.slice(2).includes("--reset-mfa");
 await (resetRequested ? resetMfa() : createOwner());
-

@@ -10,7 +10,13 @@ import { asset, kind, sevenDay, money } from "./testkit";
 
 const FII = kind("br.fii", { kind: "market_price", sourceId: "br.brapi" });
 const FUND = kind("br.fund", { kind: "nav_unit_price", sourceId: "br.fund_nav" });
-const price = (assetId: string, date: string, p: string, currency = "BRL"): PriceObservation => ({ assetId, date, price: p, currency, sourceId: "br.brapi" });
+const price = (assetId: string, date: string, p: string, currency = "BRL"): PriceObservation => ({
+  assetId,
+  date,
+  price: p,
+  currency,
+  sourceId: "br.brapi",
+});
 const W = 5;
 
 function ctx(prices: PriceObservation[]): ValuationContext {
@@ -32,7 +38,10 @@ describe("market_price", () => {
 
   it("carries forward within the window, is stale beyond, unpriced with nothing at or before", () => {
     const c = ctx([price("a1", "2026-02-13", "12.5")]);
-    expect(valueMarketPrice(a, qty, addDays("2026-02-13", W), c)).toMatchObject({ status: "carried_forward", priceDate: "2026-02-13" });
+    expect(valueMarketPrice(a, qty, addDays("2026-02-13", W), c)).toMatchObject({
+      status: "carried_forward",
+      priceDate: "2026-02-13",
+    });
     const stale = valueMarketPrice(a, qty, addDays("2026-02-13", W + 1), c);
     expect(stale.status).toBe("stale");
     if (stale.status === "stale") expect(money(stale.lastKnown)).toBe("BRL 1250");

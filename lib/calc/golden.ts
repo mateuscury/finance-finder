@@ -63,13 +63,36 @@ export const GoldenFixtureSchema = z
       }),
     ),
     /** External flows in the base currency. */
-    cashFlows: z.array(z.object({ id: z.string().min(1), date: IsoDateSchema, amount: DecimalStringSchema, currency: CurrencyCodeSchema })),
+    cashFlows: z.array(
+      z.object({
+        id: z.string().min(1),
+        date: IsoDateSchema,
+        amount: DecimalStringSchema,
+        currency: CurrencyCodeSchema,
+      }),
+    ),
     /** Keyed by asset IDENTIFIER, as a source would return them. */
-    prices: z.record(z.string(), z.array(z.object({ date: IsoDateSchema, price: DecimalStringSchema, currency: CurrencyCodeSchema, sourceId: z.string().default("manual") }))),
+    prices: z.record(
+      z.string(),
+      z.array(
+        z.object({
+          date: IsoDateSchema,
+          price: DecimalStringSchema,
+          currency: CurrencyCodeSchema,
+          sourceId: z.string().default("manual"),
+        }),
+      ),
+    ),
     /** Keyed by series id. */
     series: z.record(
       PrefixedIdSchema,
-      z.array(z.object({ date: IsoDateSchema, value: DecimalStringSchema, tenorDays: z.number().int().nonnegative().default(0) })),
+      z.array(
+        z.object({
+          date: IsoDateSchema,
+          value: DecimalStringSchema,
+          tenorDays: z.number().int().nonnegative().default(0),
+        }),
+      ),
     ),
   })
   .refine((f) => f.valuationDates.includes(f.asOf), { message: "asOf must be one of valuationDates", path: ["asOf"] });
@@ -129,18 +152,32 @@ function toPortfolioInput(fixture: GoldenFixture, packs: readonly MarketPack[]):
   const assets: HoldingAsset[] = fixture.assets.map((a) => {
     const pack = packOf(packs, a.instrumentKind);
     const instrumentKind = pack.instruments.find((k) => k.id === a.instrumentKind);
-    if (!instrumentKind) throw new KernelError("invalid_input", "unknown instrument kind", { assetId: a.id, instrumentKind: a.instrumentKind });
+    if (!instrumentKind)
+      throw new KernelError("invalid_input", "unknown instrument kind", {
+        assetId: a.id,
+        instrumentKind: a.instrumentKind,
+      });
     calendars.set(pack.id, pack.calendar);
     for (const s of seriesInScope(packs, pack)) series.set(s.id, s);
-    return { id: a.id, packId: pack.id, instrumentKind, identifier: a.identifier, nativeCurrency: a.nativeCurrency, metadata: a.metadata };
+    return {
+      id: a.id,
+      packId: pack.id,
+      instrumentKind,
+      identifier: a.identifier,
+      nativeCurrency: a.nativeCurrency,
+      metadata: a.metadata,
+    };
   });
 
   const transactions: LedgerTransaction[] = fixture.transactions.map((t) => ({ ...t }));
   const prices: PriceObservation[] = [];
   for (const [identifier, rows] of Object.entries(fixture.prices)) {
     const owners = assets.filter((a) => a.identifier === identifier);
-    if (owners.length === 0) throw new KernelError("invalid_input", "prices for an identifier no asset carries", { identifier });
-    for (const owner of owners) for (const r of rows) prices.push({ assetId: owner.id, date: r.date, price: r.price, currency: r.currency, sourceId: r.sourceId });
+    if (owners.length === 0)
+      throw new KernelError("invalid_input", "prices for an identifier no asset carries", { identifier });
+    for (const owner of owners)
+      for (const r of rows)
+        prices.push({ assetId: owner.id, date: r.date, price: r.price, currency: r.currency, sourceId: r.sourceId });
   }
   const observations: SeriesObservation[] = [];
   for (const [seriesId, rows] of Object.entries(fixture.series)) {
@@ -160,7 +197,11 @@ function toPortfolioInput(fixture: GoldenFixture, packs: readonly MarketPack[]):
 function baseFlows(fixture: GoldenFixture): BaseFlow[] {
   return fixture.cashFlows.map((f) => {
     if (f.currency !== fixture.baseCurrency) {
-      throw new KernelError("currency_mismatch", "golden cash flows must be in the base currency", { id: f.id, currency: f.currency, base: fixture.baseCurrency });
+      throw new KernelError("currency_mismatch", "golden cash flows must be in the base currency", {
+        id: f.id,
+        currency: f.currency,
+        base: fixture.baseCurrency,
+      });
     }
     return { date: f.date, amount: f.amount };
   });
@@ -168,11 +209,20 @@ function baseFlows(fixture: GoldenFixture): BaseFlow[] {
 
 function summarise(v: PortfolioValuation): GoldenResult["valuation"] {
   const assets: Record<string, GoldenAssetValue> = {};
-  for (const h of v.holdings) assets[h.assetId] = { native: h.marketValueNative.toString(), base: h.marketValueBase.toString(), status: h.status };
+  for (const h of v.holdings)
+    assets[h.assetId] = {
+      native: h.marketValueNative.toString(),
+      base: h.marketValueBase.toString(),
+      status: h.status,
+    };
   return {
     total: v.totalBase.toString(),
     assets,
-    excluded: v.excluded.map((e) => (e.status === "unpriced" ? { assetId: e.assetId, status: e.status, reason: e.reason } : { assetId: e.assetId, status: e.status })),
+    excluded: v.excluded.map((e) =>
+      e.status === "unpriced"
+        ? { assetId: e.assetId, status: e.status, reason: e.reason }
+        : { assetId: e.assetId, status: e.status },
+    ),
   };
 }
 
@@ -198,7 +248,13 @@ export function runGolden(fixture: GoldenFixture, packs: readonly MarketPack[]):
   const atAsOf = byDate.get(fixture.asOf)!;
   const start = byDate.get(first)!;
   const t = twr(points, flows);
-  const m = mwr({ from: first, to: fixture.asOf, startValue: start.totalBase.toString(), flows, endValue: atAsOf.totalBase.toString() });
+  const m = mwr({
+    from: first,
+    to: fixture.asOf,
+    startValue: start.totalBase.toString(),
+    flows,
+    endValue: atAsOf.totalBase.toString(),
+  });
   const c = contribution({ input, from: first, to: fixture.asOf, start, end: atAsOf, flows });
 
   const contributions: Record<string, string | null> = {};
@@ -230,7 +286,12 @@ export const GOLDEN_TOLERANCE = "1e-8";
  * tolerance, everything else by equality. Objects must have the same keys —
  * an asset the kernel priced but the derivation did not is a mismatch.
  */
-export function compareGolden(actual: unknown, expected: unknown, tolerance = GOLDEN_TOLERANCE, path = ""): GoldenMismatch[] {
+export function compareGolden(
+  actual: unknown,
+  expected: unknown,
+  tolerance = GOLDEN_TOLERANCE,
+  path = "",
+): GoldenMismatch[] {
   const at = (key: string | number) => (path === "" ? String(key) : `${path}.${key}`);
   if (isDecimalString(expected) && isDecimalString(actual)) {
     const diff = parseDecimal(actual).minus(parseDecimal(expected)).abs();
@@ -247,7 +308,11 @@ export function compareGolden(actual: unknown, expected: unknown, tolerance = GO
     const keys = Object.keys(exp).filter((k) => !k.startsWith("$"));
     const extra = Object.keys(act).filter((k) => !(k in exp));
     return [
-      ...keys.flatMap((k) => (k in act ? compareGolden(act[k], exp[k], tolerance, at(k)) : [{ path: at(k), expected: exp[k], actual: undefined }])),
+      ...keys.flatMap((k) =>
+        k in act
+          ? compareGolden(act[k], exp[k], tolerance, at(k))
+          : [{ path: at(k), expected: exp[k], actual: undefined }],
+      ),
       ...extra.map((k) => ({ path: at(k), expected: undefined, actual: act[k] })),
     ];
   }

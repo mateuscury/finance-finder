@@ -93,9 +93,7 @@ export async function fetchIbgeSidra(req: FetchRequest, ctx: FetchContext): Prom
     return result();
   }
   const period = `${months[0]}-${months[months.length - 1]}`;
-  const url =
-    `https://apisidra.ibge.gov.br/values/t/${SIDRA_TABLE}/n1/all` +
-    `/v/${SIDRA_VARIABLE}/p/${period}/h/n`;
+  const url = `https://apisidra.ibge.gov.br/values/t/${SIDRA_TABLE}/n1/all` + `/v/${SIDRA_VARIABLE}/p/${period}/h/n`;
 
   let res;
   try {

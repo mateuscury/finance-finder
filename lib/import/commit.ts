@@ -8,7 +8,8 @@ import type { DryRun, ImportRow } from "./dryRun";
 
 export type CommitRefusal = "preview_changed" | "rows_have_errors" | "unresolved_identifiers" | "nothing_to_import";
 
-export type CommitPlan = { ok: true; rows: ImportRow[]; skippedDuplicates: number; forced: number } | { ok: false; reason: CommitRefusal };
+export type CommitPlan =
+  { ok: true; rows: ImportRow[]; skippedDuplicates: number; forced: number } | { ok: false; reason: CommitRefusal };
 
 export function planCommit(run: DryRun, expectedHash: string, forceInclude: ReadonlySet<number>): CommitPlan {
   if (!run.ok) return { ok: false, reason: "rows_have_errors" };

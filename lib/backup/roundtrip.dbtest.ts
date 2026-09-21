@@ -17,7 +17,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { compareGolden, GoldenFixtureSchema, runGolden, type GoldenFixture } from "@/lib/calc/golden";
 import { canonicalBackup, parseBackup, type Backup } from "@/lib/backup";
-import { assertStackReachable, createDbTestClient, createThrowawayUser, type ThrowawayUserHandle } from "@/lib/testing/db";
+import {
+  assertStackReachable,
+  createDbTestClient,
+  createThrowawayUser,
+  type ThrowawayUserHandle,
+} from "@/lib/testing/db";
 import { loadGoldenFixture, seedGoldenPortfolio } from "@/lib/testing/golden";
 
 const admin = createDbTestClient();
@@ -58,7 +63,10 @@ async function countFor(table: string, userId: string): Promise<number> {
 }
 
 async function countPrices(assetIds: string[]): Promise<number> {
-  const { count, error } = await admin.from("prices").select("*", { head: true, count: "exact" }).in("asset_id", assetIds);
+  const { count, error } = await admin
+    .from("prices")
+    .select("*", { head: true, count: "exact" })
+    .in("asset_id", assetIds);
   if (error) throw new Error(`count prices failed (${error.message})`);
   return count ?? -1;
 }
@@ -131,7 +139,12 @@ describe("export → delete → restore → export", () => {
     const clientB = await second.signIn();
     const restored = await clientB.rpc("restore_backup", { payload: exportA });
     expect(restored.error).toBeNull();
-    expect(restored.data).toEqual({ assets: N.assets, transactions: N.transactions, cash_flows: N.cashFlows, prices: N.prices });
+    expect(restored.data).toEqual({
+      assets: N.assets,
+      transactions: N.transactions,
+      cash_flows: N.cashFlows,
+      prices: N.prices,
+    });
     // Ids preserved, ownership rewritten.
     expect(await countFor("assets", second.userId)).toBe(N.assets);
     expect(await countFor("assets", first.userId)).toBe(0);
@@ -141,7 +154,12 @@ describe("export → delete → restore → export", () => {
 
     const golden = toGoldenFixture(exportB, goldenIdOf);
     const mismatches = compareGolden(runGolden(golden, PACKS), expected);
-    expect(mismatches, mismatches.map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`).join("\n")).toEqual([]);
+    expect(
+      mismatches,
+      mismatches
+        .map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`)
+        .join("\n"),
+    ).toEqual([]);
 
     // Refusal: the account is no longer empty.
     const again = await clientB.rpc("restore_backup", { payload: exportA });
@@ -182,6 +200,8 @@ describe("export → delete → restore → export", () => {
 
   it("the service role cannot call either RPC: an export or a restore is always a user's own act", async () => {
     expect((await admin.rpc("export_backup")).error?.message).toMatch(/permission denied/i);
-    expect((await admin.rpc("restore_backup", { payload: { version: 1 } })).error?.message).toMatch(/permission denied/i);
+    expect((await admin.rpc("restore_backup", { payload: { version: 1 } })).error?.message).toMatch(
+      /permission denied/i,
+    );
   });
 });

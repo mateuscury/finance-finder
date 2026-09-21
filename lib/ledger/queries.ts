@@ -6,7 +6,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MarketPack } from "@/packs/types";
 import { readAll } from "@/lib/supabase/paginate";
-import { ASSET_SELECT, CASH_FLOW_SELECT, TRANSACTION_SELECT, type AssetDbRow, type CashFlowDbRow, type TransactionDbRow } from "./rows";
+import {
+  ASSET_SELECT,
+  CASH_FLOW_SELECT,
+  TRANSACTION_SELECT,
+  type AssetDbRow,
+  type CashFlowDbRow,
+  type TransactionDbRow,
+} from "./rows";
 
 export const LIST_PAGE_SIZE = 100;
 
@@ -30,16 +37,25 @@ export interface AssetListItem extends AssetDbRow {
 }
 
 export async function listAssets(client: SupabaseClient, registry: readonly MarketPack[]): Promise<AssetListItem[]> {
-  const rows = await readAll<AssetDbRow>((from, to) => client.from("assets").select(ASSET_SELECT).order("identifier").order("id").range(from, to));
+  const rows = await readAll<AssetDbRow>((from, to) =>
+    client.from("assets").select(ASSET_SELECT).order("identifier").order("id").range(from, to),
+  );
   if (rows.length === 0) return [];
   const latest = new Map<string, LatestPrice>();
   const ids = rows.map((r) => r.id);
   for (let i = 0; i < ids.length; i += LIST_PAGE_SIZE) {
     const chunk = ids.slice(i, i + LIST_PAGE_SIZE);
-    const page = await readAll<{ asset_id: string; date: string; price: string; currency: string; source_id: string }>((from, to) =>
-      client.from("asset_latest_prices").select("asset_id,date,price,currency,source_id").in("asset_id", chunk).order("asset_id").range(from, to),
+    const page = await readAll<{ asset_id: string; date: string; price: string; currency: string; source_id: string }>(
+      (from, to) =>
+        client
+          .from("asset_latest_prices")
+          .select("asset_id,date,price,currency,source_id")
+          .in("asset_id", chunk)
+          .order("asset_id")
+          .range(from, to),
     );
-    for (const p of page) latest.set(p.asset_id, { date: p.date, price: p.price, currency: p.currency, sourceId: p.source_id });
+    for (const p of page)
+      latest.set(p.asset_id, { date: p.date, price: p.price, currency: p.currency, sourceId: p.source_id });
   }
   const cursors = new Map<string, string | null>();
   const cursorRows = await readAll<{ source_id: string; last_error: string | null }>((from, to) =>
@@ -50,7 +66,10 @@ export async function listAssets(client: SupabaseClient, registry: readonly Mark
   return rows.map((r) => {
     const kind = registry.find((p) => p.id === r.pack_id)?.instruments.find((k) => k.id === r.instrument_kind) ?? null;
     const valuation = kind?.valuation.kind ?? null;
-    const sourceId = kind && (kind.valuation.kind === "market_price" || kind.valuation.kind === "nav_unit_price") ? kind.valuation.sourceId : null;
+    const sourceId =
+      kind && (kind.valuation.kind === "market_price" || kind.valuation.kind === "nav_unit_price")
+        ? kind.valuation.sourceId
+        : null;
     const price = latest.get(r.id) ?? null;
     return {
       ...r,
@@ -70,7 +89,13 @@ export interface Page<T> {
   total: number;
 }
 
-async function pageOf<T>(client: SupabaseClient, table: string, select: string, order: string[], page: number): Promise<Page<T>> {
+async function pageOf<T>(
+  client: SupabaseClient,
+  table: string,
+  select: string,
+  order: string[],
+  page: number,
+): Promise<Page<T>> {
   const from = (page - 1) * LIST_PAGE_SIZE;
   let q = client.from(table).select(select, { count: "exact" });
   for (const col of order) q = q.order(col.replace(/^-/, ""), { ascending: !col.startsWith("-") });
@@ -85,25 +110,34 @@ export interface TransactionListItem extends TransactionDbRow {
 }
 
 export async function listTransactions(client: SupabaseClient, page = 1): Promise<Page<TransactionListItem>> {
-  const result = await pageOf<TransactionDbRow & { assets: { identifier: string; name: string } | { identifier: string; name: string }[] | null }>(
-    client,
-    "transactions",
-    `${TRANSACTION_SELECT},assets!inner(identifier,name)`,
-    ["-trade_date", "id"],
-    page,
-  );
+  const result = await pageOf<
+    TransactionDbRow & { assets: { identifier: string; name: string } | { identifier: string; name: string }[] | null }
+  >(client, "transactions", `${TRANSACTION_SELECT},assets!inner(identifier,name)`, ["-trade_date", "id"], page);
   return {
     ...result,
     rows: result.rows.map((r) => {
       // PostgREST embeds a to-one row as an object or a one-element array.
       const asset = Array.isArray(r.assets) ? r.assets[0] : r.assets;
-      const row: TransactionDbRow = { id: r.id, asset_id: r.asset_id, trade_date: r.trade_date, type: r.type, quantity: r.quantity, unit_price: r.unit_price, currency: r.currency, fees: r.fees, fx_rate: r.fx_rate };
+      const row: TransactionDbRow = {
+        id: r.id,
+        asset_id: r.asset_id,
+        trade_date: r.trade_date,
+        type: r.type,
+        quantity: r.quantity,
+        unit_price: r.unit_price,
+        currency: r.currency,
+        fees: r.fees,
+        fx_rate: r.fx_rate,
+      };
       return { ...row, identifier: asset?.identifier ?? "?", assetName: asset?.name ?? "?" };
     }),
   };
 }
 
-export function listCashFlows(client: SupabaseClient, page = 1): Promise<Page<CashFlowDbRow & { note: string | null }>> {
+export function listCashFlows(
+  client: SupabaseClient,
+  page = 1,
+): Promise<Page<CashFlowDbRow & { note: string | null }>> {
   return pageOf(client, "cash_flows", `${CASH_FLOW_SELECT},note`, ["-date", "id"], page);
 }
 
@@ -119,6 +153,10 @@ export async function countLedger(client: SupabaseClient): Promise<LedgerCounts>
     if (error) throw new Error(`ledger: count ${table} (${error.code ?? "unknown"})`);
     return n ?? 0;
   };
-  const [assets, transactions, cashFlows] = await Promise.all([count("assets"), count("transactions"), count("cash_flows")]);
+  const [assets, transactions, cashFlows] = await Promise.all([
+    count("assets"),
+    count("transactions"),
+    count("cash_flows"),
+  ]);
   return { assets, transactions, cashFlows };
 }

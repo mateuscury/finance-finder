@@ -23,7 +23,8 @@ import { canonicalBackup } from "./serialize";
  * additionally raises `not_authenticated`, `account_not_empty` and
  * `asset_id_conflict` (root SPEC §12.3), which need the database.
  */
-export type RestoreRefusal = "unsupported_version" | "invalid_backup" | "duplicate_asset_id" | "foreign_asset_reference";
+export type RestoreRefusal =
+  "unsupported_version" | "invalid_backup" | "duplicate_asset_id" | "foreign_asset_reference";
 
 export interface RestoreWarning {
   assetId: string;
@@ -31,8 +32,7 @@ export interface RestoreWarning {
 }
 
 export type RestorePlan =
-  | { ok: true; payload: Backup; warnings: RestoreWarning[] }
-  | { ok: false; reason: RestoreRefusal; issues: string[] };
+  { ok: true; payload: Backup; warnings: RestoreWarning[] } | { ok: false; reason: RestoreRefusal; issues: string[] };
 
 export function planRestore(input: unknown, packs: readonly MarketPack[]): RestorePlan {
   const parsed = parseBackup(input);

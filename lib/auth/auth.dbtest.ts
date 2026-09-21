@@ -10,7 +10,13 @@ import { createHmac } from "node:crypto";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { assertStackReachable, createDbTestClient, createThrowawayUser, requireDbEnv, type ThrowawayUserHandle } from "@/lib/testing/db";
+import {
+  assertStackReachable,
+  createDbTestClient,
+  createThrowawayUser,
+  requireDbEnv,
+  type ThrowawayUserHandle,
+} from "@/lib/testing/db";
 import { redirectFor, resolveAccess } from "./access";
 
 const admin = createDbTestClient();
@@ -24,7 +30,9 @@ afterAll(async () => {
 
 function anonClient() {
   const { url, anonKey } = requireDbEnv();
-  return createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  return createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
 }
 
 // --- RFC 4648 base32 + RFC 6238 TOTP (HMAC-SHA1, 30 s, 6 digits) ----------
@@ -60,11 +68,20 @@ describe("sign-in", () => {
   it("a wrong password and an unknown email produce identical failures", async () => {
     const user = await createThrowawayUser(admin);
     users.push(user);
-    const wrong = await anonClient().auth.signInWithPassword({ email: user.email, password: "Aa1!definitely-not-the-password" });
-    const unknown = await anonClient().auth.signInWithPassword({ email: `nobody-${randomUUID()}@example.com`, password: "Aa1!whatever-it-is" });
+    const wrong = await anonClient().auth.signInWithPassword({
+      email: user.email,
+      password: "Aa1!definitely-not-the-password",
+    });
+    const unknown = await anonClient().auth.signInWithPassword({
+      email: `nobody-${randomUUID()}@example.com`,
+      password: "Aa1!whatever-it-is",
+    });
     expect(wrong.error).not.toBeNull();
     expect(unknown.error).not.toBeNull();
-    expect({ status: wrong.error?.status, message: wrong.error?.message }).toEqual({ status: unknown.error?.status, message: unknown.error?.message });
+    expect({ status: wrong.error?.status, message: wrong.error?.message }).toEqual({
+      status: unknown.error?.status,
+      message: unknown.error?.message,
+    });
     expect(wrong.data.session).toBeNull();
     expect(unknown.data.session).toBeNull();
   });
@@ -74,7 +91,10 @@ describe("sign-in", () => {
     users.push(user);
     const client = await user.signIn();
     const access = await resolveAccess(client.auth);
-    expect(access).toMatchObject({ kind: "ok", identity: { userId: user.userId, email: user.email, currentLevel: "aal1", nextLevel: "aal1" } });
+    expect(access).toMatchObject({
+      kind: "ok",
+      identity: { userId: user.userId, email: user.email, currentLevel: "aal1", nextLevel: "aal1" },
+    });
     expect(redirectFor("/assets", access)).toBeNull();
     await client.auth.signOut({ scope: "local" });
     expect((await resolveAccess(client.auth)).kind).toBe("unauthenticated");
@@ -120,7 +140,11 @@ describe("TOTP second factor", () => {
     const factors = await fresh.auth.mfa.listFactors();
     const factor = factors.data!.totp.find((f) => f.status === "verified")!;
     let passed = await fresh.auth.mfa.challengeAndVerify({ factorId: factor.id, code: totp(secret) });
-    if (passed.error) passed = await fresh.auth.mfa.challengeAndVerify({ factorId: factor.id, code: totp(secret, Date.now() + 30_000) });
+    if (passed.error)
+      passed = await fresh.auth.mfa.challengeAndVerify({
+        factorId: factor.id,
+        code: totp(secret, Date.now() + 30_000),
+      });
     expect(passed.error).toBeNull();
     expect((await resolveAccess(fresh.auth)).kind).toBe("ok");
 

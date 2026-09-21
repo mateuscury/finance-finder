@@ -12,17 +12,29 @@ async function ownsAsset(client: SupabaseClient, assetId: string): Promise<boole
   return !error && data !== null;
 }
 
-export async function createTransaction(client: SupabaseClient, userId: string, input: unknown): Promise<ActionResult<{ id: string }>> {
+export async function createTransaction(
+  client: SupabaseClient,
+  userId: string,
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
   const parsed = TransactionInputSchema.safeParse(input);
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
   // A friendly not_found before the composite FK says the same thing less kindly.
   if (!(await ownsAsset(client, parsed.data.asset_id))) return fail("not_found", ["asset_id"]);
-  const { data, error } = await client.from("transactions").insert({ user_id: userId, ...parsed.data }).select("id").single();
+  const { data, error } = await client
+    .from("transactions")
+    .insert({ user_id: userId, ...parsed.data })
+    .select("id")
+    .single();
   if (error || !data) return fail(reasonFor(error));
   return ok({ id: data.id as string });
 }
 
-export async function updateTransaction(client: SupabaseClient, transactionId: string, input: unknown): Promise<ActionResult> {
+export async function updateTransaction(
+  client: SupabaseClient,
+  transactionId: string,
+  input: unknown,
+): Promise<ActionResult> {
   const parsed = TransactionInputSchema.safeParse(input);
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
   if (!(await ownsAsset(client, parsed.data.asset_id))) return fail("not_found", ["asset_id"]);

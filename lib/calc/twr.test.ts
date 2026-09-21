@@ -49,7 +49,14 @@ describe("twr", () => {
     expect(out.skipped).toHaveLength(1);
     expect(twr([], [f(day(0), "1")]).ignored).toEqual([f(day(0), "1")]);
     // One valuation is no sub-period at all.
-    expect(twr([v(day(0), "100")], [f(day(0), "100")])).toEqual({ twr: null, from: null, to: null, subPeriods: [], skipped: [], ignored: [] });
+    expect(twr([v(day(0), "100")], [f(day(0), "100")])).toEqual({
+      twr: null,
+      from: null,
+      to: null,
+      subPeriods: [],
+      skipped: [],
+      ignored: [],
+    });
   });
 
   it("rejects duplicate dates and negative values", () => {
@@ -89,11 +96,15 @@ describe("twr", () => {
   });
 
   it("property: chaining — twr(a→c) = (1 + twr(a→b))(1 + twr(b→c)) − 1 at any valuation date b", () => {
-    const flows = fc.array(fc.tuple(fc.integer({ min: 1, max: 11 }), fc.integer({ min: -5000, max: 20000 })), { maxLength: 4 });
+    const flows = fc.array(fc.tuple(fc.integer({ min: 1, max: 11 }), fc.integer({ min: -5000, max: 20000 })), {
+      maxLength: 4,
+    });
     fc.assert(
       fc.property(series, fc.integer({ min: 1, max: 10 }), flows, (vs, b, fl) => {
         if (b >= vs.length - 1) return;
-        const fs = fl.filter(([i]) => i < vs.length).map(([i, amt]) => f(vs[i].date, new KernelDecimal(amt).div(100).toFixed()));
+        const fs = fl
+          .filter(([i]) => i < vs.length)
+          .map(([i, amt]) => f(vs[i].date, new KernelDecimal(amt).div(100).toFixed()));
         const whole = twr(vs, fs);
         const left = twr(vs.slice(0, b + 1), fs);
         const right = twr(vs.slice(b), fs);

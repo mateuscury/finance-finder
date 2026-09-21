@@ -29,7 +29,8 @@ function loadDotEnvLocal(): void {
     if (eq <= 0) continue;
     const key = line.slice(0, eq).trim();
     let value = line.slice(eq + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+      value = value.slice(1, -1);
     if (process.env[key] === undefined) process.env[key] = value;
   }
 }
@@ -37,6 +38,7 @@ function loadDotEnvLocal(): void {
 export default async function globalSetup(): Promise<void> {
   loadDotEnvLocal();
   requireDbEnv();
-  if (!process.env.NEXT_PUBLIC_SITE_URL) throw new Error("e2e: NEXT_PUBLIC_SITE_URL must be set (this tier never skips)");
+  if (!process.env.NEXT_PUBLIC_SITE_URL)
+    throw new Error("e2e: NEXT_PUBLIC_SITE_URL must be set (this tier never skips)");
   await assertStackReachable(createDbTestClient());
 }

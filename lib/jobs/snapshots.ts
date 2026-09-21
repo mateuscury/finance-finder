@@ -130,7 +130,15 @@ export async function runSnapshots(options: RunSnapshotsOptions): Promise<Snapsh
   const users: UserSummary[] = [];
 
   for (const user of await store.listUsers(scope)) {
-    const summary: UserSummary = { userId: user.userId, status: "complete", from: null, to: null, daysBuilt: 0, rowsWritten: 0, errorCode: null };
+    const summary: UserSummary = {
+      userId: user.userId,
+      status: "complete",
+      from: null,
+      to: null,
+      daysBuilt: 0,
+      rowsWritten: 0,
+      errorCode: null,
+    };
     users.push(summary);
     const marker = markerFor(user);
     if (marker === null || compareDates(marker, today) > 0) {
@@ -165,7 +173,10 @@ export async function runSnapshots(options: RunSnapshotsOptions): Promise<Snapsh
       // A kernel contract violation names an id and a code, never a value;
       // anything else is reduced to a fixed literal.
       summary.status = "error";
-      summary.errorCode = err instanceof Error && err.name === "KernelError" ? (err as { code?: string }).code ?? "kernel_error" : "store_failed";
+      summary.errorCode =
+        err instanceof Error && err.name === "KernelError"
+          ? ((err as { code?: string }).code ?? "kernel_error")
+          : "store_failed";
     }
   }
 

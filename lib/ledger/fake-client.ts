@@ -18,7 +18,10 @@ export interface FakeCall {
   filters: Array<[string, string, unknown]>;
 }
 
-export function fakeClient(responses: Partial<Record<string, Partial<Record<Op, FakeResponse | FakeResponse[]>>>>): { client: SupabaseClient; calls: FakeCall[] } {
+export function fakeClient(responses: Partial<Record<string, Partial<Record<Op, FakeResponse | FakeResponse[]>>>>): {
+  client: SupabaseClient;
+  calls: FakeCall[];
+} {
   const calls: FakeCall[] = [];
   const queues = new Map<string, FakeResponse[]>();
   const next = (table: string, op: Op): FakeResponse => {
@@ -57,7 +60,8 @@ export function fakeClient(responses: Partial<Record<string, Partial<Record<Op, 
       limit: chain,
       maybeSingle: () => Promise.resolve(finish()),
       single: () => Promise.resolve(finish()),
-      then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) => Promise.resolve(finish()).then(resolve, reject),
+      then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+        Promise.resolve(finish()).then(resolve, reject),
     });
     const finish = () => {
       calls.push({ table, op, payload, filters });

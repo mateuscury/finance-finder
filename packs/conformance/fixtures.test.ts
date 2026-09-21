@@ -39,9 +39,16 @@ function replayEnv(source: PriceSource): Record<string, string> {
  * that are not series ids are asset identifiers, and the instrument that owns
  * them is the one whose valuation names this source.
  */
-function instrumentsForSource(pack: MarketPack, source: PriceSource, refs: string[], series: Map<string, SeriesDescriptor>) {
+function instrumentsForSource(
+  pack: MarketPack,
+  source: PriceSource,
+  refs: string[],
+  series: Map<string, SeriesDescriptor>,
+) {
   const kind = pack.instruments.find(
-    (i) => (i.valuation.kind === "market_price" || i.valuation.kind === "nav_unit_price") && i.valuation.sourceId === source.id,
+    (i) =>
+      (i.valuation.kind === "market_price" || i.valuation.kind === "nav_unit_price") &&
+      i.valuation.sourceId === source.id,
   );
   const out = new Map<string, InstrumentKind>();
   if (!kind) return out;
@@ -52,7 +59,9 @@ function instrumentsForSource(pack: MarketPack, source: PriceSource, refs: strin
 interface ReplayOutcome {
   points: FetchPoint[];
   warnings: string[];
-  coverage: ReturnType<typeof RefCoverageSchema.safeParse> extends never ? never : NonNullable<Awaited<ReturnType<PriceSource["fetch"]>>["coverage"]> | undefined;
+  coverage: ReturnType<typeof RefCoverageSchema.safeParse> extends never
+    ? never
+    : NonNullable<Awaited<ReturnType<PriceSource["fetch"]>>["coverage"]> | undefined;
   attempts: number;
   elapsedMs: number;
 }
@@ -105,7 +114,10 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — fixtures", (_
     const fileFor = (name: string) => path.join(httpFixtures, source.id, `${name}.json`);
     const load = (name: string) => {
       const parsed = FixtureFileSchema.safeParse(readJson(fileFor(name)));
-      expect(parsed.success, parsed.success ? "" : `${source.id}/${name}.json: ${JSON.stringify(parsed.error.issues)}`).toBe(true);
+      expect(
+        parsed.success,
+        parsed.success ? "" : `${source.id}/${name}.json: ${JSON.stringify(parsed.error.issues)}`,
+      ).toBe(true);
       return parsed.success ? parsed.data : null;
     };
 
@@ -192,13 +204,22 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — fixtures", (_
           } else {
             expect(outcome.coverage, `${where} is bounded and must declare coverage`).toBeDefined();
             const coverage = outcome.coverage!;
-            expect(coverage.map((c) => c.ref), `${where} coverage must name every requested ref`).toEqual(input.refs);
+            expect(
+              coverage.map((c) => c.ref),
+              `${where} coverage must name every requested ref`,
+            ).toEqual(input.refs);
 
             for (const entry of coverage) {
-              expect(RefCoverageSchema.safeParse(entry).success, `${where} coverage for '${entry.ref}' is malformed`).toBe(true);
+              expect(
+                RefCoverageSchema.safeParse(entry).success,
+                `${where} coverage for '${entry.ref}' is malformed`,
+              ).toBe(true);
               expect(entry.requested).toEqual({ from: input.from, to: input.to });
 
-              const forRef = outcome.points.filter((p) => p.ref === entry.ref).map((p) => p.date).sort();
+              const forRef = outcome.points
+                .filter((p) => p.ref === entry.ref)
+                .map((p) => p.date)
+                .sort();
               if (forRef.length === 0) {
                 expect(entry.returned, `${where} claims a span for '${entry.ref}' with no points`).toBeNull();
               } else {
@@ -290,6 +311,11 @@ describe.each(PACKS.map((p) => [p.id, p] as const))("pack '%s' — fixtures", (_
     }
     const actual = runGolden(portfolio.data, PACKS);
     const mismatches = compareGolden(actual, expected);
-    expect(mismatches, mismatches.map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`).join("\n")).toEqual([]);
+    expect(
+      mismatches,
+      mismatches
+        .map((m) => `${m.path}: expected ${JSON.stringify(m.expected)}, got ${JSON.stringify(m.actual)}`)
+        .join("\n"),
+    ).toEqual([]);
   });
 });

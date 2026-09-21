@@ -103,7 +103,10 @@ describe("bcb-sgs budget and coverage contract", () => {
 
   it("never certifies a window it could not read", async () => {
     for (const ctx of [ctxWith(503, "unavailable"), ctxWith(200, { not: "an array" })]) {
-      const r = await fetchBcbSgs({ capability: "series", refs: ["br.cdi"], from: "2025-01-02", to: "2025-01-03" }, ctx);
+      const r = await fetchBcbSgs(
+        { capability: "series", refs: ["br.cdi"], from: "2025-01-02", to: "2025-01-03" },
+        ctx,
+      );
       expect(r.coverage?.[0]).toMatchObject({ returned: null, complete: false });
     }
   });
@@ -151,14 +154,18 @@ describe("bcb-sgs budget and coverage contract", () => {
   });
 
   it("reports the wrong capability without covering anything", async () => {
-    const r = await fetchBcbSgs({ capability: "spot", refs: ["br.cdi"], from: "2025-01-02", to: "2025-01-02" }, ctxWith(200, []));
+    const r = await fetchBcbSgs(
+      { capability: "spot", refs: ["br.cdi"], from: "2025-01-02", to: "2025-01-02" },
+      ctxWith(200, []),
+    );
     expect(r.coverage?.[0].complete).toBe(false);
     expect(r.warnings).toHaveLength(1);
   });
 });
 
 describe("bcb-sgs empty-window contract (SGS answers 404, not 200 [])", () => {
-  const notFound = '{"erro":{"statusCode":404,"detail":"br.gov.bcb.pec.sgs.comum.excecoes.SGSNegocioException: Value(s) not found"}}';
+  const notFound =
+    '{"erro":{"statusCode":404,"detail":"br.gov.bcb.pec.sgs.comum.excecoes.SGSNegocioException: Value(s) not found"}}';
 
   it("certifies a 404 'Value(s) not found' window as genuinely empty", async () => {
     // Without this, a weekend run would never advance the CDI watermark and

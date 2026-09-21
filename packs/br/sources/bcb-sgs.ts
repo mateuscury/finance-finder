@@ -86,9 +86,7 @@ export async function fetchBcbSgs(req: FetchRequest, ctx: FetchContext): Promise
       // percentage change. Chaining it into a level is math, and packs never
       // supply math. br.ipca is served by br.ibge_sidra, which publishes the
       // número-índice directly.
-      warnings.push(
-        "bcb_sgs: br.ipca disabled until SGS 433 monthly variations are chained into a stable index level",
-      );
+      warnings.push("bcb_sgs: br.ipca disabled until SGS 433 monthly variations are chained into a stable index level");
       continue;
     }
     const url =

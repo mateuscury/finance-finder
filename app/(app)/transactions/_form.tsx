@@ -13,7 +13,17 @@ export interface TransactionFormValues {
 }
 
 /** SPEC §2: signed quantity by type; unit_price is the per-unit price, or the cash amount for dividend / interest / fee. */
-export function TransactionForm({ action, assets, values = {}, submitLabel }: { action: (formData: FormData) => Promise<void>; assets: readonly AssetListItem[]; values?: TransactionFormValues; submitLabel: string }) {
+export function TransactionForm({
+  action,
+  assets,
+  values = {},
+  submitLabel,
+}: {
+  action: (formData: FormData) => Promise<void>;
+  assets: readonly AssetListItem[];
+  values?: TransactionFormValues;
+  submitLabel: string;
+}) {
   return (
     <form action={action}>
       <label>
@@ -46,7 +56,13 @@ export function TransactionForm({ action, assets, values = {}, submitLabel }: { 
         Unit price <input name="unit_price" inputMode="decimal" defaultValue={values.unit_price ?? ""} required />
       </label>
       <label>
-        Currency <input name="currency" defaultValue={values.currency ?? assets[0]?.native_currency ?? INSTANCE_DEFAULTS.baseCurrency} pattern="[A-Z]{3}" required />
+        Currency{" "}
+        <input
+          name="currency"
+          defaultValue={values.currency ?? assets[0]?.native_currency ?? INSTANCE_DEFAULTS.baseCurrency}
+          pattern="[A-Z]{3}"
+          required
+        />
       </label>
       <label>
         Fees <input name="fees" inputMode="decimal" defaultValue={values.fees ?? "0"} />

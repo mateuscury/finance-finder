@@ -28,7 +28,11 @@ export type FxResult =
 const PIVOT = "USD";
 
 /** One leg: the series that converts `from` → `to`, direct or inverted. */
-function findLeg(descriptors: readonly SeriesDescriptor[], from: string, to: string): { seriesId: string; invert: boolean } | null {
+function findLeg(
+  descriptors: readonly SeriesDescriptor[],
+  from: string,
+  to: string,
+): { seriesId: string; invert: boolean } | null {
   for (const d of descriptors) {
     if (d.kind.kind !== "fx_rate") continue;
     if (d.kind.base === from && d.kind.quote === to) return { seriesId: d.id, invert: false };
@@ -40,7 +44,12 @@ function findLeg(descriptors: readonly SeriesDescriptor[], from: string, to: str
   return null;
 }
 
-function legRate(market: MarketData, leg: { seriesId: string; invert: boolean }, asOf: IsoDate, windowDays: number): Observed<KDecimal> {
+function legRate(
+  market: MarketData,
+  leg: { seriesId: string; invert: boolean },
+  asOf: IsoDate,
+  windowDays: number,
+): Observed<KDecimal> {
   const o = fxRateAt(market, leg.seriesId, asOf, windowDays);
   if (!leg.invert) return o;
   if (o.status === "unpriced") return o;

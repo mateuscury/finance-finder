@@ -11,11 +11,24 @@ const FII = brInstruments.find((k) => k.id === "br.fii")!;
 const US_STOCK = kind("zz.stock", { kind: "market_price", sourceId: "zz" }, "USD");
 
 let seq = 0;
-function txn(assetId: string, tradeDate: string, type: LedgerTransaction["type"], quantity: string, unitPrice: string, currency = "BRL"): LedgerTransaction {
+function txn(
+  assetId: string,
+  tradeDate: string,
+  type: LedgerTransaction["type"],
+  quantity: string,
+  unitPrice: string,
+  currency = "BRL",
+): LedgerTransaction {
   seq += 1;
   return { id: `t${seq}`, assetId, tradeDate, type, quantity, unitPrice, currency, fees: "0", fxRate: null };
 }
-const price = (assetId: string, date: string, p: string, currency = "BRL"): PriceObservation => ({ assetId, date, price: p, currency, sourceId: "x" });
+const price = (assetId: string, date: string, p: string, currency = "BRL"): PriceObservation => ({
+  assetId,
+  date,
+  price: p,
+  currency,
+  sourceId: "x",
+});
 
 const AS_OF = "2026-02-13";
 const input: PortfolioInput = {
@@ -63,7 +76,13 @@ describe("valuePortfolio", () => {
       ["old", "stale", true, "BRL 105"],
     ]);
     expect(v.excluded).toEqual([
-      { assetId: "old", status: "stale", lastKnownBase: Money.parse("105", "BRL"), priceDate: "2026-02-01", fxDate: null },
+      {
+        assetId: "old",
+        status: "stale",
+        lastKnownBase: Money.parse("105", "BRL"),
+        priceDate: "2026-02-01",
+        fxDate: null,
+      },
       { assetId: "nofx", status: "unpriced", reason: "no_fx_series" },
       { assetId: "fxcf", status: "unpriced", reason: "no_fx_series" },
     ]);
@@ -88,7 +107,13 @@ describe("valuePortfolio", () => {
     // fresh 100 + fxcf 1500 + nofx 1 × 150 × 5: `nofx` only lacked FX in `input`.
     expect(money(v.totalBase)).toBe("BRL 2350");
     // Two days later the FX leg is stale and the row drops out of the total.
-    const later = valuePortfolio({ ...withFx, market: buildMarketData([price("fxcf", "2026-02-14", "150", "USD")], [pt("global.usdbrl", "2026-02-12", "5")]) }, "2026-02-14");
+    const later = valuePortfolio(
+      {
+        ...withFx,
+        market: buildMarketData([price("fxcf", "2026-02-14", "150", "USD")], [pt("global.usdbrl", "2026-02-12", "5")]),
+      },
+      "2026-02-14",
+    );
     expect(later.holdings.find((h) => h.assetId === "fxcf")!.status).toBe("stale");
     expect(money(later.totalBase)).toBe("BRL 0");
   });
@@ -105,7 +130,9 @@ describe("valuePortfolio", () => {
   });
 
   it("throws invalid_input when an asset's pack has no calendar", () => {
-    expect(() => valuePortfolio({ ...input, calendars: new Map([["br", brCalendar]]) }, AS_OF)).toThrow(/invalid_input/);
+    expect(() => valuePortfolio({ ...input, calendars: new Map([["br", brCalendar]]) }, AS_OF)).toThrow(
+      /invalid_input/,
+    );
   });
 });
 
@@ -117,10 +144,26 @@ describe("toBase and the window", () => {
 
   it("converts through the FX series under the pack's window, or reports why not", () => {
     const usd = Money.parse("10", "USD");
-    expect(toBase(withFx, Money.parse("10", "BRL"), AS_OF, "br")).toEqual({ status: "ok", value: Money.parse("10", "BRL"), observedOn: AS_OF });
-    expect(toBase(withFx, usd, "2026-02-12", "zz")).toEqual({ status: "ok", value: Money.parse("50", "BRL"), observedOn: "2026-02-12" });
-    expect(toBase(withFx, usd, AS_OF, "zz")).toEqual({ status: "carried_forward", value: Money.parse("50", "BRL"), observedOn: "2026-02-12" });
-    expect(toBase(withFx, usd, "2026-02-14", "zz")).toEqual({ status: "stale", lastKnown: Money.parse("50", "BRL"), observedOn: "2026-02-12" });
+    expect(toBase(withFx, Money.parse("10", "BRL"), AS_OF, "br")).toEqual({
+      status: "ok",
+      value: Money.parse("10", "BRL"),
+      observedOn: AS_OF,
+    });
+    expect(toBase(withFx, usd, "2026-02-12", "zz")).toEqual({
+      status: "ok",
+      value: Money.parse("50", "BRL"),
+      observedOn: "2026-02-12",
+    });
+    expect(toBase(withFx, usd, AS_OF, "zz")).toEqual({
+      status: "carried_forward",
+      value: Money.parse("50", "BRL"),
+      observedOn: "2026-02-12",
+    });
+    expect(toBase(withFx, usd, "2026-02-14", "zz")).toEqual({
+      status: "stale",
+      lastKnown: Money.parse("50", "BRL"),
+      observedOn: "2026-02-12",
+    });
     expect(toBase(input, usd, AS_OF, "zz")).toEqual({ status: "unpriced", reason: "no_fx_series" });
   });
 });

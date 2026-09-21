@@ -41,11 +41,13 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
       {loaded.kind === "none" ? (
         <>
           <p>
-            Canonical columns: <code>{CANONICAL_COLUMNS.join(",")}</code>. Column order does not matter, unknown columns are ignored, and you can map your broker&apos;s headers on the next step.
-            Nothing is written until you commit.
+            Canonical columns: <code>{CANONICAL_COLUMNS.join(",")}</code>. Column order does not matter, unknown columns
+            are ignored, and you can map your broker&apos;s headers on the next step. Nothing is written until you
+            commit.
           </p>
           <form action={uploadCsvAction}>
-            <input type="file" name="file" accept=".csv,text/csv" required /> <button type="submit">Upload and preview</button>
+            <input type="file" name="file" accept=".csv,text/csv" required />{" "}
+            <button type="submit">Upload and preview</button>
           </form>
         </>
       ) : null}
@@ -76,7 +78,10 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
               <label key={col}>
                 {col}
                 {REQUIRED_COLUMNS.includes(col) ? " (required)" : ""}{" "}
-                <select name={`map_${col}`} defaultValue={loaded.map[col] ?? (loaded.header.find((h) => h.trim().toLowerCase() === col) ?? "")}>
+                <select
+                  name={`map_${col}`}
+                  defaultValue={loaded.map[col] ?? loaded.header.find((h) => h.trim().toLowerCase() === col) ?? ""}
+                >
                   <option value="">— not in file —</option>
                   {loaded.header.map((h, i) => (
                     <option key={`${h}-${i}`} value={h}>
@@ -95,7 +100,8 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
             <>
               <h2>Preview</h2>
               <p>
-                {loaded.run.counts.total} rows · {loaded.run.counts.valid} ready · {loaded.run.counts.errors} with errors · {loaded.run.counts.unresolved} unresolved · {loaded.run.counts.duplicates} duplicates
+                {loaded.run.counts.total} rows · {loaded.run.counts.valid} ready · {loaded.run.counts.errors} with
+                errors · {loaded.run.counts.unresolved} unresolved · {loaded.run.counts.duplicates} duplicates
               </p>
               {loaded.run.unresolved.length > 0 ? (
                 <>
@@ -108,7 +114,13 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                       {u.registered ? (
                         <AssetForm
                           action={createAssetThen.bind(null, "/transactions/import")}
-                          values={{ pack_id: u.pack_id, instrument_kind: u.instrument_kind, identifier: u.identifier, name: u.identifier, native_currency: INSTANCE_DEFAULTS.baseCurrency }}
+                          values={{
+                            pack_id: u.pack_id,
+                            instrument_kind: u.instrument_kind,
+                            identifier: u.identifier,
+                            name: u.identifier,
+                            native_currency: INSTANCE_DEFAULTS.baseCurrency,
+                          }}
                           submitLabel="Create this asset"
                         />
                       ) : (
@@ -146,7 +158,11 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                         </td>
                         <td>{r.values.fees}</td>
                         <td>
-                          {r.errors.length > 0 ? `error: ${r.errors.join(", ")}` : r.assetId === null ? "unresolved" : r.duplicate ? (
+                          {r.errors.length > 0 ? (
+                            `error: ${r.errors.join(", ")}`
+                          ) : r.assetId === null ? (
+                            "unresolved"
+                          ) : r.duplicate ? (
                             <label>
                               duplicate — <input type="checkbox" name="force" value={r.index} /> include anyway
                             </label>
@@ -158,7 +174,10 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                     ))}
                   </tbody>
                 </table>
-                <p>Commit writes every ready row in one transaction, skips duplicates unless included, and refuses if any row has an error or an unresolved identifier.</p>
+                <p>
+                  Commit writes every ready row in one transaction, skips duplicates unless included, and refuses if any
+                  row has an error or an unresolved identifier.
+                </p>
                 <button type="submit" disabled={loaded.run.counts.errors > 0 || loaded.run.counts.unresolved > 0}>
                   Commit {loaded.run.counts.valid - loaded.run.counts.duplicates} rows
                 </button>

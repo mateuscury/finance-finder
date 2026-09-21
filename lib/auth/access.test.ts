@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { isPublicPath, redirectFor, resolveAccess, type AuthReader } from "./access";
 
-function fakeAuth(user: { id: string; email?: string } | null, aal: { currentLevel: string | null; nextLevel: string | null } | null = null): AuthReader {
+function fakeAuth(
+  user: { id: string; email?: string } | null,
+  aal: { currentLevel: string | null; nextLevel: string | null } | null = null,
+): AuthReader {
   return {
     getUser: async () => ({ data: { user }, error: user ? null : { message: "no session" } }),
     mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: aal, error: null }) },
@@ -14,7 +17,9 @@ describe("resolveAccess", () => {
   });
 
   it("is ok at AAL1 when no factor is enrolled, and at AAL2 when one is", async () => {
-    expect(await resolveAccess(fakeAuth({ id: "u1", email: "o@x" }, { currentLevel: "aal1", nextLevel: "aal1" }))).toEqual({
+    expect(
+      await resolveAccess(fakeAuth({ id: "u1", email: "o@x" }, { currentLevel: "aal1", nextLevel: "aal1" })),
+    ).toEqual({
       kind: "ok",
       identity: { userId: "u1", email: "o@x", currentLevel: "aal1", nextLevel: "aal1" },
     });
@@ -32,7 +37,10 @@ describe("resolveAccess", () => {
 });
 
 describe("redirectFor", () => {
-  const ok = { kind: "ok", identity: { userId: "u", email: null, currentLevel: "aal1" as const, nextLevel: "aal1" as const } } as const;
+  const ok = {
+    kind: "ok",
+    identity: { userId: "u", email: null, currentLevel: "aal1" as const, nextLevel: "aal1" as const },
+  } as const;
   const mfa = { kind: "mfa_required", identity: ok.identity } as const;
   const anon = { kind: "unauthenticated" } as const;
 

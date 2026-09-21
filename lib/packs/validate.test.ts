@@ -150,7 +150,10 @@ describe("validatePoints — window, identity and duplicates", () => {
 
   it("rejects a structurally malformed point without throwing", () => {
     const r = validatePoints(
-      [{ ref: "br.cdi", date: "not-a-date", value: "1", currency: null } as FetchPoint, { ref: "br.cdi", date: "2026-09-02", value: "1e-3", currency: null } as FetchPoint],
+      [
+        { ref: "br.cdi", date: "not-a-date", value: "1", currency: null } as FetchPoint,
+        { ref: "br.cdi", date: "2026-09-02", value: "1e-3", currency: null } as FetchPoint,
+      ],
       SCOPE,
     );
     expect(r.accepted).toEqual([]);
@@ -192,10 +195,10 @@ describe("validatePoints — an unattributable ref taints the whole response", (
 
   it("leaves other refs alone when the only problem is a duplicate key", () => {
     // A duplicate is attributable, so it taints just its own ref.
-    const r = validatePoints(
-      [p({ ref: "br.cdi" }), p({ ref: "br.cdi" }), p({ ref: "br.ibovespa", value: "100" })],
-      { ...SCOPE, requested: new Set(["br.cdi", "br.ibovespa"]) },
-    );
+    const r = validatePoints([p({ ref: "br.cdi" }), p({ ref: "br.cdi" }), p({ ref: "br.ibovespa", value: "100" })], {
+      ...SCOPE,
+      requested: new Set(["br.cdi", "br.ibovespa"]),
+    });
     expect([...r.ambiguousRefs]).toEqual(["br.cdi"]);
   });
 });
