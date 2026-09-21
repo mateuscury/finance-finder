@@ -704,7 +704,11 @@ ownership itself (decision 11): it refuses when unauthenticated, when the
 account is not empty, when an asset id already exists for any user, or when a
 transaction or price names an asset outside the restored set. The refusal
 codes are `not_authenticated`, `unsupported_version`, `account_not_empty`,
-`duplicate_asset_id`, `asset_id_conflict`, `foreign_asset_reference`.
+`duplicate_asset_id`, `asset_id_conflict`, `foreign_asset_reference` and
+`invalid_rows` (a row the database itself refuses — a negative price, an
+unknown type — reported as the same fixed shape rather than a raw error).
+Concurrent restores into one account are serialised by a per-user advisory
+lock, so the second sees `account_not_empty`.
 
 **Proof.** `lib/backup/roundtrip.dbtest.ts` (`pnpm test:db`, against a real
 Postgres) seeds the BR golden portfolio for a throwaway user, exports, deletes

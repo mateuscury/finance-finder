@@ -20,11 +20,14 @@ import { canonicalBackup } from "./serialize";
 
 /**
  * The refusals the planner can decide from the file alone. `restore_backup`
- * additionally raises `not_authenticated`, `account_not_empty` and
- * `asset_id_conflict` (root SPEC §12.3), which need the database.
+ * additionally raises the `DatabaseRestoreRefusal`s (root SPEC §12.3), which
+ * need the database.
  */
 export type RestoreRefusal =
   "unsupported_version" | "invalid_backup" | "duplicate_asset_id" | "foreign_asset_reference";
+
+/** Raised only by `restore_backup` itself; `invalid_rows` is a row the database refused (a check, a type). */
+export type DatabaseRestoreRefusal = "not_authenticated" | "account_not_empty" | "asset_id_conflict" | "invalid_rows";
 
 export interface RestoreWarning {
   assetId: string;

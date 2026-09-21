@@ -204,4 +204,45 @@ describe("export → delete → restore → export", () => {
       /permission denied/i,
     );
   });
+  it("refuses a row the database itself rejects with the fixed reason invalid_rows, writing nothing (D-16)", async () => {
+    const owner = await newUser();
+    await seedGoldenPortfolio(admin, owner.userId, fixture);
+    const theirs = await exportBackup(await owner.signIn());
+    // The file's asset ids must be free, as after a real loss of the account.
+    await owner.remove();
+
+    const fresh = await newUser();
+    const client = await fresh.signIn();
+    // A negative unit price violates the transactions check constraint; before
+    // the hardening this surfaced as the raw Postgres error text.
+    const broken = {
+      ...theirs,
+      transactions: theirs.transactions.map((x, i) => (i === 0 ? { ...x, unit_price: "-1" } : x)),
+    };
+    const res = await client.rpc("restore_backup", { payload: asJson(broken) });
+    expect(res.error?.message).toMatch(/restore_refused: invalid_rows/);
+    expect(res.error?.message).not.toMatch(/violates|constraint/i);
+    for (const table of ["assets", "transactions", "cash_flows"] as const) {
+      expect(await countFor(table, fresh.userId), `${table} was written`).toBe(0);
+    }
+  });
+
+  it("serialises two concurrent restores into one empty account: exactly one wins (D-17)", async () => {
+    const owner = await newUser();
+    await seedGoldenPortfolio(admin, owner.userId, fixture);
+    const theirs = await exportBackup(await owner.signIn());
+    await owner.remove();
+
+    const fresh = await newUser();
+    const [a, b] = await Promise.all([fresh.signIn(), fresh.signIn()]);
+    const [ra, rb] = await Promise.all([
+      a.rpc("restore_backup", { payload: asJson(theirs) }),
+      b.rpc("restore_backup", { payload: asJson(theirs) }),
+    ]);
+    const outcomes = [ra, rb].map((r) => (r.error ? r.error.message : "ok"));
+    expect(outcomes.filter((o) => o === "ok")).toHaveLength(1);
+    expect(outcomes.find((o) => o !== "ok")).toMatch(/restore_refused: account_not_empty/);
+    expect(await countFor("assets", fresh.userId)).toBe(N.assets);
+    expect(await countFor("transactions", fresh.userId)).toBe(N.transactions);
+  });
 });

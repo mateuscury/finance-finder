@@ -35,6 +35,8 @@ const RESTORE_COPY: Record<string, string> = {
   account_not_empty:
     "Restore only works into an empty account. Delete everything first, or restore into a fresh instance.",
   asset_id_conflict: "An asset id in the file already exists.",
+  invalid_rows:
+    "The file has a row the database refuses (a negative price, an unknown type). Fix the export and retry.",
   not_authenticated: "Sign in again and retry.",
   write_failed: "The restore was refused.",
 };
