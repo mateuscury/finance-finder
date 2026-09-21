@@ -1,0 +1,118 @@
+.header {
+  border-bottom: var(--hairline);
+  background: var(--bg);
+}
+.inner {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+@media (min-width: 640px) {
+  .inner {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+.brand {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  text-decoration: none;
+  margin-right: auto;
+}
+.group {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.groupLabel {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.link {
+  text-decoration: none;
+  padding: var(--space-1) 0;
+  border-bottom: 2px solid transparent;
+}
+.link[aria-current="page"] {
+  border-bottom-color: var(--accent);
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.theme {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+.theme select {
+  min-height: 2rem;
+  padding: 0 var(--space-2);
+}
+.theme button,
+.controls button {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+}
+
+/* Wide: everything inline. Narrow: a disclosure menu. */
+.wide {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+.narrow {
+  display: none;
+  width: 100%;
+}
+.summary {
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  list-style: none;
+}
+.summary::-webkit-details-marker {
+  display: none;
+}
+.summary::before {
+  content: "☰ ";
+}
+.narrow nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) 0 var(--space-4);
+}
+.narrow .group {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+.narrow .list {
+  flex-direction: column;
+  gap: var(--space-2);
+}
+@media (max-width: 639px) {
+  .wide {
+    display: none;
+  }
+  .narrow {
+    display: block;
+  }
+}

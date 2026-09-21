@@ -28,6 +28,8 @@ export async function proxy(request: NextRequest) {
   const nonce = newNonce();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // The path, for the shell's aria-current: a layout cannot read the URL.
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
   requestHeaders.set("Content-Security-Policy", buildCsp(nonce, { dev: DEV }));
   const next = () => NextResponse.next({ request: { headers: requestHeaders } });
 

@@ -41,7 +41,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   return (
-    <html lang={locale} data-theme={theme === "system" ? undefined : theme} className={instrumentSerif.variable}>
+    // suppressHydrationWarning: the boot script adds data-privacy before React
+    // hydrates, deliberately; the attribute is per device and never rendered
+    // by the server.
+    <html
+      lang={locale}
+      data-theme={theme === "system" ? undefined : theme}
+      className={instrumentSerif.variable}
+      suppressHydrationWarning
+    >
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: PRIVACY_BOOT }} />
       </head>

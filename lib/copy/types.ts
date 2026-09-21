@@ -21,6 +21,48 @@ export type RestoreOutcome = RestoreRefusal | DatabaseRestoreRefusal | "done" | 
 export type DeleteOutcome = "phrase" | "password" | "failed";
 
 export interface Copy {
+  /** The shell (SPEC §9.2): route labels in the two groups, the toggles, sign out. */
+  nav: {
+    skipToContent: string;
+    analysis: string;
+    ledger: string;
+    overview: string;
+    performance: string;
+    allocation: string;
+    contribution: string;
+    maturities: string;
+    assets: string;
+    transactions: string;
+    cashFlows: string;
+    settings: string;
+    menu: string;
+    signOut: string;
+    theme: string;
+    themeSystem: string;
+    themeLight: string;
+    themeDark: string;
+    /** The privacy toggle's label and the hidden-amount announcement (SPEC §12.3). */
+    privacy: string;
+    privacyOn: string;
+    privacyOff: string;
+    amountHidden: string;
+  };
+  /** The value-status marks of SPEC §11 and §9.5. */
+  status: {
+    ok: string;
+    carriedForward: (p: { date: string }) => string;
+    stale: (p: { date: string }) => string;
+    unpriced: string;
+    unpricedReason: (p: { reason: string }) => string;
+    accrues: string;
+  };
+  /** Fixed copy of the error boundary and the loading state — never a detail. */
+  errors: {
+    title: string;
+    body: string;
+    retry: string;
+    loading: string;
+  };
   /** The one line under a saved form. */
   saved: string;
   /** "Check: a, b." after a field-level refusal. */

@@ -345,3 +345,32 @@ main {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- loading skeleton -------------------------------------------------- */
+
+.skeleton {
+  background: var(--bg-subtle);
+  border-radius: var(--radius);
+  margin-bottom: var(--space-3);
+}
+.skeleton-title {
+  height: 2rem;
+  width: 12rem;
+}
+.skeleton-line {
+  height: 1rem;
+  width: 60%;
+}
+.skeleton-block {
+  height: 8rem;
+  width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
