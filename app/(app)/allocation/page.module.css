@@ -1,0 +1,28 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+  margin: var(--space-4) 0 var(--space-8);
+}
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: var(--space-6) 0 var(--space-2);
+}
+.stale {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.stale li {
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline);
+}

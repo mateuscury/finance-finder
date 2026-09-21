@@ -127,6 +127,22 @@ export const ptBR: Copy = {
       },
       over: ({ from, to }) => `${from} → ${to}`,
     },
+    allocation: {
+      title: "Alocação",
+      asOf: ({ date }) => `Em ${date}, pela última foto.`,
+      byKind: "Por tipo de instrumento",
+      byPack: "Por mercado",
+      byCurrency: "Por moeda",
+      exposure: "Exposição",
+      currency: "Moeda",
+      native: "Valor na moeda",
+      base: "Na moeda base",
+      stale: "Desatualizado — exibido, não alocado",
+      unresolved: ({ n }) =>
+        n === 1
+          ? "1 posição é de um tipo que esta versão não conhece; conta pelo id."
+          : `${n} posições são de tipos que esta versão não conhece; contam pelo id.`,
+    },
   },
   errors: {
     title: "Algo deu errado",

@@ -120,6 +120,22 @@ export const en: Copy = {
       },
       over: ({ from, to }) => `${from} → ${to}`,
     },
+    allocation: {
+      title: "Allocation",
+      asOf: ({ date }) => `As of ${date}, from the latest snapshot.`,
+      byKind: "By instrument kind",
+      byPack: "By market",
+      byCurrency: "By currency",
+      exposure: "Exposure",
+      currency: "Currency",
+      native: "Native value",
+      base: "In base currency",
+      stale: "Stale — shown, not allocated",
+      unresolved: ({ n }) =>
+        n === 1
+          ? "1 holding is of a kind this build does not know; it is counted under its id."
+          : `${n} holdings are of kinds this build does not know; they are counted under their ids.`,
+    },
   },
   errors: {
     title: "Something went wrong",

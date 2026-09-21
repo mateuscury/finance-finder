@@ -128,6 +128,19 @@ export interface Copy {
       mwrReason: Record<"insufficient_flows" | "no_root", string>;
       over: (p: { from: string; to: string }) => string;
     };
+    allocation: {
+      title: string;
+      asOf: (p: { date: string }) => string;
+      byKind: string;
+      byPack: string;
+      byCurrency: string;
+      exposure: string;
+      currency: string;
+      native: string;
+      base: string;
+      stale: string;
+      unresolved: (p: { n: number }) => string;
+    };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {
