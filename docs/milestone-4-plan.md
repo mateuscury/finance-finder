@@ -8,6 +8,12 @@ placed here moves to Milestone 5, and this milestone takes what
 §7 and §8 own the principles, theme and the deployment steps; `PACKS.md`
 §12 owns what "supported" means.
 
+**Status 2026-09-20:** decisions 33–52 confirmed by the maintainer (34
+amended: English *and* Brazilian Portuguese from the start; 40 confirmed on
+the condition stated under it) and recorded in `MILESTONES.md` §4. The
+step-by-step runbook a worker follows end to end is
+`docs/milestone-4-execution.md`; this document stays the *why*.
+
 Every merge unit leaves `pnpm test` and `pnpm test:db` green on `main` and
 runs the loop in `.claude/CLAUDE.md`: plan → build → gates →
 `/qa-spec-fidelity` → `/qa-code-quality` (and `/qa-ux` for the screen
@@ -78,8 +84,9 @@ tabular numerals (`font-variant-numeric: tabular-nums`), the currency code
 or symbol per locale, an explicit sign on every change and return, a fixed
 number of decimals per kind (2 for money in the base currency, the asset's
 own precision for prices, 2 for percentages, up to 10 for quantities with
-trailing zeros trimmed). Dates format per `user_settings.locale`. UI copy
-stays English (PACKS §15; decision 34).
+trailing zeros trimmed). Dates format per `user_settings.locale`, and so
+does the copy: English or Brazilian Portuguese from `lib/copy` (decision
+34 as amended).
 
 ### Time series from snapshots, period figures from the kernel
 
@@ -198,9 +205,20 @@ recorded under `MILESTONES.md` §4.
     hand-edited). BDRs carry the SPEC §11 known gap (zero FX attribution),
     stated in the README. Poupança and fundos stay out: each needs a new
     source and a licence review.
-34. **UI copy stays English; the locale drives formatting only** (PACKS
-    §15). pt-BR is the instance default. Translation is a later
-    contribution with a real request behind it.
+34. **UI copy ships in English and Brazilian Portuguese from the start;
+    `user_settings.locale` selects both the copy and the formatting**
+    (amended by the maintainer from "English only"). `lib/copy/en.ts` and
+    `lib/copy/pt-BR.ts` implement one `Copy` type, so a key present in one
+    and missing in the other is a type error and a test; `copyFor(locale)`
+    in `lib/copy/index.ts` is the registry — the second and last place a
+    locale literal may appear (decision 42's allowlist), because naming the
+    languages an instance ships is exactly what that file is for. Before
+    sign-in the instance default applies (`INSTANCE_DEFAULTS.locale`); after
+    it, the user's setting, mirrored in a preference cookie so the root
+    layout sets `lang` without a database read. SPEC quotes its copy in
+    English; the pt-BR strings are translations of the same keys, written
+    with the screen. PACKS §15's open question closes: a pack's `locale` is
+    formatting only; languages are kernel-owned dictionaries.
 35. **Charts are Recharts** (ARCHITECTURE §7 names it; version pinned), the
     only new production dependency. Chart coordinates are the one place a
     decimal string becomes a `number`, inside `app/(app)/_charts/**`, which
@@ -228,6 +246,14 @@ recorded under `MILESTONES.md` §4.
 40. **Privacy mode is client-only** (`localStorage`, one `<Amount>`
     component, `•••`), exactly SPEC §12.3: a display preference for
     screen-sharing, not a security boundary.
+    Confirmed on the condition that the real boundaries stand and are
+    exercised: RLS on every user table, `httpOnly` cookie sessions verified
+    by `getUser()`, AAL2 before any data page for an enrolled owner, the
+    service role confined to cron and `lib/jobs`, value-free logs, and the
+    decision 51 headers. Privacy mode is a convenience *inside* those
+    boundaries, never a substitute — so Phase 7's journeys include one that
+    requests every data route unauthenticated and at AAL1 with a factor,
+    and asserts the redirect, never a render.
 41. **`packs/br` and `packs/global` become `supported` in Phase 8**, by
     the maintainer, once fixtures are re-recorded (within 90 days) and
     conformance is fully green. `global` is one PTAX source; it meets §12
@@ -261,7 +287,6 @@ recorded under `MILESTONES.md` §4.
     has been driven by a browser yet; the UK milestone will not touch
     screens, so this is the last cheap moment. Cost: a large
     devDependency with browser binaries; kept out of the default test run.
-
 ## Technical debt inventory — paid early (Phase 1)
 
 Every deferred fix, advisory and latent finding from Milestones 1–3, plus
@@ -287,13 +312,13 @@ the maintainer.
 | D-12 | `store.ts listAssets` `unpriced` reads every price row to diff | M1 comment "should become a view" | Read `asset_latest_prices` for the candidate ids instead — one row per asset | 1 |
 | D-13 | `readLedger` reads every price and series row on every call; the analysis screens will call it per request | M3 Phase 2 | `pricesFrom` / `seriesFrom` options and a `latestPricesOnly` mode for point valuations; Overview reads snapshots + `asset_latest_prices`, not a full valuation | 1 (minimal), 6 (if budgets fail) |
 | D-14 | Import duplicate detection reads every transaction | M3 Phase 5 | Bound the read to the file's `[min, max]` trade date | 1 |
-| D-15 | UI copy scattered: `form.ts REASON_COPY`, three maps on Settings, one on Import | M3 CQ-021 | `lib/copy/en.ts`, one module keyed by reason and screen — also the one thing PACKS §15's future translation needs | 1 |
+| D-15 | UI copy scattered: `form.ts REASON_COPY`, three maps on Settings, one on Import | M3 CQ-021 | `lib/copy/{types,en,pt-BR,index}.ts`: one `Copy` type, two complete dictionaries, `copyFor(locale)`; the four maps and the shared strings move in Phase 1, each screen's own strings as it is designed (Phases 2–5) — decision 34 as amended | 1 |
 | D-16 | A check-constraint failure inside `restore_backup` surfaces as a raw Postgres error | M2 CQ-010 | Forward migration: `exception when others` → `restore_refused: invalid_rows`; `planRestore` already refuses everything the RPC would | 1 |
 | D-17 | Two concurrent restores into one empty account both pass the emptiness check | M2 "what I might have missed" | Same migration: `pg_advisory_xact_lock(hashtext(auth.uid()::text))` first | 1 |
 | D-18 | `writeDay` upserts a whole day in one request; a 1,000-asset day would exceed sane body sizes | M3 Phase 3 CQ | Chunk at 500 rows; a partial day is rebuilt next run because the marker is `max(date)` — document that | 1 |
 | D-19 | Cron runs leave no record beyond the HTTP response | SPEC §12 allows counts and codes | Both cron routes `console.log` the summary JSON (counts and codes only) so Vercel's log retains runs; no table | 1 |
-| D-20 | Test utilities live beside source (`lib/calc/valuation/testkit.ts`, `lib/ledger/fake-client.ts`) | tree | Move under `lib/testing/`; kernel lint keeps `lib/testing` banned from `lib/calc` source | 1 |
-| D-21 | Doc drift: ARCHITECTURE §3 says `@supabase/ssr` *planned* (installed), Tailwind/shadcn, react-hook-form, date-fns, RTL *planned*; SPEC §12.1 lists AwesomeAPI (removed); README's privacy section says export, tested restore and confirmed deletion are "not present in this scaffold yet" (they are); ARCHITECTURE §8 counts migrations | tree | Rewrite §3 to the installed truth after decisions 47–50; fix the three lines; keep the §3 table as the one place *planned* means anything | 1 |
+| D-20 | Test utilities live beside source (`lib/calc/valuation/testkit.ts`, `lib/ledger/fake-client.ts`) | tree | `fake-client.ts` moves to `lib/testing/`. `testkit.ts` STAYS: `lib/calc` tests are lint-banned from `lib/testing` so `test:calc` can never reach the database harness, and the kit is kernel-pure test support (amended while writing the runbook) | 1 |
+| D-21 | Doc drift: ARCHITECTURE §3 says `@supabase/ssr` *planned* (installed), Tailwind/shadcn, react-hook-form, date-fns, RTL *planned*; SPEC §12.1 lists AwesomeAPI (removed); README's privacy section says export, tested restore and confirmed deletion are "not present in this scaffold yet" (they are) | tree | ARCHITECTURE §3 is rewritten in Phase 0 (the decisions are confirmed, and Phase 0 installs against it); the SPEC and README lines in Phase 1; the §3 table stays the one place *planned* means anything | 0 (§3), 1 (rest) |
 | D-22 | `verifyTotp` challenges `totp[0]`; Auth permits up to ten verified factors | M3 Phase 1 | Enrolment already clears leftovers and the UI enrols one; document "one factor" in `lib/auth/README.md`; refuse a second enrolment while one is verified | 1 |
 | D-23 | `parseCsv` builds fields character by character; a 4 MB file is seconds of CPU inside a server action | M3 Phase 5 | Measure in Phase 6's budgets; index-scan rewrite only if the 20k-row synthetic file exceeds 500 ms | 6 |
 | D-24 | The "two calendars per pack" kernel question (B3 closes 24/31 Dec, ANBIMA does not) | `packs/br/README.md` Quirks | A `PACK_API_VERSION` question; recorded in PACKS §16 for the canary, where the LSE/bank-holiday split is the same question | 0 (document) |
@@ -340,7 +365,6 @@ says to propose in chat before installing — this is the proposal.
     `snapshot_markers` view and D-16/17's `restore_backup` hardening are
     migrations, and a view is the right answer to a read PostgREST cannot
     express (as `asset_latest_prices` was).
-
 ## Definition of done
 
 - The ten screens of SPEC §9 exist under `app/(app)/` with the §10 design
@@ -360,7 +384,7 @@ says to propose in chat before installing — this is the proposal.
   thresholds of decision 44.
 - Every Phase-1 row of the debt inventory is closed: CI green on the
   remote with `test:db`, audit, format and coverage jobs; the typed client;
-  headers; `lib/env.ts`; `lib/copy/en.ts`; the `snapshot_markers` view; the
+  headers; `lib/env.ts`; `lib/copy/{en,pt-BR}.ts`; the `snapshot_markers` view; the
   hardened `restore_backup`; dependencies current; ARCHITECTURE §3 true.
 - `pnpm test:e2e` passes the eight journeys against the local stack.
 - `specs/PERSONAS.md` has no placeholders; US-009 to US-014 have every AC
@@ -373,8 +397,9 @@ says to propose in chat before installing — this is the proposal.
 
 - No `packs/uk`, no second FX series, no `indexation` for curve bonds, no
   foreign-currency cash flows (Milestone 5).
-- No UI translation (PACKS §15), no OAuth, no public signup, no native app,
-  no crypto source, no broker integration, no tax figure of any kind.
+- No third language and no per-pack copy (decision 34: English and pt-BR,
+  kernel-owned), no OAuth, no public signup, no native app, no crypto
+  source, no broker integration, no tax figure of any kind.
 - No new user-data tables. Forward migrations are limited to read views
   and function bodies (decision 52); a screen that seems to need a table is
   a sign the kernel or a reader is missing something — ask.
@@ -399,8 +424,9 @@ says to propose in chat before installing — this is the proposal.
 
 ## Phase 0 — Baseline: decisions, stories, personas, dependencies, `br.stock`, neutrality
 
-1. Record decisions 33–52 under `MILESTONES.md` §4; swap §4/§5 headings
-   (decision 32, already recorded).
+1. ~~Record decisions 33–52 under `MILESTONES.md` §4~~ — done with the
+   confirmation (2026-09-20). Rewrite `ARCHITECTURE.md` §3 to the installed
+   truth plus the confirmed choices (D-21, first half).
 2. `specs/PERSONAS.md`: the primary persona (the self-hosting Brazilian
    investor — holds Tesouro, CDBs, FIIs and a few ações; checks on a phone;
    moderate tech comfort; wants one honest number and no surprises) and
@@ -452,7 +478,8 @@ One merge unit per row group, in this order, each under the full gate:
    logging.
 6. **Restore hardening** (D-16, D-17): the migration; the dbtest gains the
    raw-constraint and concurrent-restore cases.
-7. **Copy, test utilities, docs, one-factor rule** (D-15, D-20, D-21, D-22).
+7. **Copy in both languages, test utilities, docs, one-factor rule** (D-15,
+   D-20, D-21 second half, D-22).
 8. **Coverage** (D-04) last, once the tree is in its Phase-1 shape, with the
    thresholds enforced in CI.
 

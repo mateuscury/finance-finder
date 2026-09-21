@@ -443,8 +443,9 @@ that `PACKS.md` §14 placed here is now §5.
   and job fixes — before any screen is built.
 
 Implementation plan: `docs/milestone-4-plan.md` (conventions, the debt
-inventory, decisions 33–52 to confirm before code, phases 0–9 and merge
-order).
+inventory, decisions 33–52, phases 0–9 and merge order). Execution runbook:
+`docs/milestone-4-execution.md` (one unit per commit, in order, with the
+gate and the done-when for each).
 
 ### Decisions taken 2026-09-20 (before implementation)
 
@@ -459,6 +460,77 @@ order).
     test, and a written checklist of every assumption the second pack will
     meet. Building that pack is not deferred indefinitely — it is the next
     milestone.
+
+### Decisions taken 2026-09-20 (confirmed on the plan's recommendation)
+
+Numbered on from 32. Each changes a checked-in contract, a dependency, a
+doc that says *planned*, or a behaviour a screen will depend on. Rationale
+in full in `docs/milestone-4-plan.md` "Decisions to confirm".
+
+33. **`br.stock` joins `packs/br`** — ações, ETFs and BDRs on B3,
+    `market_price` through `br.brapi`, `ticker` identifier, `{ name }`
+    metadata; one catalog case, re-recorded fixtures, a README row with the
+    BDR zero-FX-attribution note (SPEC §11), one golden row derived by the
+    script. Poupança and fundos stay out (new source, licence review).
+34. **UI copy ships in English and Brazilian Portuguese from the start**
+    (the maintainer amended the plan's "English only"). `user_settings.
+    locale` selects copy and formatting; `lib/copy/{en,pt-BR}.ts` share one
+    `Copy` type so the two dictionaries cannot drift; `lib/copy/index.ts`
+    is the second allowed site for a locale literal; the instance default
+    applies before sign-in. PACKS §15's translation question is closed: a
+    pack's `locale` is formatting only, languages are kernel dictionaries.
+35. **Charts are Recharts**, exact-pinned, the only new production
+    dependency. A decimal string becomes a `number` only inside
+    `app/(app)/_charts/**`, for a coordinate; lint exempts that directory
+    and nothing else; the neutrality test still scans it.
+36. **Time series come from `portfolio_snapshots`; period figures are
+    computed by the kernel at request time.** No new tables, no cached
+    returns.
+37. **`lib/calc/benchmark.ts` `seriesReturn(descriptor, market, from, to)`**
+    over the closed `SeriesKind` union, returning `Observed<KDecimal>`, with
+    the two properties named in the plan.
+38. **Maturities read an optional metadata convention:** a kind whose
+    `metadataSchema` has `maturity: IsoDate` is a fixed-income holding.
+    Contracted value at maturity is shown for plain-rate accrual kinds
+    only; indexed kinds say the final amount depends on the index.
+39. **A review gate after Phase 2** (tokens, type, theme, shell, Overview)
+    before the other screens are built.
+40. **Privacy mode is client-only** (`localStorage`, `<Amount>`, `•••`) —
+    confirmed on the condition that the real boundaries stand and are
+    exercised by a Phase 7 journey: RLS, verified cookie sessions, AAL2 for
+    enrolled owners, the service role confined to cron and jobs, value-free
+    logs, decision 51's headers. It is a convenience inside them.
+41. **`packs/br` and `packs/global` become `supported` in Phase 8**, once
+    fixtures are re-recorded within 90 days and conformance is fully green.
+42. **A kernel-neutrality test** scans `app/` and `lib/` source for pack
+    ids, currency codes and locale literals and allows them only in
+    `lib/settings/defaults.ts` (and locale literals in `lib/copy/index.ts`,
+    decision 34).
+43. **Deployment is Vercel Hobby + Supabase free tier** on the maintainer's
+    accounts, by `docs/DEPLOY.md`, performed with the maintainer.
+44. **Performance budgets are measured** on a synthetic five-year,
+    twenty-asset ledger: `runSnapshots` ≥ 50 days/s, every screen read
+    < 500 ms p50 on the local stack; recorded in `docs/performance-budgets.
+    md`; optimisation only where a budget fails.
+45. **The multi-country placeholder is PACKS §16 + decision 42 + the
+    registry-driven form** — no stub pack, no kernel type change.
+46. **Playwright smoke journeys** (`pnpm test:e2e`, a tier like `dbtest`,
+    required by `release:check`): eight journeys plus the decision 40
+    security-boundary journey.
+47. **Styling is plain CSS on the SPEC §10 tokens with CSS Modules; no
+    Tailwind, no shadcn/ui.** ARCHITECTURE §3's *planned* row is reversed.
+48. **Forms stay native `<form action>` with server actions; react-hook-form
+    is not adopted.** ARCHITECTURE §3 amended.
+49. **A typed Supabase client** from `pnpm db:types`: `lib/database.types.
+    ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
+    every factory.
+50. **Prettier is the formatter; CI also runs `test:db`, `pnpm audit
+    --audit-level=high` and coverage thresholds.** React Testing Library is
+    not adopted (pure view models + the journeys).
+51. **Security headers with a nonce-based CSP** set by `proxy.ts`; HSTS in
+    production; `frame-ancestors 'none'`; `Referrer-Policy: no-referrer`.
+52. **Forward migrations this milestone are read views and function bodies
+    only; no new user-data tables.**
 
 ## 5. Second-pack canary (UK)
 
