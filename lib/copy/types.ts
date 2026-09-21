@@ -184,6 +184,21 @@ export interface Copy {
       recordRedemption: string;
       noValueToday: string;
     };
+    /** The asset form (SPEC §9 screen 6): pack → kind → generated metadata fields → currency. */
+    assetForm: {
+      pack: string;
+      kind: string;
+      identifier: string;
+      identifierHint: Record<"ticker" | "isin" | "custom", string>;
+      name: string;
+      nativeCurrency: string;
+      metadata: string;
+      noMetadata: string;
+      optional: string;
+      saving: string;
+      locked: string;
+      packStatus: Record<"draft" | "supported" | "unmaintained", string>;
+    };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {

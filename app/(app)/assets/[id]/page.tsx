@@ -2,11 +2,15 @@ import { notFound } from "next/navigation";
 import { Notice } from "@/app/(app)/_components/notice";
 import { requireUser } from "@/lib/auth/session";
 import { ASSET_SELECT } from "@/lib/ledger/rows";
+import { PACKS } from "@/packs";
+import { currentCopy } from "@/lib/copy/server";
 import { AssetForm } from "../_form";
+import { kindOptions } from "../_kinds";
 import { updateAssetAction } from "../actions";
 
 export default async function EditAssetPage({ params, searchParams }: PageProps<"/assets/[id]">) {
   const { client } = await requireUser();
+  const copy = await currentCopy();
   const { id } = await params;
   const { data } = await client.from("assets").select(ASSET_SELECT).eq("id", id).maybeSingle();
   if (!data) notFound();
@@ -18,17 +22,13 @@ export default async function EditAssetPage({ params, searchParams }: PageProps<
     <main>
       <h1>Edit {asset.identifier}</h1>
       <Notice searchParams={await searchParams} />
-      {locked ? (
-        <p>
-          This asset has transactions: its pack, kind, identifier and currency are locked (name and metadata can
-          change).
-        </p>
-      ) : null}
       <AssetForm
         action={action}
+        kinds={kindOptions(PACKS)}
         values={{ ...asset, metadata: asset.metadata }}
         lockIdentity={locked}
         submitLabel="Save"
+        copy={{ ...copy.screens.assetForm, reasons: copy.reasons }}
       />
     </main>
   );

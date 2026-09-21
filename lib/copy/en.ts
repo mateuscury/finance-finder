@@ -190,6 +190,25 @@ export const en: Copy = {
       recordRedemption: "Record the sell",
       noValueToday: "No value today",
     },
+    assetForm: {
+      pack: "Market pack",
+      kind: "Instrument kind",
+      identifier: "Identifier",
+      identifierHint: {
+        ticker: "The exchange ticker, e.g. HGLG11 or PETR4.",
+        isin: "The 12-character ISIN, e.g. BRPETRACNPR6.",
+        custom: "Any label that is unique among your assets of this kind.",
+      },
+      name: "Name",
+      nativeCurrency: "Native currency",
+      metadata: "Details this kind needs",
+      noMetadata: "This kind needs no details.",
+      optional: "optional",
+      saving: "Saving…",
+      locked:
+        "This asset has transactions: its pack, kind, identifier and currency are locked. Name and details can change.",
+      packStatus: { draft: "draft", supported: "supported", unmaintained: "unmaintained" },
+    },
   },
   errors: {
     title: "Something went wrong",

@@ -197,6 +197,25 @@ export const ptBR: Copy = {
       recordRedemption: "Registrar a venda",
       noValueToday: "Sem valor hoje",
     },
+    assetForm: {
+      pack: "Pacote de mercado",
+      kind: "Tipo de instrumento",
+      identifier: "Identificador",
+      identifierHint: {
+        ticker: "O código na bolsa, ex.: HGLG11 ou PETR4.",
+        isin: "O ISIN de 12 caracteres, ex.: BRPETRACNPR6.",
+        custom: "Qualquer rótulo único entre seus ativos deste tipo.",
+      },
+      name: "Nome",
+      nativeCurrency: "Moeda do ativo",
+      metadata: "Detalhes que este tipo exige",
+      noMetadata: "Este tipo não exige detalhes.",
+      optional: "opcional",
+      saving: "Salvando…",
+      locked:
+        "Este ativo tem transações: pacote, tipo, identificador e moeda estão travados. Nome e detalhes podem mudar.",
+      packStatus: { draft: "rascunho", supported: "suportado", unmaintained: "sem manutenção" },
+    },
   },
   errors: {
     title: "Algo deu errado",

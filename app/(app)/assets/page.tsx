@@ -9,6 +9,7 @@ import { readSettings } from "@/lib/ledger/rows";
 import { requireUser } from "@/lib/auth/session";
 import { listAssets } from "@/lib/ledger/queries";
 import { AssetForm } from "./_form";
+import { kindOptions } from "./_kinds";
 import { createAssetThen, deleteAssetAction, deleteManualPriceAction, setManualPriceAction } from "./actions";
 
 // The create action schedules the price-then-snapshot chain after the response (decision 30).
@@ -100,7 +101,12 @@ export default async function AssetsPage({ searchParams }: PageProps<"/assets">)
         </div>
       )}
       <h2>Add an asset</h2>
-      <AssetForm action={createAssetThen.bind(null, "/assets")} submitLabel="Add asset" />
+      <AssetForm
+        action={createAssetThen.bind(null, "/assets")}
+        kinds={kindOptions(PACKS)}
+        submitLabel="Add asset"
+        copy={{ ...copy.screens.assetForm, reasons: copy.reasons }}
+      />
     </main>
   );
 }

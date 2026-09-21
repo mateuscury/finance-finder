@@ -16,20 +16,6 @@ export function formValues<K extends string>(formData: FormData, names: readonly
   return out;
 }
 
-/** A JSON object from a textarea; empty means `{}`; anything else that is not an object is null. */
-export function metadataFromForm(formData: FormData): Record<string, unknown> | null {
-  const raw = formData.get("metadata");
-  if (typeof raw !== "string" || raw.trim() === "") return {};
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 /** `?saved=1`, or `?error=<reason>&fields=a,b`. */
 export function outcomeQuery(result: ActionResult<unknown>): string {
   if (result.ok) return "?saved=1";

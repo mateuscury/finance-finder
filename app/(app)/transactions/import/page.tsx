@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PACKS } from "@/packs";
 import { AssetForm } from "@/app/(app)/assets/_form";
+import { kindOptions } from "@/app/(app)/assets/_kinds";
 import { createAssetThen } from "@/app/(app)/assets/actions";
 import { requireUser } from "@/lib/auth/session";
 import { CANONICAL_COLUMNS, REQUIRED_COLUMNS } from "@/lib/import";
@@ -104,6 +105,8 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                       {u.registered ? (
                         <AssetForm
                           action={createAssetThen.bind(null, "/transactions/import")}
+                          kinds={kindOptions(PACKS)}
+                          fixedKind
                           values={{
                             pack_id: u.pack_id,
                             instrument_kind: u.instrument_kind,
@@ -112,6 +115,7 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                             native_currency: INSTANCE_DEFAULTS.baseCurrency,
                           }}
                           submitLabel="Create this asset"
+                          copy={{ ...copy.screens.assetForm, reasons: copy.reasons }}
                         />
                       ) : (
                         <p>This instrument kind is not registered in this build; these rows cannot be imported.</p>

@@ -15,45 +15,67 @@ import { requireUser } from "@/lib/auth/session";
 import { priceThenSnapshot } from "@/lib/jobs";
 import { createAsset, deleteAsset, updateAsset } from "@/lib/ledger/assets";
 import { deleteManualPrice, setManualPrice } from "@/lib/ledger/prices";
-import { formValues, metadataFromForm, outcomeQuery } from "@/app/(app)/_lib/form";
+import { fieldsOf, valuesFromForm } from "@/lib/forms/zod-fields";
+import { formValues, outcomeQuery } from "@/app/(app)/_lib/form";
+import type { AssetFormState } from "./_form";
 
 const ASSET_FIELDS = ["pack_id", "instrument_kind", "identifier", "name", "native_currency"] as const;
+
+/** The submitted strings, echoed back so the form re-fills after a failure (the user's own input, never a stored value). */
+function echo(formData: FormData): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of formData.entries()) if (typeof v === "string" && !k.startsWith("$ACTION")) out[k] = v;
+  return out;
+}
+
+/** The metadata object from the form, through the fields the chosen kind's schema declares (decision 55). */
+function metadataFor(formData: FormData): Record<string, unknown> {
+  const packId = String(formData.get("pack_id") ?? "");
+  const kindId = String(formData.get("instrument_kind") ?? "");
+  const kind = PACKS.find((p) => p.id === packId)?.instruments.find((k) => k.id === kindId);
+  return kind ? valuesFromForm(fieldsOf(kind.metadataSchema), formData) : {};
+}
 
 /**
  * Creates an asset and returns to `returnTo` — the assets page, or the CSV
  * import preview, which creates unresolved identifiers the same way and
- * with the same scoped fetch (SPEC §9.4).
+ * with the same scoped fetch (SPEC §9.4). The `useActionState` contract
+ * (decision 55): returns the failure so the form marks its fields inline,
+ * redirects on success.
  */
-export async function createAssetThen(returnTo: "/assets" | "/transactions/import", formData: FormData): Promise<void> {
+export async function createAssetThen(
+  returnTo: "/assets" | "/transactions/import",
+  _prev: AssetFormState,
+  formData: FormData,
+): Promise<AssetFormState> {
   const started = Date.now();
   const { client, identity } = await requireUser();
-  const metadata = metadataFromForm(formData);
-  const result =
-    metadata === null
-      ? ({ ok: false, reason: "invalid_metadata", fields: ["metadata"] } as const)
-      : await createAsset(client, PACKS, identity.userId, { ...formValues(formData, ASSET_FIELDS), metadata });
-  if (result.ok) {
-    const assetId = result.value.id;
-    const spent = Date.now() - started;
-    after(() => priceThenSnapshot({ kind: "assets", assetIds: [assetId] }, [identity.userId], spent));
-    revalidatePath("/assets");
-    revalidatePath("/");
-  }
-  redirect(`${returnTo}${outcomeQuery(result)}`);
+  const result = await createAsset(client, PACKS, identity.userId, {
+    ...formValues(formData, ASSET_FIELDS),
+    metadata: metadataFor(formData),
+  });
+  if (!result.ok) return { ok: false, reason: result.reason, fields: result.fields, values: echo(formData) };
+  const assetId = result.value.id;
+  const spent = Date.now() - started;
+  after(() => priceThenSnapshot({ kind: "assets", assetIds: [assetId] }, [identity.userId], spent));
+  revalidatePath("/assets");
+  revalidatePath("/");
+  redirect(`${returnTo}?saved=1`);
 }
 
-export async function updateAssetAction(assetId: string, formData: FormData): Promise<void> {
+export async function updateAssetAction(
+  assetId: string,
+  _prev: AssetFormState,
+  formData: FormData,
+): Promise<AssetFormState> {
   const { client } = await requireUser();
-  const metadata = metadataFromForm(formData);
-  const result =
-    metadata === null
-      ? ({ ok: false, reason: "invalid_metadata", fields: ["metadata"] } as const)
-      : await updateAsset(client, PACKS, assetId, { ...formValues(formData, ASSET_FIELDS), metadata });
-  if (result.ok) {
-    revalidatePath("/assets");
-    redirect("/assets?saved=1");
-  }
-  redirect(`/assets/${assetId}${outcomeQuery(result)}`);
+  const result = await updateAsset(client, PACKS, assetId, {
+    ...formValues(formData, ASSET_FIELDS),
+    metadata: metadataFor(formData),
+  });
+  if (!result.ok) return { ok: false, reason: result.reason, fields: result.fields, values: echo(formData) };
+  revalidatePath("/assets");
+  redirect("/assets?saved=1");
 }
 
 export async function deleteAssetAction(formData: FormData): Promise<void> {
