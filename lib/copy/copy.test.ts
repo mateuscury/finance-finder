@@ -34,6 +34,8 @@ describe("copy dictionaries (decision 34)", () => {
     expect(a).toContain("2");
     expect(b).toContain("2");
     expect(a).not.toBe(b);
+    expect(en.checkFields({ fields: "quantity, date" })).toBe(" Check: quantity, date.");
+    expect(ptBR.checkFields({ fields: "quantity, date" })).toBe(" Verifique: quantity, date.");
   });
 
   it("copyFor matches a shipped locale exactly and falls back to English", () => {

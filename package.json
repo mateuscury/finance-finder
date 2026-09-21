@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:calc": "vitest run lib/calc",
     "test:packs": "vitest run packs",
+    "test:coverage": "vitest run --coverage",
     "test:db": "vitest run --config vitest.db.config.mts",
     "test:e2e": "playwright test",
     "codeowners": "tsx scripts/generate-codeowners.ts",

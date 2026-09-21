@@ -66,6 +66,15 @@ describe("xirr", () => {
     });
     expect(xirr([flow("2026-01-01", "-100")])).toEqual({ status: "null", reason: "insufficient_flows" });
     expect(xirr([])).toEqual({ status: "null", reason: "insufficient_flows" });
+    // Every flow on one date: the NPV is a constant; a zero constant is not a rate.
+    expect(xirr([flow("2026-01-01", "-100"), flow("2026-01-01", "100")])).toEqual({
+      status: "null",
+      reason: "insufficient_flows",
+    });
+    expect(xirr([flow("2026-01-01", "-100"), flow("2026-01-01", "90")])).toEqual({
+      status: "null",
+      reason: "insufficient_flows",
+    });
   });
 
   it("is null with no_root when NPV never changes sign", () => {
@@ -81,17 +90,22 @@ describe("xirr", () => {
   const days = fc.integer({ min: 90, max: 3650 });
   const start = fc.integer({ min: 0, max: 3000 }).map((n) => addDays("2020-01-01", n));
 
-  it("property: deposit D and terminal V after n days solve to (V/D)^(365/n) − 1 within 1e-12", () => {
-    fc.assert(
-      fc.property(amount, ratio, days, start, (d, k, n, d0) => {
-        const v = d.times(k);
-        const r = xirr([flow(d0, d.negated().toFixed()), flow(addDays(d0, n), v.toFixed())]);
-        if (r.status !== "ok") throw new Error(r.reason);
-        const closed = k.pow(new KernelDecimal(365).div(n)).minus(1);
-        expect(r.rate.minus(closed).abs().lt("1e-12")).toBe(true);
-      }),
-    );
-  });
+  // 40-digit Newton/bisection × 100 runs: seconds under coverage instrumentation with workers contending.
+  it(
+    "property: deposit D and terminal V after n days solve to (V/D)^(365/n) − 1 within 1e-12",
+    { timeout: 60_000 },
+    () => {
+      fc.assert(
+        fc.property(amount, ratio, days, start, (d, k, n, d0) => {
+          const v = d.times(k);
+          const r = xirr([flow(d0, d.negated().toFixed()), flow(addDays(d0, n), v.toFixed())]);
+          if (r.status !== "ok") throw new Error(r.reason);
+          const closed = k.pow(new KernelDecimal(365).div(n)).minus(1);
+          expect(r.rate.minus(closed).abs().lt("1e-12")).toBe(true);
+        }),
+      );
+    },
+  );
 
   const stream = fc
     .tuple(

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { compareGolden, GoldenFixtureSchema } from "./golden";
+import { PACKS } from "@/packs";
+import { compareGolden, GoldenFixtureSchema, runGolden } from "./golden";
+import { isKernelError } from "./errors";
 
 describe("compareGolden", () => {
   it("compares decimal strings within the tolerance and everything else by equality", () => {
@@ -75,5 +77,63 @@ describe("GoldenFixtureSchema", () => {
       false,
     );
     expect(GoldenFixtureSchema.safeParse({ ...minimal, series: { cdi: [] } }).success).toBe(false);
+  });
+});
+
+describe("runGolden refuses a fixture that does not fit the packs it is given", () => {
+  const base = {
+    baseCurrency: "BRL",
+    asOf: "2026-02-13",
+    valuationDates: ["2026-02-13"],
+    assets: [
+      { id: "x", instrumentKind: "br.fii", identifier: "HGLG11", nativeCurrency: "BRL", metadata: { fundName: "x" } },
+    ],
+    transactions: [
+      {
+        id: "t1",
+        assetId: "x",
+        tradeDate: "2026-02-02",
+        type: "buy",
+        quantity: "1",
+        unitPrice: "100",
+        currency: "BRL",
+        fees: "0",
+      },
+    ],
+    cashFlows: [{ id: "c1", date: "2026-02-02", amount: "100", currency: "BRL" }],
+    prices: { HGLG11: [{ date: "2026-02-13", price: "101", currency: "BRL" }] },
+    series: {},
+  };
+  const parse = (over: Record<string, unknown>) => GoldenFixtureSchema.parse({ ...base, ...over });
+  const codeOf = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      if (isKernelError(e)) return e.code;
+      throw e;
+    }
+    return "no throw";
+  };
+
+  it("names an unknown pack, an unknown kind, orphan prices and a non-base cash flow as contract violations", () => {
+    expect(codeOf(() => runGolden(parse({ assets: [{ ...base.assets[0], instrumentKind: "zz.fii" }] }), PACKS))).toBe(
+      "invalid_input",
+    );
+    expect(codeOf(() => runGolden(parse({ assets: [{ ...base.assets[0], instrumentKind: "br.nope" }] }), PACKS))).toBe(
+      "invalid_input",
+    );
+    expect(codeOf(() => runGolden(parse({ prices: { ...base.prices, ZZZZ11: base.prices.HGLG11 } }), PACKS))).toBe(
+      "invalid_input",
+    );
+    expect(codeOf(() => runGolden(parse({ cashFlows: [{ ...base.cashFlows[0], currency: "USD" }] }), PACKS))).toBe(
+      "currency_mismatch",
+    );
+  });
+
+  it("runs a one-asset, one-date fixture: MWR is null over a zero-length window, contribution present", () => {
+    const out = runGolden(parse({}), PACKS);
+    expect(out.valuation.total).toBe("101");
+    expect(out.mwr).toBeNull();
+    expect(out.contribution.assets).toHaveProperty("x");
   });
 });

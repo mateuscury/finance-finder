@@ -8,7 +8,9 @@
  * when Newton leaves (−0.999999, 1e6), meets a flat derivative or does not
  * converge, over a bracket found by scanning [−0.999999, 10] for a sign
  * change. No sign change → null with `no_root`. A stream without at least one
- * negative and one positive amount → null with `insufficient_flows`. The rate
+ * negative and one positive amount, or whose flows all fall on ONE date (no
+ * time to discount across — the NPV is then a constant, and a constant zero
+ * would make every rate a root) → null with `insufficient_flows`. The rate
  * is annualised even for periods under a year, as XIRR is.
  *
  * `mwr` builds the stream from a valuation window: −startValue at `from` when
@@ -129,6 +131,10 @@ export function xirr(stream: readonly XirrFlow[]): XirrResult {
     return { status: "null", reason: "insufficient_flows" };
   }
   const origin = stream.reduce((min, f) => (compareDates(f.date, min) < 0 ? f.date : min), stream[0].date);
+  // Every flow on one date: t = 0 throughout, so NPV does not depend on the
+  // rate at all. A zero sum would otherwise return the bracket's first grid
+  // point as if it were the answer.
+  if (stream.every((f) => f.date === origin)) return { status: "null", reason: "insufficient_flows" };
   const flows: Timed[] = stream.map((f) => ({
     amount: f.amount,
     years: new KernelDecimal(daysBetween(origin, f.date)).div(365),

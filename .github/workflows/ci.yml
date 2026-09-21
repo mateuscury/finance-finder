@@ -25,7 +25,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
-      - run: pnpm test
+      - name: Unit tests with coverage floors (MILESTONES.md §4 decision 50)
+        run: pnpm test:coverage
       - name: Pack conformance (PACKS.md §11)
         run: pnpm test:packs
       - name: CODEOWNERS is generated from manifests (PACKS.md §12)

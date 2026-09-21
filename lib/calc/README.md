@@ -133,7 +133,7 @@ and never looks up a price itself.
   `|Δr| < 1e-20`), bisection to a `1e-30` bracket over a sign change scanned
   in `[−0.999999, 10]` when Newton leaves `(−0.999999, 1e6)`, meets a flat
   derivative or fails to converge. `null` with `insufficient_flows` (no
-  negative and positive amount) or `no_root`. The guarantee is that the root
+  negative and positive amount, or every flow on one date) or `no_root`. The guarantee is that the root
   lies within ±1e-12 of the rate — an absolute NPV bound is meaningless near
   a total loss, where `|NPV′|` exceeds 1e21. `mwr({ from, to, startValue,
 flows, endValue })` builds the stream: `−startValue` when positive, flows

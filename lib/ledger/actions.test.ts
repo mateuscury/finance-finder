@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { createAsset, deleteAsset, normalizeIdentifier, prepareAsset, updateAsset } from "./assets";
-import { createCashFlow } from "./cashFlows";
+import { createCashFlow, deleteCashFlow, updateCashFlow } from "./cashFlows";
 import { fakeClient } from "@/lib/testing/fake-client";
-import { setManualPrice } from "./prices";
+import { deleteManualPrice, setManualPrice } from "./prices";
 import { reasonFor } from "./result";
 import { changeBaseCurrency } from "./settings";
 import { createTransaction, deleteTransaction, updateTransaction } from "./transactions";
@@ -158,6 +158,61 @@ describe("transaction, cash-flow, price and base-currency actions", () => {
       value: { id: "c1" },
     });
     expect(c.calls[0].payload).toMatchObject({ user_id: U, currency: "BRL", amount: "1000" });
+  });
+
+  it("updateCashFlow and deleteCashFlow report not_found when nothing was affected, and validate first", async () => {
+    const hit = fakeClient({ cash_flows: { update: { data: [{ id: "c1" }] }, delete: { data: [{ id: "c1" }] } } });
+    expect(await updateCashFlow(hit.client, "c1", "BRL", { date: "2026-02-02", amount: "-50" })).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(hit.calls[0]).toMatchObject({
+      op: "update",
+      payload: { currency: "BRL", amount: "-50" },
+      filters: [["id", "eq", "c1"]],
+    });
+    expect(await deleteCashFlow(hit.client, "c1")).toEqual({ ok: true, value: undefined });
+
+    const none = fakeClient({ cash_flows: { update: { data: [] }, delete: { data: [] } } });
+    expect(await updateCashFlow(none.client, "c1", "BRL", { date: "2026-02-02", amount: "-50" })).toEqual({
+      ok: false,
+      reason: "not_found",
+    });
+    expect(await deleteCashFlow(none.client, "c1")).toEqual({ ok: false, reason: "not_found" });
+    // A zero amount is refused before any database call (AC-004.5).
+    const zero = await updateCashFlow(none.client, "c1", "BRL", { date: "2026-02-02", amount: "0" });
+    expect(zero).toMatchObject({ ok: false, reason: "invalid_input" });
+    expect(none.calls).toHaveLength(2);
+  });
+
+  it("setManualPrice refuses an unknown asset and a bad price before writing; deleteManualPrice deletes only manual rows", async () => {
+    const unknown = fakeClient({ assets: { select: { data: null } } });
+    expect(await setManualPrice(unknown.client, { asset_id: A, date: "2026-02-20", price: "155.5" })).toEqual({
+      ok: false,
+      reason: "not_found",
+      fields: ["asset_id"],
+    });
+    expect(unknown.calls.some((c) => c.table === "prices")).toBe(false);
+    expect(await setManualPrice(unknown.client, { asset_id: A, date: "2026-02-20", price: "-1" })).toMatchObject({
+      ok: false,
+      reason: "invalid_input",
+    });
+
+    const refused = fakeClient({
+      assets: { select: { data: { native_currency: "BRL" } } },
+      prices: { upsert: { error: { code: "23514" } } },
+    });
+    expect(await setManualPrice(refused.client, { asset_id: A, date: "2026-02-20", price: "155.5" })).toMatchObject({
+      ok: false,
+    });
+
+    const del = fakeClient({ prices: { delete: { data: [{ date: "2026-02-20" }] } } });
+    expect(await deleteManualPrice(del.client, A, "2026-02-20")).toEqual({ ok: true, value: undefined });
+    expect(del.calls[0].filters).toEqual([
+      ["asset_id", "eq", A],
+      ["date", "eq", "2026-02-20"],
+      ["source_id", "eq", "manual"],
+    ]);
   });
 
   it("setManualPrice upserts source_id = 'manual' in the asset's native currency", async () => {

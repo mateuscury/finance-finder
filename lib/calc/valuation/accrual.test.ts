@@ -156,6 +156,28 @@ describe("index_plus_spread", () => {
     });
   });
 
+  it("is stale with the last known level beyond the flat window, and unpriced on a zero start level", () => {
+    const a = asset("cdb", ipcaPlus, { rate: "0.06" });
+    // 62 days flat after the 28 Feb anchor, then stale (inflation.ts); the end leg's status wins.
+    const stale = valueAccrual(a, [lot("2026-02-02", "1", "10000")], "2026-06-30", br);
+    expect(stale.status).toBe("stale");
+    if (stale.status === "stale") expect(stale.lastKnown.amount.gt(0)).toBe(true);
+
+    // A lot opened ON an anchor whose level is zero: the ratio is undefined, never Infinity.
+    const zeroStart = buildMarketData([], [pt("br.ipca", "2026-01-31", "0"), pt("br.ipca", "2026-02-28", "101")]);
+    expect(valueAccrual(a, [lot("2026-01-31", "1", "10000")], "2026-02-13", { ...br, market: zeroStart })).toEqual({
+      status: "unpriced",
+      reason: "no_observation",
+    });
+  });
+
+  it("refuses an asset whose strategy is not accrual", () => {
+    const wrong = asset("fii", kind("zz.fii", { kind: "market_price", sourceId: "zz.src" }));
+    expect(() => valueAccrual(wrong, [lot("2026-02-02", "1", "10")], "2026-02-13", br)).toThrow(
+      expect.objectContaining({ code: "invalid_input" }),
+    );
+  });
+
   it("accepts an index_level series, carried forward within the window", () => {
     const ibovPlus = accrual({
       dayCount: "BUS/252",

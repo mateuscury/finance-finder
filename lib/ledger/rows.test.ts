@@ -109,3 +109,112 @@ describe("readLedger price modes (Milestone 4 D-13)", () => {
     ]);
   });
 });
+
+describe("readLedger under the service role (userId given)", () => {
+  const settings = {
+    base_currency: "BRL",
+    enabled_packs: ["br"],
+    locale: "pt-BR",
+    theme: "system",
+    last_export_at: null,
+    csv_column_map: null,
+  };
+  const empty = { data: [], error: null };
+
+  it("filters every user table by the id, prices by the user's asset ids in chunks, and series from the lookback", async () => {
+    const assets = Array.from({ length: 150 }, (_, i) => ({
+      id: `a${i}`,
+      pack_id: "br",
+      instrument_kind: "br.fii",
+      identifier: `T${i}`,
+      name: `T${i}`,
+      native_currency: "BRL",
+      metadata: {},
+    }));
+    const { client, calls } = fakeClient({
+      user_settings: { select: { data: settings } },
+      assets: { select: { data: assets } },
+      transactions: {
+        select: {
+          data: [
+            {
+              id: "t1",
+              asset_id: "a0",
+              trade_date: "2026-02-02",
+              type: "buy",
+              quantity: "1",
+              unit_price: "1",
+              currency: "BRL",
+              fees: "0",
+              fx_rate: null,
+            },
+          ],
+        },
+      },
+      cash_flows: { select: empty },
+      prices: { select: empty },
+      series_points: { select: empty },
+    });
+    const read = await readLedger(client, PACKS, { userId: "u1" });
+    for (const table of ["user_settings", "assets", "transactions", "cash_flows"]) {
+      expect(calls.find((c) => c.table === table)!.filters, table).toContainEqual(["user_id", "eq", "u1"]);
+    }
+    // 150 asset ids → two chunks of at most 100.
+    const priceReads = calls.filter((c) => c.table === "prices");
+    expect(priceReads.map((c) => (c.filters[0][2] as string[]).length)).toEqual([100, 50]);
+    // Series from the earliest trade less the lookback, for the packs in scope.
+    const series = calls.find((c) => c.table === "series_points")!;
+    expect(series.filters).toContainEqual(["date", "gte", "2025-12-02"]);
+    expect(read.packs.map((p) => p.id).sort()).toEqual(["br", "global"]);
+    expect(read.assets).toHaveLength(150);
+  });
+
+  it("falls back to the instance defaults when the account has no settings row, and reads no series without a trade", async () => {
+    const { client, calls } = fakeClient({
+      user_settings: { select: { data: null } },
+      assets: { select: empty },
+      transactions: { select: empty },
+      cash_flows: { select: empty },
+      prices: { select: empty },
+    });
+    const read = await readLedger(client, PACKS);
+    expect(read.settings.base_currency).toBe("BRL");
+    expect(calls.some((c) => c.table === "series_points")).toBe(false);
+    expect(read.series).toEqual([]);
+  });
+
+  it("throws a code-only message when the settings read fails", async () => {
+    const { client } = fakeClient({
+      user_settings: { select: { error: { code: "42501", message: "permission denied for table user_settings" } } },
+    });
+    await expect(readLedger(client, PACKS)).rejects.toThrow(/^ledger: settings \(42501\)$/);
+  });
+
+  it("keeps an unregistered kind as unresolved rather than dropping the asset (decision 4)", () => {
+    const { assets, unresolved } = resolveAssets(
+      [
+        {
+          id: "a",
+          pack_id: "br",
+          instrument_kind: "br.fii",
+          identifier: "HGLG11",
+          name: "x",
+          native_currency: "BRL",
+          metadata: {},
+        },
+        {
+          id: "b",
+          pack_id: "xx",
+          instrument_kind: "xx.thing",
+          identifier: "?",
+          name: "y",
+          native_currency: "BRL",
+          metadata: {},
+        },
+      ],
+      PACKS,
+    );
+    expect(assets.map((a) => a.id)).toEqual(["a"]);
+    expect(unresolved).toEqual([{ id: "b", packId: "xx", instrumentKind: "xx.thing", identifier: "?", name: "y" }]);
+  });
+});

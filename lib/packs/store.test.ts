@@ -136,9 +136,45 @@ describe("createIngestStore — earliestTradeDates", () => {
     expect(out).toEqual({ HGLG11: "2025-02-03", KNRI11: "2026-01-01" });
   });
 
+  it("skips a transaction whose embedded asset is missing rather than keying it under undefined", async () => {
+    const { client } = fakeClient({
+      transactions: [
+        { trade_date: "2026-05-01", assets: null },
+        { trade_date: "2026-01-01", assets: [] },
+        { trade_date: "2026-03-01", assets: { identifier: "HGLG11" } },
+      ],
+    });
+    expect(await createIngestStore(client).earliestTradeDates(["HGLG11"])).toEqual({ HGLG11: "2026-03-01" });
+  });
+
   it("returns nothing for an empty identifier list without querying", async () => {
     const { client, ranges } = fakeClient({ transactions: [] });
     expect(await createIngestStore(client).earliestTradeDates([])).toEqual({});
     expect(ranges.transactions).toBeUndefined();
+  });
+});
+
+describe("createIngestStore — settings and the commit RPC", () => {
+  it("listEnabledPacks reads one page of user_settings and treats a null array as empty", async () => {
+    const { client } = fakeClient({ user_settings: [{ enabled_packs: ["br"] }, { enabled_packs: null }] });
+    expect(await createIngestStore(client).listEnabledPacks(0, 10)).toEqual([["br"], []]);
+  });
+
+  it("commitChunk returns the RPC's counts and reports a failure by code only", async () => {
+    const payload = {
+      sourceId: "br.brapi",
+      runAt: "2026-09-21T00:00:00Z",
+      points: [],
+      watermarks: [],
+      cursor: { lastError: null },
+    };
+    const okClient = { rpc: async () => ({ data: { written: 3 }, error: null }) } as unknown as Db;
+    expect(await createIngestStore(okClient).commitChunk(payload as never)).toEqual({ written: 3 });
+    const failing = {
+      rpc: async () => ({ data: null, error: { code: "P0001", message: "postgres://user:pw@host" } }),
+    } as unknown as Db;
+    await expect(createIngestStore(failing).commitChunk(payload as never)).rejects.toThrow(
+      /^store: commit failed \(P0001\)$/,
+    );
   });
 });

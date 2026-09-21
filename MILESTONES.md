@@ -532,6 +532,31 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
 52. **Forward migrations this milestone are read views and function bodies
     only; no new user-data tables.**
 
+### Contract corrections found while implementing
+
+1. **XIRR over a single-date stream returned the bracket's first grid point
+   as a rate.** Every flow on one date makes the NPV a constant; a zero
+   constant made `bisection` return −0.999999 as "the" root. Found while
+   testing `runGolden` on a one-date fixture (Phase 1, coverage work).
+   `xirr` now returns `insufficient_flows` when every flow shares a date;
+   documented in `lib/calc/mwr.ts` and the README.
+
+### Advisories recorded
+
+- **P1-U8, coverage floors.** `lib/calc` branches measured 93.6 % against
+  the 95 % target after the Phase 1 tests; the floor is 92. The uncovered
+  branches are contract-violation throws and null legs in `golden.ts`,
+  `contribution.ts`, `fx.ts` and `mwr.ts`. Every other module group is
+  above 85 % branches and 90 % on the other metrics. Vitest's `autoUpdate`
+  was tried and rejected: it ratchets to a high-water mark that the
+  property tests' random exploration does not reproduce, a flake by
+  construction. Floors are raised by hand.
+- **P1-U8, property timeout under coverage.** `mwr.test.ts` "deposit D and
+  terminal V … within 1e-12" — a hundred 40-digit Newton/bisection solves —
+  exceeded vitest's 5 s default in two of nine coverage runs (5.24 s
+  observed) with 61 workers contending; never a counterexample. It now
+  carries the 60 s budget its sibling property already had.
+
 ## 5. Second-pack canary (UK)
 
 - Add the minimal UK pack required by `PACKS.md` §14 — one instrument kind
