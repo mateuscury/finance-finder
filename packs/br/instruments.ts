@@ -48,6 +48,19 @@ const FiiMetadata = z.object({
   segment: z.string().optional(),
 });
 
+/**
+ * Ações, ETFs and BDRs listed on B3 (MILESTONES.md §4 decision 33): one
+ * `market_price` kind, because brapi serves every listed symbol through the
+ * same quote endpoint and the kernel does not care what the underlying is.
+ * A BDR is quoted in BRL over a foreign underlying, so the naive
+ * decomposition reports zero FX attribution for it — the SPEC §11 known gap,
+ * stated in the README and on the Contribution screen, not solved here.
+ */
+const StockMetadata = z.object({
+  /** Company, fund or programme name as B3 lists it. */
+  name: z.string().min(1),
+});
+
 export const brInstruments: InstrumentKind[] = [
   {
     id: "br.tesouro_direto",
@@ -124,6 +137,14 @@ export const brInstruments: InstrumentKind[] = [
     label: "Fundo Imobiliário (FII)",
     valuation: { kind: "market_price", sourceId: "br.brapi" },
     metadataSchema: FiiMetadata,
+    identifier: "ticker",
+    quoteCurrency: "BRL",
+  },
+  {
+    id: "br.stock",
+    label: "Ação / ETF / BDR (B3)",
+    valuation: { kind: "market_price", sourceId: "br.brapi" },
+    metadataSchema: StockMetadata,
     identifier: "ticker",
     quoteCurrency: "BRL",
   },

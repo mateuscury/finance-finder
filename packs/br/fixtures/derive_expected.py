@@ -105,6 +105,7 @@ kinds = {
     "br.lci_lca": ("accrual", ("percent_of_index", "br.cdi")),
     "br.cdb_prefixado": ("accrual", ("plain", None)),
     "br.cdb_ipca": ("accrual", ("index_plus_spread", "br.ipca")),
+    "br.stock": ("market", None),
 }
 prices = {ident: {parse(p["date"]): D(p["price"]) for p in rows} for ident, rows in fixture["prices"].items()}
 series = {sid: {parse(p["date"]): D(p["value"]) for p in rows} for sid, rows in fixture["series"].items()}

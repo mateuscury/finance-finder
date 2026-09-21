@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "recordedAt": "2026-09-06T22:12:34.858Z",
+  "recordedAt": "2026-09-21T10:25:08.041Z",
   "cases": [
     {
       "input": {
@@ -15,7 +15,7 @@
         {
           "request": {
             "method": "GET",
-            "url": "https://brapi.dev/api/quote/HGLG11?range=5d&interval=1d",
+            "url": "https://brapi.dev/api/quote/HGLG11?range=1mo&interval=1d",
             "headers": {
               "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
               "accept": "application/json",
@@ -33,7 +33,7 @@
         {
           "request": {
             "method": "GET",
-            "url": "https://brapi.dev/api/quote/HGLG11?range=5d&interval=1d",
+            "url": "https://brapi.dev/api/quote/HGLG11?range=1mo&interval=1d",
             "headers": {
               "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
               "accept": "application/json",
@@ -51,7 +51,7 @@
         {
           "request": {
             "method": "GET",
-            "url": "https://brapi.dev/api/quote/HGLG11?range=5d&interval=1d",
+            "url": "https://brapi.dev/api/quote/HGLG11?range=1mo&interval=1d",
             "headers": {
               "authorization": "Bearer <REDACTED:BRAPI_TOKEN>",
               "accept": "application/json",

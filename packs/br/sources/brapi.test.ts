@@ -141,6 +141,14 @@ describe("brapi adapter", () => {
     expect(fii.points[0].currency).toBe("BRL");
   });
 
+  it("serves an equity ticker through the same quote path as a FII (br.stock)", async () => {
+    const { context, seen } = ctx((url) => ({ status: 200, body: quoteBody(url.includes("PETR4") ? "PETR4" : "HGLG11") }));
+    const res = await fetchBrapi({ capability: "spot", refs: ["PETR4"] }, context);
+    expect(seen[0].url).toBe("https://brapi.dev/api/quote/PETR4");
+    expect(res.points).toEqual([{ ref: "PETR4", date: "2026-09-04", value: "148.3", currency: "BRL" }]);
+    expect(res.warnings).toEqual([]);
+  });
+
   it("enforces the requested window itself, since the API will not", async () => {
     const { context } = ctx(() => ({
       status: 200,

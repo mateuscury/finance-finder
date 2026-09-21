@@ -23,6 +23,7 @@ async function newUser(): Promise<ThrowawayUserHandle> {
   return u;
 }
 const { fixture } = loadGoldenFixture();
+const T = fixture.transactions.length;
 beforeAll(async () => {
   await assertStackReachable(admin);
 });
@@ -63,7 +64,7 @@ describe("settings", () => {
     const known = await readAll<KnownAsset>((from, to) => client.from("assets").select("id,pack_id,instrument_kind,identifier,native_currency").order("id").range(from, to));
     const existing = await readAll<KnownTransaction>((from, to) => client.from("transactions").select("asset_id,trade_date,type,quantity::text,unit_price::text").order("id").range(from, to));
     const run = dryRun(csv.header, csv.rows, {}, known, existing, PACKS);
-    expect(run.ok && run.counts).toMatchObject({ total: 9, valid: 9, errors: 0, unresolved: 0, duplicates: 9 });
+    expect(run.ok && run.counts).toMatchObject({ total: T, valid: T, errors: 0, unresolved: 0, duplicates: T });
   });
 
   it("delete everything cascades from auth.users and leaves market data alone", async () => {

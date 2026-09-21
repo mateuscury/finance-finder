@@ -86,6 +86,8 @@ export const FIXTURE_CATALOG: SourceCatalog[] = [
     success: [
       { note: "spot: a liquid, non-sandbox FII", input: { capability: "spot", refs: ["HGLG11"] } },
       { note: "historical: the same FII over a recent window inside the free plan's 3mo cap", input: { capability: "historical", refs: ["HGLG11"], from: "2026-09-01", to: "2026-09-04" } },
+      { note: "spot: an equity ticker — the br.stock kind (MILESTONES §4 decision 33)", input: { capability: "spot", refs: ["PETR4"] } },
+      { note: "historical: the same equity over the same window", input: { capability: "historical", refs: ["PETR4"], from: "2026-09-01", to: "2026-09-04" } },
       { note: "series: both index symbols, ^BVSP and IFIX.SA", input: { capability: "series", refs: ["br.ibovespa", "br.ifix"], from: "2026-09-01", to: "2026-09-04" } },
     ],
     empty: [

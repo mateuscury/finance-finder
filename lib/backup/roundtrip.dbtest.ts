@@ -35,6 +35,13 @@ afterAll(async () => {
 });
 
 const { fixture, expected } = loadGoldenFixture();
+/** The golden's own counts, so the fixture may grow without editing every assertion. */
+const N = {
+  assets: fixture.assets.length,
+  transactions: fixture.transactions.length,
+  cashFlows: fixture.cashFlows.length,
+  prices: Object.values(fixture.prices).reduce((n, rows) => n + rows.length, 0),
+};
 
 async function exportBackup(client: SupabaseClient): Promise<Backup> {
   const { data, error } = await client.rpc("export_backup");
@@ -100,11 +107,16 @@ describe("export → delete → restore → export", () => {
     const { uuidOf, goldenIdOf } = await seedGoldenPortfolio(admin, first.userId, fixture);
 
     const exportA = await exportBackup(await first.signIn());
-    expect(exportA.assets).toHaveLength(6);
-    expect(exportA.transactions).toHaveLength(9);
-    expect(exportA.cash_flows).toHaveLength(4);
-    expect(exportA.prices).toHaveLength(11);
-    expect(exportA.prices.map((p) => p.source_id).sort()).toEqual([...new Array(5).fill("br.brapi"), ...new Array(6).fill("br.tesouro_transparente")]);
+    expect(exportA.assets).toHaveLength(N.assets);
+    expect(exportA.transactions).toHaveLength(N.transactions);
+    expect(exportA.cash_flows).toHaveLength(N.cashFlows);
+    expect(exportA.prices).toHaveLength(N.prices);
+    // Every price row keeps its provenance (decision 3): the export's source ids are the fixture's.
+    expect(exportA.prices.map((p) => p.source_id).sort()).toEqual(
+      Object.values(fixture.prices)
+        .flatMap((rows) => rows.map((r) => r.sourceId))
+        .sort(),
+    );
     // Text, never a float, on the way out.
     for (const t of exportA.transactions) expect(typeof t.quantity).toBe("string");
     expect(JSON.stringify(exportA)).not.toContain("user_id");
@@ -119,9 +131,9 @@ describe("export → delete → restore → export", () => {
     const clientB = await second.signIn();
     const restored = await clientB.rpc("restore_backup", { payload: exportA });
     expect(restored.error).toBeNull();
-    expect(restored.data).toEqual({ assets: 6, transactions: 9, cash_flows: 4, prices: 11 });
+    expect(restored.data).toEqual({ assets: N.assets, transactions: N.transactions, cash_flows: N.cashFlows, prices: N.prices });
     // Ids preserved, ownership rewritten.
-    expect(await countFor("assets", second.userId)).toBe(6);
+    expect(await countFor("assets", second.userId)).toBe(N.assets);
     expect(await countFor("assets", first.userId)).toBe(0);
 
     const exportB = await exportBackup(clientB);
@@ -134,7 +146,7 @@ describe("export → delete → restore → export", () => {
     // Refusal: the account is no longer empty.
     const again = await clientB.rpc("restore_backup", { payload: exportA });
     expect(again.error?.message).toMatch(/restore_refused: account_not_empty/);
-    expect(await countFor("assets", second.userId)).toBe(6);
+    expect(await countFor("assets", second.userId)).toBe(N.assets);
   });
 
   it("refuses a file that names another user's asset ids, and writes nothing", async () => {
@@ -164,8 +176,8 @@ describe("export → delete → restore → export", () => {
       expect(await countFor(table, intruder.userId), `${table} was written`).toBe(0);
     }
     // The owner's rows are untouched, including the prices the intruder named.
-    expect(await countPrices([...uuidOf.values()])).toBe(11);
-    expect(await countFor("assets", owner.userId)).toBe(6);
+    expect(await countPrices([...uuidOf.values()])).toBe(N.prices);
+    expect(await countFor("assets", owner.userId)).toBe(N.assets);
   });
 
   it("the service role cannot call either RPC: an export or a restore is always a user's own act", async () => {

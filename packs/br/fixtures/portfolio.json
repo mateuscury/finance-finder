@@ -1,5 +1,5 @@
 {
-  "$comment": "PACKS.md §11.5 golden portfolio for packs/br. One asset per instrument kind; nine transactions including one sell and one dividend; four external cash flows (each purchase day's deposit and the sale's withdrawal — there is no cash ledger, so an unfunded buy would read as a gain); six valuation dates spanning Carnival 2026 (Sat 14 – Tue 17 Feb); the FII price is deliberately missing on 2026-02-19 to exercise carry-forward. Derived by hand in derive_expected.py into expected.json — never adjusted to match kernel output.",
+  "$comment": "PACKS.md §11.5 golden portfolio for packs/br. One asset per instrument kind (seven since br.stock, Milestone 4 decision 33); ten transactions including one sell and one dividend; five external cash flows (each purchase day's deposit and the sale's withdrawal — there is no cash ledger, so an unfunded buy would read as a gain); six valuation dates spanning Carnival 2026 (Sat 14 – Tue 17 Feb); the FII price is deliberately missing on 2026-02-19 to exercise carry-forward. Derived by hand in derive_expected.py into expected.json — never adjusted to match kernel output. Prices and series are fixture data chosen to be plausible, not market records.",
   "baseCurrency": "BRL",
   "asOf": "2026-02-27",
   "valuationDates": [
@@ -72,6 +72,15 @@
         "issuer": "Banco W",
         "rate": "0.06",
         "maturity": "2029-02-02"
+      }
+    },
+    {
+      "id": "stk",
+      "instrumentKind": "br.stock",
+      "identifier": "PETR4",
+      "nativeCurrency": "BRL",
+      "metadata": {
+        "name": "Petrobras PN"
       }
     }
   ],
@@ -165,6 +174,16 @@
       "unitPrice": "155",
       "currency": "BRL",
       "fees": "1.50"
+    },
+    {
+      "id": "t10",
+      "assetId": "stk",
+      "tradeDate": "2026-02-10",
+      "type": "buy",
+      "quantity": "100",
+      "unitPrice": "38.20",
+      "currency": "BRL",
+      "fees": "4.90"
     }
   ],
   "cashFlows": [
@@ -190,6 +209,12 @@
       "id": "c4",
       "date": "2026-02-18",
       "amount": "-4648.50",
+      "currency": "BRL"
+    },
+    {
+      "id": "c5",
+      "date": "2026-02-10",
+      "amount": "3824.90",
       "currency": "BRL"
     }
   ],
@@ -262,6 +287,44 @@
         "price": "15080.00",
         "currency": "BRL",
         "sourceId": "br.tesouro_transparente"
+      }
+    ],
+    "PETR4": [
+      {
+        "date": "2026-02-10",
+        "price": "38.20",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-12",
+        "price": "38.75",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-13",
+        "price": "38.40",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-18",
+        "price": "39.10",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-19",
+        "price": "39.05",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
+      },
+      {
+        "date": "2026-02-27",
+        "price": "39.60",
+        "currency": "BRL",
+        "sourceId": "br.brapi"
       }
     ]
   },

@@ -25,6 +25,8 @@ async function newUser(): Promise<ThrowawayUserHandle> {
   return u;
 }
 const { fixture } = loadGoldenFixture();
+/** The golden's transaction count: the CSV under test is the golden ledger itself. */
+const T = fixture.transactions.length;
 beforeAll(async () => {
   await assertStackReachable(admin);
 });
@@ -58,7 +60,7 @@ describe("CSV import on the live path", () => {
     const same = await loadDryRun(client, PACKS);
     expect(same.kind).toBe("preview");
     if (same.kind !== "preview" || !same.run.ok) throw new Error("no preview");
-    expect(same.run.counts).toMatchObject({ total: 9, valid: 9, errors: 0, unresolved: 0, duplicates: 9 });
+    expect(same.run.counts).toMatchObject({ total: T, valid: T, errors: 0, unresolved: 0, duplicates: T });
     expect(planCommit(same.run, same.run.previewHash, new Set())).toEqual({ ok: false, reason: "nothing_to_import" });
 
     // Two new rows and one repeat: the plan holds exactly two, the insert is one statement.
@@ -69,11 +71,11 @@ describe("CSV import on the live path", () => {
     expect((await client.from("csv_imports").upsert({ user_id: owner.userId, filename: "march.csv", content }, { onConflict: "user_id" })).error).toBeNull();
     const loaded = await loadDryRun(client, PACKS);
     if (loaded.kind !== "preview" || !loaded.run.ok) throw new Error("no preview");
-    expect(loaded.run.counts).toMatchObject({ total: 11, duplicates: 9, unresolved: 0, errors: 0 });
+    expect(loaded.run.counts).toMatchObject({ total: T + 2, duplicates: T, unresolved: 0, errors: 0 });
     const plan = planCommit(loaded.run, loaded.run.previewHash, new Set());
     if (!plan.ok) throw new Error(plan.reason);
     expect(plan.rows).toHaveLength(2);
-    expect(plan.skippedDuplicates).toBe(9);
+    expect(plan.skippedDuplicates).toBe(fixture.transactions.length);
     const before = await transactionCount(owner.userId);
     const insert = await client.from("transactions").insert(plan.rows.map((r) => ({ user_id: owner.userId, ...r })));
     expect(insert.error).toBeNull();
@@ -85,7 +87,7 @@ describe("CSV import on the live path", () => {
     // Importing the same file again is now entirely duplicates.
     const again = await loadDryRun(client, PACKS);
     if (again.kind !== "preview" || !again.run.ok) throw new Error("no preview");
-    expect(again.run.counts.duplicates).toBe(11);
+    expect(again.run.counts.duplicates).toBe(T + 2);
   });
 
   it("a batch with one row the database refuses writes nothing", async () => {
@@ -110,7 +112,7 @@ describe("CSV import on the live path", () => {
     expect((await client.from("csv_imports").upsert({ user_id: owner.userId, filename: "new.csv", content }, { onConflict: "user_id" })).error).toBeNull();
     const first = await loadDryRun(client, PACKS);
     if (first.kind !== "preview" || !first.run.ok) throw new Error("no preview");
-    expect(first.run.unresolved).toEqual([{ pack_id: "br", instrument_kind: "br.fii", identifier: "XPLG11", rows: [9], registered: true }]);
+    expect(first.run.unresolved).toEqual([{ pack_id: "br", instrument_kind: "br.fii", identifier: "XPLG11", rows: [fixture.transactions.length], registered: true }]);
     expect(planCommit(first.run, first.run.previewHash, new Set())).toEqual({ ok: false, reason: "unresolved_identifiers" });
     expect((await client.from("assets").insert({ user_id: owner.userId, pack_id: "br", instrument_kind: "br.fii", identifier: "XPLG11", name: "XP Log", native_currency: "BRL", metadata: { fundName: "XP Log" } })).error).toBeNull();
     const second = await loadDryRun(client, PACKS);
@@ -128,6 +130,6 @@ describe("CSV import on the live path", () => {
     const assets: KnownAsset[] = fixture.assets.map((a, i) => ({ id: `00000000-0000-4000-8000-00000000000${i}`, pack_id: "br", instrument_kind: a.instrumentKind, identifier: a.identifier, native_currency: "BRL" }));
     const existing: KnownTransaction[] = [];
     const run = dryRun(parsed.header, parsed.rows, {}, assets, existing, PACKS);
-    expect(run.ok && run.counts).toMatchObject({ total: 9, valid: 9, duplicates: 0 });
+    expect(run.ok && run.counts).toMatchObject({ total: T, valid: T, duplicates: 0 });
   });
 });

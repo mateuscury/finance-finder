@@ -34,6 +34,13 @@ afterAll(async () => {
 });
 
 const { fixture, expected } = loadGoldenFixture();
+/** The golden's own counts, so the fixture may grow without editing every assertion. */
+const N = {
+  assets: fixture.assets.length,
+  transactions: fixture.transactions.length,
+  cashFlows: fixture.cashFlows.length,
+  prices: Object.values(fixture.prices).reduce((n, rows) => n + rows.length, 0),
+};
 
 /** The read, re-keyed by golden asset id so it can be compared with expected.json. */
 function toGolden(read: Awaited<ReturnType<typeof readLedger>>, goldenIdOf: Map<string, string>): GoldenFixture {
@@ -61,11 +68,11 @@ describe("readLedger under RLS", () => {
     const client: SupabaseClient = await owner.signIn();
 
     const read = await readLedger(client, PACKS);
-    expect(read.assets).toHaveLength(6);
+    expect(read.assets).toHaveLength(N.assets);
     expect(read.unresolved).toEqual([]);
-    expect(read.transactions).toHaveLength(9);
-    expect(read.cashFlows).toHaveLength(4);
-    expect(read.prices).toHaveLength(11);
+    expect(read.transactions).toHaveLength(N.transactions);
+    expect(read.cashFlows).toHaveLength(N.cashFlows);
+    expect(read.prices).toHaveLength(N.prices);
     expect(read.series.filter((s) => s.seriesId === "br.cdi").length).toBeGreaterThanOrEqual(39);
     expect(read.packs.map((p) => p.id).sort()).toEqual(["br", "global"]);
     for (const t of read.transactions) expect(typeof t.quantity).toBe("string");
@@ -85,7 +92,7 @@ describe("readLedger under RLS", () => {
     const client = await owner.signIn();
 
     const assets = await listAssets(client, PACKS);
-    expect(assets).toHaveLength(6);
+    expect(assets).toHaveLength(N.assets);
     const fii = assets.find((a) => a.identifier === "HGLG11")!;
     expect(fii.latest).toEqual({ date: "2026-02-27", price: "156.2000000000", currency: "BRL", sourceId: "br.brapi" });
     expect(fii.kindLabel).toBe("Fundo Imobiliário (FII)");
@@ -94,11 +101,11 @@ describe("readLedger under RLS", () => {
     expect(cdb.latest).toBeNull();
 
     const txns = await listTransactions(client, 1);
-    expect(txns.total).toBe(9);
+    expect(txns.total).toBe(N.transactions);
     expect(txns.rows[0].trade_date).toBe("2026-02-18");
     expect(txns.rows[0].identifier).toBe("HGLG11");
-    expect((await listCashFlows(client, 1)).total).toBe(4);
-    expect(await countLedger(client)).toEqual({ assets: 6, transactions: 9, cashFlows: 4 });
+    expect((await listCashFlows(client, 1)).total).toBe(N.cashFlows);
+    expect(await countLedger(client)).toEqual({ assets: N.assets, transactions: N.transactions, cashFlows: N.cashFlows });
 
     const stranger = await (await newUser()).signIn();
     expect(await countLedger(stranger)).toEqual({ assets: 0, transactions: 0, cashFlows: 0 });

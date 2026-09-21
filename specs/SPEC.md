@@ -86,9 +86,9 @@ section; decisions in `MILESTONES.md` §2):
 
 **Test Scenarios**:
 ```
-Given: packs/br/fixtures/portfolio.json (six instrument kinds, nine
-       transactions incl. one sell and one dividend, four cash flows — a
-       deposit on each purchase day and the sale's withdrawal — six
+Given: packs/br/fixtures/portfolio.json (seven instrument kinds since
+       br.stock, ten transactions incl. one sell and one dividend, five cash
+       flows — a deposit on each purchase day and the sale's withdrawal — six
        valuation dates spanning Carnival 2026, one FII price missing on one
        valuation date)
 When:  runGolden(fixture, registry) is executed by the conformance suite
