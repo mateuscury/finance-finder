@@ -44,7 +44,7 @@ second pack will meet. Building `packs/uk` is Milestone 5 (decision 45).
 | 1 — Debt paydown and hardening: CI that runs, typed client, coverage, headers, env, the deferred fixes       | `3420c29`..`498004f` | done 2026-09-21               |
 | 2 — Foundation and Overview: tokens, fonts, theme, shell, status strip, privacy, formatting, first-run card  | `903d8f8`..`42cf33a` | done 2026-09-21 (gate passed) |
 | 3 — Performance and Allocation                                                                               | `aa6014d`..`df1bf25` | done 2026-09-21               |
-| 4 — Contribution (with attribution) and Maturities                                                           | `186c88b`..(P4-U2)   | done 2026-09-21               |
+| 4 — Contribution (with attribution) and Maturities                                                           | `186c88b`..`55927d5`   | done 2026-09-21               |
 | 5 — Ledger screens designed: Assets (schema-driven form), Transactions + import, Cash flows, Settings, Login | —                    | not started                   |
 | 6 — Multi-year portfolio, performance budgets                                                                | —                    | not started                   |
 | 7 — Smoke journeys, accessibility pass                                                                       | —                    | not started                   |
