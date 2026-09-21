@@ -43,3 +43,8 @@ next-env.d.ts
 
 # editor
 .obsidian/
+
+# playwright / review artefacts
+/test-results
+/playwright-report
+/docs/review
