@@ -38,18 +38,18 @@ second pack will meet. Building `packs/uk` is Milestone 5 (decision 45).
 
 ## Progress
 
-| Phase                                                                                                        | Merge unit           | Status          |
-| ------------------------------------------------------------------------------------------------------------ | -------------------- | --------------- |
-| 0 — Baseline: decisions, stories, personas, dependencies, `br.stock`, neutrality                             | `02b9cb4`..`46c0c32` | done 2026-09-21 |
-| 1 — Debt paydown and hardening: CI that runs, typed client, coverage, headers, env, the deferred fixes       | `3420c29`..`498004f` | done 2026-09-21 |
-| 2 — Foundation and Overview: tokens, fonts, theme, shell, status strip, privacy, formatting, first-run card  | —                    | not started     |
-| 3 — Performance and Allocation                                                                               | —                    | not started     |
-| 4 — Contribution (with attribution) and Maturities                                                           | —                    | not started     |
-| 5 — Ledger screens designed: Assets (schema-driven form), Transactions + import, Cash flows, Settings, Login | —                    | not started     |
-| 6 — Multi-year portfolio, performance budgets                                                                | —                    | not started     |
-| 7 — Smoke journeys, accessibility pass                                                                       | —                    | not started     |
-| 8 — Production readiness: packs supported, runbook, release gate                                             | —                    | not started     |
-| 9 — First deploy (maintainer-gated)                                                                          | —                    | not started     |
+| Phase                                                                                                        | Merge unit           | Status                        |
+| ------------------------------------------------------------------------------------------------------------ | -------------------- | ----------------------------- |
+| 0 — Baseline: decisions, stories, personas, dependencies, `br.stock`, neutrality                             | `02b9cb4`..`46c0c32` | done 2026-09-21               |
+| 1 — Debt paydown and hardening: CI that runs, typed client, coverage, headers, env, the deferred fixes       | `3420c29`..`498004f` | done 2026-09-21               |
+| 2 — Foundation and Overview: tokens, fonts, theme, shell, status strip, privacy, formatting, first-run card  | `903d8f8`..`42cf33a` | done 2026-09-21 (gate passed) |
+| 3 — Performance and Allocation                                                                               | `aa6014d`..`df1bf25` | done 2026-09-21               |
+| 4 — Contribution (with attribution) and Maturities                                                           | —                    | not started                   |
+| 5 — Ledger screens designed: Assets (schema-driven form), Transactions + import, Cash flows, Settings, Login | —                    | not started                   |
+| 6 — Multi-year portfolio, performance budgets                                                                | —                    | not started                   |
+| 7 — Smoke journeys, accessibility pass                                                                       | —                    | not started                   |
+| 8 — Production readiness: packs supported, runbook, release gate                                             | —                    | not started                   |
+| 9 — First deploy (maintainer-gated)                                                                          | —                    | not started                   |
 
 ## Why the conventions below are written down first
 
