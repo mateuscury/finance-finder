@@ -144,7 +144,7 @@ fallback so the run continues end to end.
 | P3-U2 | Performance                                                             | P3-U1        | done `311e4e5` |
 | P3-U3 | Allocation                                                              | P3-U1        | done `df1bf25` |
 | P4-U1 | Contribution and attribution drill-in                                   | P3-U1        | done `186c88b` |
-| P4-U2 | Maturities                                                              | P3-U1        | done `55927d5`  |
+| P4-U2 | Maturities                                                              | P3-U1        | done `55927d5` |
 | P5-U1 | Schema-driven fields and the asset form                                 | P2-U6        | not started    |
 | P5-U2 | Assets, Transactions and Import designed                                | P5-U1        | not started    |
 | P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1        | not started    |
@@ -1629,49 +1629,103 @@ MILESTONES §4 decision 38` · `/qa-code-quality lib/ledger/maturity.ts` ·
 
 ### P5-U1 — Schema-driven fields and the asset form
 
-**Goal.** The asset form is pack → kind → generated metadata fields →
-currency; the JSON textarea is gone; no screen knows a kind by name.
+**Grounded 2026-09-21** against the tree after Phase 4. Every ledger page
+exists and works (Milestone 3): `app/(app)/{assets,transactions,cash-flows,
+settings}/…`, `app/login/…`, their `actions.ts`, and the redirect-with-
+`?error=<reason>&fields=a,b` → `<Notice>` outcome pattern in
+`app/(app)/_lib/form.ts`. What Phases 2–4 built that this phase reuses:
+the tokens and `globals.css` primitives (`.table-scroll`, `.num`,
+`.figure`, `.muted`, `[role=alert|status]`, focus rings), `<Amount>`,
+`<ValueStatus>` (+ `copy.status.reasons`), `lib/format`, `copyFor` /
+`currentCopy`, the `_models` + golden test pattern, `PeriodNav`'s link
+style. Field kinds come from the zod v4 facts verified on the installed
+version: `schema instanceof z.ZodObject` exposes `.shape`; `.optional()`
+`.unwrap()` returns the SAME instance, so `=== DecimalStringSchema` /
+`=== IsoDateSchema` (both from `packs/schema.ts`) identify the kernel
+field schemas; `z.iso.date().def.format === "date"` is the fallback;
+`def.type` is `"string" | "enum" | "boolean" | "number"`.
 
-**Read first.** `app/(app)/assets/_form.tsx`, `actions.ts`; `lib/ledger/
-assets.ts` (metadata validation); `packs/schema.ts` (`DecimalStringSchema`,
-`IsoDateSchema`); zod v4 introspection (`schema.shape`, `def.type`,
-`unwrap()`); every in-repo `metadataSchema`.
+**Goal.** The asset form is pack → kind → generated metadata fields →
+currency (SPEC §9 screen 6), the JSON textarea is gone, and no screen
+knows a kind by name.
+
+**Read first.** `app/(app)/assets/_form.tsx` (`metadataKeys`, the hidden
+identity inputs when locked), `actions.ts` (`createAssetThen(returnTo)`,
+`metadataFromForm`), `lib/ledger/assets.ts` (`prepareAsset`,
+`normalizeIdentifier`), `lib/ledger/schemas.ts` (`AssetInputSchema`,
+`failedFields`), `packs/br/instruments.ts` (the four metadata shapes:
+`TesouroDireto` titulo+maturity+optional purchaseRate; `PrivateCredit`
+issuer+rate+maturity+optional liquidityFrom; `Fii` fundName+optional
+segment; `Stock` name), `app/(app)/transactions/import/page.tsx` (the
+inline creation with pack and kind fixed), Next docs on `useActionState`
+(`node_modules/next/dist/docs/01-app/02-guides/forms.md`).
 
 **Steps.**
 
-1. `lib/forms/zod-fields.ts`: `fieldsOf(schema: ZodType): Field[]` for a
-   `ZodObject`: each key → `{ name, label (from the key, humanised),
-kind: "text" | "decimal" | "date" | "select" | "checkbox", required,
-options? }` — `decimal` when the unwrapped schema `=== DecimalStringSchema`,
-   `date` when `=== IsoDateSchema`, `select` for `z.enum`, `checkbox` for
-   `z.boolean`, `text` for `z.string`; a `z.number()` throws
-   `unsupported_metadata_field` (values are strings). `valuesFromForm(
-fields, formData)` builds the metadata object (empty optional → omitted).
-2. `_form.tsx`: pack `<select>` (registry, status shown), kind `<select>`
-   (per pack; a native form: changing the pack submits `?pack=` — or a small
-   client component that swaps the kind list; choose the client component,
-   it is interaction only), the generated fields (`<input inputmode=
-"decimal">` for decimals, `type="date"` for dates), identifier with the
-   kind's `IdentifierSpec` hint, currency defaulting to the kind's
-   `quoteCurrency`. Edit form: identity fields read-only once traded
-   (decision 27), name and metadata editable. `useActionState` for pending
-   and field errors (decision 48).
-3. `actions.ts`: build `metadata` through `valuesFromForm`; validation stays
-   in `lib/ledger/assets.ts`.
-4. The import preview's inline asset creation reuses the same form
-   component with pack and kind fixed from the CSV.
+1. `lib/forms/zod-fields.ts` — `fieldsOf(schema: ZodType): Field[]` where
+   `Field = { name; label; kind: "text" | "decimal" | "date" | "select" |
+"checkbox"; required: boolean; options?: string[] }`: a non-`ZodObject`
+   schema → `[]`; per key, unwrap `ZodOptional` (`required = false`);
+   `decimal` when the unwrapped schema `=== DecimalStringSchema`; `date`
+   when `=== IsoDateSchema` or `def.format === "date"`; `select` for
+   `def.type === "enum"` with its options; `checkbox` for `"boolean"`;
+   `text` for `"string"`; `"number"` throws `Error("unsupported_metadata_
+field: <name> — values are strings")`. `label` = the key humanised
+   (`purchaseRate` → "Purchase rate"). `valuesFromForm(fields, formData):
+Record<string, unknown>` — trims strings, omits an empty optional field,
+   `checkbox` → boolean, never parses a number.
+2. `lib/forms/zod-fields.test.ts`: every in-repo `metadataSchema` yields one
+   field per key with the kinds above (TD: text, date, decimal-optional;
+   credit: text, decimal, date, date-optional; FII: text, text-optional;
+   stock: text); round trip `valuesFromForm(fields, form(values))` deep-
+   equals each golden asset's metadata; a `z.number()` field throws; a
+   non-object schema yields `[]`.
+3. **Decision 55 (below):** `app/(app)/assets/_form.tsx` becomes the one
+   client form — `"use client"`, props `{ action, kinds: Array<{ packId;
+packName; packStatus; kindId; label; identifierSpec; quoteCurrency;
+fields: Field[] }>, values, lockIdentity, submitLabel, copy: the strings
+it needs }` (the server page computes `fieldsOf` per kind and passes
+   plain data; a zod schema never crosses to the client). State: the
+   chosen pack and kind (`useState`, initial from `values`); the kind
+   `<select>` lists that pack's kinds; the metadata fields render from the
+   chosen kind's `fields` (`<input inputmode="decimal">` for `decimal`,
+   `type="date"` for `date`, a `<select>` for `select`, a checkbox for
+   `checkbox`), names prefixed `meta_`; identifier hint from
+   `identifierSpec` (ticker / ISIN / free); currency defaults to the kind's
+   `quoteCurrency`; the identity fields disabled + mirrored as hidden when
+   `lockIdentity` (as today). `useActionState(action, null)` gives pending
+   (`disabled` submit, "Saving…") and the failed result: the reason line
+   from `copy.reasons` and `aria-invalid` + a `.field-error` on each named
+   field. Without JavaScript the form still posts and the action's
+   redirect still lands on the page with `?error=` for `<Notice>`.
+4. `actions.ts`: `createAssetThen(returnTo, prev, formData)` and
+   `updateAssetAction(assetId, prev, formData)` take the `useActionState`
+   signature; they build `metadata` with `valuesFromForm(fieldsOf(kind.
+metadataSchema), formData)` (the kind resolved from `pack_id` +
+   `instrument_kind`; unknown → `unknown_kind`), call the ledger as today,
+   and **return** `{ ok: false, reason, fields }` on failure, **redirect**
+   on success (the `after()` chain unchanged). `metadataFromForm` and the
+   JSON textarea are deleted.
+5. `app/(app)/assets/[id]/page.tsx` and the import preview pass the kinds
+   data; the preview fixes pack and kind (`lockIdentity` false, but the two
+   selects `readOnly` via a `fixed` prop) — pack and kind come from the
+   CSV (SPEC §9.1).
+6. Copy: `copy.screens.assets.form` group (labels, identifier hints per
+   spec, "Saving…", the lock explanation) in both languages.
 
-**Tests.** `zod-fields.test.ts`: every in-repo `metadataSchema` yields one
-field per key with the right kinds; round trip `valuesFromForm(fields,
-form(values))` deep-equals for each golden asset's metadata; a number field
-throws.
+**Tests.** `zod-fields.test.ts` (step 2); `lib/ledger/actions.test.ts`
+unchanged and green; `pnpm build`; manual: create each of the seven BR
+kinds through the form on the dev server, edit a traded one (identity
+locked, metadata editable), create an unresolved identifier from the
+import preview.
 
-**Done when.** No `metadata` textarea anywhere; creating each of the seven
-BR kinds through the form succeeds locally.
+**Done when.** `grep -rn "metadata" app --include=*.tsx | grep -i textarea`
+is empty; every kind's metadata fields are generated; the golden CSV's
+unresolved identifiers can be created inline.
 
-**Gate & QA.** Gate + build. `/qa-spec-fidelity against US-013 AC-013.7,
-SPEC §9 screen 6, MILESTONES §4 decision 45` · `/qa-code-quality lib/forms
-app/(app)/assets`.
+**Gate & QA.** Gate + build. `/qa-spec-fidelity lib/forms app/(app)/assets
+against US-013 AC-013.7, SPEC §9 screen 6, MILESTONES §4 decisions 45, 48,
+55` · `/qa-code-quality lib/forms app/(app)/assets`.
 
 **Commit.** `Milestone 4 Phase 5: the registry-driven asset form`
 
@@ -1679,39 +1733,87 @@ app/(app)/assets`.
 
 ### P5-U2 — Assets, Transactions and Import designed
 
-**Goal.** Screens 6 and 7 on the tokens with their states, empties and
-phone layouts; the import as four steps.
+**Goal.** Screens 6 and 7 on the tokens with their row states, every §9.5
+empty state, phone layouts, and the import as four steps.
 
-**Read first.** the three page files and their actions; `SPEC.md` §9 screens
-6–7, §9.1, §9.4, §9.5 rows 7–8; `lib/ledger/queries.ts`.
+**Read first.** `app/(app)/assets/page.tsx` (row states, the manual-price
+forms per row), `transactions/page.tsx` + `_form.tsx` + `[id]/page.tsx`,
+`transactions/import/page.tsx` (the four stages: none / unparsable /
+mapping / preview+commit), `lib/ledger/queries.ts` (`AssetListItem`:
+`valuation`, `sourceId`, `latest`, `sourceError`; `listTransactions`
+page shape), `_components/pager.tsx`, `_components/notice.tsx`,
+`SPEC.md` §9 screens 6–7, §9.1, §9.4, §9.5 rows 7–8.
 
 **Steps.**
 
-1. Assets list: row states priced (value, source, date) / carried forward /
-   stale / unpriced with reason (`sourceError`, "Retry · Enter a price")
-   / accrues (accrual kinds: "accrues — valued from the series");
-   `<Amount>`, `<ValueStatus>`; manual price form on the asset page;
-   pager restyled; empty state verbatim with the two links.
-2. Transactions list: date, asset, type, quantity, price, fees, note;
-   filters none (scope); add/edit form on the tokens with `useActionState`;
-   `fx_rate` labelled "optional, display only" (D-28); empty state verbatim.
-3. Import: steps Upload → Map columns → Preview (per-row status: ok /
-   error fields / unresolved with inline create / duplicate with
-   force-include) → Commit, each a section with a step indicator; the
-   counts line; the canonical format documented in-app (`copy.import.format`).
-4. All strings through `copy` in both languages; phone layouts (tables
-   stack into definition lists under 640 px).
+1. **Responsive tables, once.** `globals.css`: `table.stack` — under 640 px
+   each `tr` becomes a card (`display: block`, hairline between), each
+   `td` a row with its `data-label` shown as a caption (`td::before {
+content: attr(data-label) }`); above 640 px a normal table. Every
+   ledger table uses it with `data-label` on cells; wide numeric tables
+   (the import preview) keep `.table-scroll` instead. `<Pager>` restyled
+   on `PeriodNav`'s link style with copy (`copy.screens.pager`).
+2. **Failed fields marked.** `outcomeFrom` already returns `fields`;
+   `<Notice>` gains nothing, but each form marks `aria-invalid` +
+   `.field-error` on inputs named in `?fields=` (a `fieldsFrom(
+searchParams)` helper in `_lib/form.ts`; the form takes `invalid:
+string[]`). This is the server-only form's equivalent of P5-U1's
+   inline errors (decision 55).
+3. **Assets** (`/assets`): the list as `table.stack` with columns
+   identifier + name (link), kind, currency, value/state, actions. Row
+   states from `AssetListItem`: priced → `<Amount>` price + source + date
+   (as today, formatted); `valuation === "accrual"` → `<ValueStatus
+status="accrues">`; carried forward / stale are not on the list (the
+   list has no valuation date) — they stay on Overview/Allocation; unpriced
+   → `<ValueStatus status="unpriced" reason>` with the two actions the
+   §9.4 copy names: _Retry_ (a form posting `refreshAction` with
+   `ReturnTo`) and _Enter a price_ (a link to `/assets/[id]#price`). The
+   per-row manual-price forms move to the asset page (`/assets/[id]`):
+   the edit form, then a "Prices" section with the manual-price form and
+   the current manual rows with their remove buttons. The create form is
+   a `<details>` ("Add an asset") below the list so the list leads.
+   Empty state: `copy.empty.assets` + `copy.empty.assetsImport` (the
+   import link). `<Notice>` at the top.
+4. **Transactions** (`/transactions`): `table.stack` with date
+   (`formatDate`), asset (identifier + name link to the asset), type
+   (`copy.screens.transactions.types[type]`), quantity (`formatQuantity`
+   in `<Amount>`), unit price + currency (`formatPrice` in `<Amount>`),
+   fees, actions (edit link, delete form). `?asset=<id>` (Maturities'
+   "record the sell" links here) pre-selects the asset and `type=sell` in
+   the form; the form's `fx_rate` is NOT added (D-28: display-only, never
+   populated by a form); the form's type select explains the quantity
+   sign rule in copy. The imported-count notice through copy. Empty
+   state: `copy.empty.transactions` + the two links. Edit page on the
+   same form.
+5. **Import** (`/transactions/import`): one page, four stages as a
+   numbered step header (Upload → Map columns → Preview → Commit; the
+   current stage marked `aria-current="step"`): the canonical format
+   documented in-app from `copy.screens.import.format` (a `<code>` block
+   of the header + one example row, as SPEC §9.1 shows); the mapping form
+   as a two-column list; the preview counts line; unresolved identifiers
+   as cards each embedding P5-U1's form with pack and kind fixed; the row
+   table in `.table-scroll` with a status column that uses
+   `<ValueStatus>`-style marks (ready ✓ / error with the failed columns /
+   unresolved / duplicate with the include checkbox); the commit button
+   naming the count. Discard as a quiet button.
+6. Every string through `copy.screens.{assets,transactions,import}` in both
+   languages; the last hard-coded strings in these three areas go.
 
-**Tests.** Existing action and import tests unchanged and green; `pnpm
-build`; manual run of the golden CSV through the four steps.
+**Tests.** Existing action, import and dbtests unchanged and green;
+`fieldsFrom` unit test; `pnpm build`; manual on the dev server: the golden
+CSV through the four steps at 400 px; delete → `asset_has_transactions`
+marked.
 
-**Done when.** Both screens and the import pass the P7 checklist visually at
-400 px; nothing that worked in Milestone 3 regressed (the dbtests say so).
+**Done when.** `grep -rn '"[A-Z][a-z][^"]*"' app/(app)/assets app/(app)/
+transactions --include=*.tsx` finds no user-facing literal; the three
+screens pass the 400 px no-overflow check; every Milestone 3 dbtest still
+passes.
 
-**Gate & QA.** Gate + build. `/qa-spec-fidelity against SPEC §9 screens 6–7,
-§9.1, §9.4, §9.5 and US-013` · `/qa-code-quality app/(app)/assets
-app/(app)/transactions` · `/qa-ux /assets /transactions /transactions/import
-against "import a broker CSV"`.
+**Gate & QA.** Gate + build. `/qa-spec-fidelity against SPEC §9 screens
+6–7, §9.1, §9.4, §9.5 and US-013 AC-013.4, AC-013.6, AC-013.7` ·
+`/qa-code-quality app/(app)/assets app/(app)/transactions` · `/qa-ux
+/assets /transactions /transactions/import against specs/PERSONAS.md
+"import a broker CSV"`.
 
 **Commit.** `Milestone 4 Phase 5: Assets, Transactions and Import designed`
 
@@ -1720,36 +1822,67 @@ against "import a broker CSV"`.
 ### P5-U3 — Cash flows, Settings, Login/MFA/reset designed
 
 **Goal.** Screens 8, 9, 10 on the tokens; every remaining string in both
-dictionaries.
+dictionaries; the login pages get their own minimal shell.
 
-**Read first.** the pages and actions; `SPEC.md` §9 screens 8–10, §9.6,
-§12.3, §9.5 rows 9–10; `app/(app)/settings/totp-enrol.tsx`.
+**Read first.** `app/(app)/cash-flows/{page,_form}.tsx`, `app/(app)/
+settings/{page,actions,totp-enrol}.tsx` (the §9 screen 9 sections:
+Portfolio / Security / Your data), `app/login/{page,mfa/page,reset/page}.
+tsx` and `app/login/actions.ts`, `app/layout.tsx` (the root layout wraps
+login too), `SPEC.md` §9 screens 8–10, §9.6, §12.1, §12.3, §9.5 rows
+9–10; `lib/copy/index.ts` (`LOCALES`).
 
 **Steps.**
 
-1. Cash flows: list + form; the empty state's sentence verbatim; base
-   currency shown, not editable (decision 25).
-2. Settings in the §9 screen 9 sections: Portfolio (base currency with the
-   lock/reset explanation, enabled packs with status badges and the draft
-   banner, theme, locale — the locale select lists `LOCALES` with their own
-   names); Security (change password, TOTP enrol/remove with the QR, sign
-   out everywhere, the AAL2 notes); Your data (export — two buttons —, the
-   last export date, restore with warnings, delete everything with the
-   phrase and password); the SPEC §12.1 disclosure paragraph.
-3. Login, `/login/mfa`, `/login/reset`: the tokens, the one bootstrap line,
-   uniform failure copy, no signup link (assert in the e2e later).
-4. `grep -rn '"[A-Z][a-z].*"' app --include=*.tsx` (or equivalent) finds no
-   user-facing literal outside `lib/copy`; anything left moves.
+1. **Cash flows**: `table.stack` (date, amount as `formatChange` in
+   `<Amount>` with sign and `--pos/--neg` — a deposit is positive, a
+   withdrawal negative —, note, actions); the form with the base currency
+   shown as text, not editable (decision 25), and the sign rule in copy;
+   `copy.empty.cashFlows` verbatim; `?fields=` marking.
+2. **Settings** in the three §9 screen 9 sections, each a `<section
+aria-labelledby>` with the `.label` caption style: **Portfolio** — base
+   currency with the lock/reset explanation and the confirm checkbox;
+   enabled packs as a list with a status badge per pack (`draft` banner
+   copy from PACKS §12), instrument and series counts; theme as the same
+   select the nav uses; **locale as a `<select>` over `LOCALES` with each
+   language's own name** ("English", "Português (Brasil)") — the free-text
+   input goes (decision 34: the copy must exist for the locale). **Security**
+   — signed-in line with the assurance level in copy; change password;
+   the second factor: enrolled → the one-factor note + remove (AAL2) +
+   the CLI recovery line; not enrolled → `<TotpEnrol>` restyled (its
+   strings via props from the page's copy — it is a client component);
+   sign out everywhere. **Your data** — the SPEC §12.1 disclosure
+   paragraph (`copy.screens.settings.disclosure`), last export date
+   (`formatDate`) or "never", the two download links as buttons, restore
+   with the acknowledge checkbox and the warnings line, delete-everything
+   in a `--neg` bordered box with the phrase in `<code>`. `<Notice>`, the
+   `security=` / `restore=` / `delete=` outcomes as today.
+3. **Login, MFA, reset** (`app/login/…`): no nav — a centred card on the
+   tokens (`app/login/layout.tsx`: brand, `<main class="auth">`, the
+   `.skip-link`), Instrument Serif heading, the one bootstrap line
+   (`copy.empty.login` verbatim), the uniform failure line, "Forgot your
+   password?", MFA with the recovery line, reset's two steps. Copy from
+   `currentCopy()` (the instance default before sign-in, the user's cookie
+   after a sign-out). No signup link (asserted by `e2e/smoke.spec.ts`).
+4. **Sweep**: `grep -rn '"[A-Z][a-z][^"]*[a-z.]"' app --include=*.tsx`
+   plus a manual read of every page for JSX text; whatever is left moves
+   to `copy.screens.*`. `copy.test.ts` still proves both dictionaries
+   complete (it walks the type, so any new leaf must exist in both).
+5. `lib/copy/README.md` (six lines): the one-type-two-dictionaries rule,
+   how a leaf with parameters is written, that SPEC's quoted lines are
+   verbatim in `en` and translated in `pt-BR`.
 
-**Tests.** Existing `settings.test.ts`, `security.test.ts`, dbtests green;
-`copy.test.ts` still complete; build.
+**Tests.** `settings.test.ts`, `security.test.ts`, the dbtests and `pnpm
+test:e2e` green (the smoke spec still finds the email and password labels
+— they are now `copy.screens.login.*`; adjust the regexes to accept both
+languages); `pnpm build`; manual: every screen at 400 px in both themes.
 
-**Done when.** Every screen SPEC §9 names exists and is designed; the
-copy grep is clean.
+**Done when.** The sweep grep is clean; every screen SPEC §9 names exists
+and is designed; `LOCALES` drives the locale select.
 
-**Gate & QA.** Gate + build. `/qa-spec-fidelity against SPEC §9 screens 8–10,
-§9.6, §12.3 and US-013 AC-013.7–8` · `/qa-code-quality app/(app)/settings
-app/(app)/cash-flows app/login` · `/qa-ux /settings /login`.
+**Gate & QA.** Gate + build + e2e. `/qa-spec-fidelity against SPEC §9
+screens 8–10, §9.6, §12.3 and US-013 AC-013.7–8` · `/qa-code-quality
+app/(app)/settings app/(app)/cash-flows app/login lib/copy` · `/qa-ux
+/settings /login against specs/PERSONAS.md`.
 
 **Commit.** `Milestone 4 Phase 5: Cash flows, Settings and Login designed — Phase 5 complete`
 

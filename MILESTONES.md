@@ -543,6 +543,16 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
     marked partial. Unreachable from the forms (decision 25); reachable
     from a restored file.
 
+### Decision taken 2026-09-21 (grounding Phase 5)
+
+55. **One client form; actions return on failure and redirect on
+    success.** The asset form (pack → kind → generated metadata fields)
+    is the one Client Component form, on `useActionState`; every other
+    ledger form stays server-rendered with the redirect-to-`<Notice>`
+    pattern plus `aria-invalid` on the fields the query names. Decision 48
+    applied: no form library, client state only where the form cannot be
+    drawn without it; zod schemas never reach the client.
+
 ### Contract corrections found while implementing
 
 1. **Decision 53 needed the unpriced case too.** A holding that goes

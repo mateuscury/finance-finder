@@ -44,7 +44,7 @@ second pack will meet. Building `packs/uk` is Milestone 5 (decision 45).
 | 1 — Debt paydown and hardening: CI that runs, typed client, coverage, headers, env, the deferred fixes       | `3420c29`..`498004f` | done 2026-09-21               |
 | 2 — Foundation and Overview: tokens, fonts, theme, shell, status strip, privacy, formatting, first-run card  | `903d8f8`..`42cf33a` | done 2026-09-21 (gate passed) |
 | 3 — Performance and Allocation                                                                               | `aa6014d`..`df1bf25` | done 2026-09-21               |
-| 4 — Contribution (with attribution) and Maturities                                                           | `186c88b`..`55927d5`   | done 2026-09-21               |
+| 4 — Contribution (with attribution) and Maturities                                                           | `186c88b`..`55927d5` | done 2026-09-21               |
 | 5 — Ledger screens designed: Assets (schema-driven form), Transactions + import, Cash flows, Settings, Login | —                    | not started                   |
 | 6 — Multi-year portfolio, performance budgets                                                                | —                    | not started                   |
 | 7 — Smoke journeys, accessibility pass                                                                       | —                    | not started                   |
@@ -383,6 +383,25 @@ Neither changes the golden numbers; both apply decision 10 to time series.
     restored file could carry one; the read path converts it with `toBase`
     at its date under the first holdable pack's window and, when that is
     `unpriced`, drops it, counts it, and marks the figure partial.
+
+## Decision to confirm before Phase 5 (grounding, 2026-09-21)
+
+55. **One client form, and the "return on failure, redirect on success"
+    action contract.** The asset form needs client state anyway (the kind
+    list follows the pack; the metadata fields follow the kind), so it is
+    the one form that becomes a Client Component and uses
+    `useActionState`: its actions take `(prev, formData)`, return
+    `{ ok: false, reason, fields }` so the form can mark the failed fields
+    and show the reason inline while still pending-aware, and redirect on
+    success exactly as today. Every other ledger form stays a Server
+    Component posting to an action that redirects with `?error=&fields=`
+    to `<Notice>` — the progressive-enhancement pattern Milestone 3 built
+    — and gains only `aria-invalid` on the fields named in the query. This
+    is decision 48 applied, not reversed: native `<form action>`, server
+    actions, zod; no form library, and client state only where the form
+    cannot be drawn without it. The zod schema never crosses to the
+    client: the server computes the field descriptors per kind and passes
+    plain data.
 
 ## Definition of done
 
