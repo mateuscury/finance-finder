@@ -145,8 +145,8 @@ fallback so the run continues end to end.
 | P3-U3 | Allocation                                                              | P3-U1        | done `df1bf25` |
 | P4-U1 | Contribution and attribution drill-in                                   | P3-U1        | done `186c88b` |
 | P4-U2 | Maturities                                                              | P3-U1        | done `55927d5` |
-| P5-U1 | Schema-driven fields and the asset form                                 | P2-U6        | not started    |
-| P5-U2 | Assets, Transactions and Import designed                                | P5-U1        | not started    |
+| P5-U1 | Schema-driven fields and the asset form                                 | P2-U6        | done `233cbf9` |
+| P5-U2 | Assets, Transactions and Import designed                                | P5-U1        | done `5ff08c2` |
 | P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1        | not started    |
 | P6-U1 | Synthetic ledger and performance budgets                                | P4-U2, P5-U3 | not started    |
 | P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1        | not started    |

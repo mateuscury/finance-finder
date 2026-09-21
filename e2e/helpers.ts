@@ -36,11 +36,12 @@ export async function createOwner(): Promise<Owner> {
   };
 }
 
+/** Signs in through the form in whichever language the instance speaks (decision 34). */
 export async function signIn(page: Page, owner: Owner): Promise<void> {
   await page.goto("/login");
-  await page.getByLabel(/email/i).fill(owner.email);
-  await page.getByLabel(/password/i).fill(owner.password);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByLabel(/e-?mail/i).fill(owner.email);
+  await page.getByLabel(/password|senha/i).fill(owner.password);
+  await page.getByRole("button", { name: /sign in|entrar/i }).click();
   await page.waitForURL("**/");
 }
 

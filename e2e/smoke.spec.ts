@@ -5,9 +5,12 @@ import { cspViolations } from "./helpers";
 test("the login page is email + password with no signup link, and violates no CSP", async ({ page }) => {
   const violations = cspViolations(page);
   await page.goto("/login");
-  await expect(page.getByLabel(/email/i)).toBeVisible();
-  await expect(page.getByLabel(/password/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: /sign up|signup|register|create account/i })).toHaveCount(0);
+  // The labels come from the instance's dictionary (decision 34): either language.
+  await expect(page.getByLabel(/e-?mail/i)).toBeVisible();
+  await expect(page.getByLabel(/password|senha/i)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /sign up|signup|register|create account|cadastr|criar conta/i }),
+  ).toHaveCount(0);
   // Next's own scripts ran under the nonce: the page is hydrated, not static HTML.
   await expect.poll(() => page.evaluate(() => document.querySelectorAll("script[nonce]").length)).toBeGreaterThan(0);
   expect(violations).toEqual([]);

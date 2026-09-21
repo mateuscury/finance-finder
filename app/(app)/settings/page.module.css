@@ -1,0 +1,78 @@
+/* Settings (SPEC §9 screen 9): three sections, each a stack of short forms. */
+.section {
+  max-width: 40rem;
+}
+.form {
+  margin: 0 0 var(--space-6);
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 var(--space-4);
+}
+@media (min-width: 640px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.check input {
+  margin-top: 0.2em;
+}
+.pack {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+}
+.pack input {
+  margin-top: 0.2em;
+}
+.badge {
+  display: inline-block;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+.badgeDraft {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 var(--space-6);
+}
+.downloads a {
+  display: inline-block;
+  border: 1px solid var(--text);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  text-decoration: none;
+  color: var(--text);
+}
+.danger {
+  border: 1px solid var(--neg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin: var(--space-4) 0;
+}
+.danger button {
+  border-color: var(--neg);
+  color: var(--neg);
+}
+.short {
+  max-width: 8rem !important;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}

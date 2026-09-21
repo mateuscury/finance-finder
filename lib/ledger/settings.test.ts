@@ -46,7 +46,13 @@ describe("updatePreferences / stampExport", () => {
       reason: "invalid_input",
       fields: ["locale"],
     });
+    // Well-formed but not shipped: no dictionary, so refused (decision 34).
     expect(await updatePreferences(c.client, U, { theme: "dark", locale: "en-GB" })).toEqual({
+      ok: false,
+      reason: "invalid_input",
+      fields: ["locale"],
+    });
+    expect(await updatePreferences(c.client, U, { theme: "dark", locale: "en" })).toEqual({
       ok: true,
       value: undefined,
     });

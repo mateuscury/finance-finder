@@ -1,48 +1,57 @@
 import Link from "next/link";
+import { currentCopy } from "@/lib/copy/server";
 import { completePasswordReset, requestPasswordReset } from "../actions";
 
+/** SPEC §9.6: the reset email, then the new password once the callback has exchanged the link. */
 export default async function ResetPage({ searchParams }: PageProps<"/login/reset">) {
-  const { step, sent, failed } = await searchParams;
+  const [{ step, sent, failed }, copy] = await Promise.all([searchParams, currentCopy()]);
+  const c = copy.screens.login.reset;
   if (step === "complete") {
     return (
-      <main>
-        <h1>Choose a new password</h1>
+      <>
+        <h1>{c.completeTitle}</h1>
         <form action={completePasswordReset}>
           <label>
-            New password <input name="password" type="password" autoComplete="new-password" minLength={12} required />
+            {c.newPassword}
+            <input name="password" type="password" autoComplete="new-password" minLength={12} required />
           </label>
           <label>
-            Confirm <input name="confirm" type="password" autoComplete="new-password" minLength={12} required />
+            {c.confirm}
+            <input name="confirm" type="password" autoComplete="new-password" minLength={12} required />
           </label>
-          {failed ? (
-            <p role="alert">
-              The passwords did not match or were not accepted (12+ characters, upper, lower, digit, symbol).
-            </p>
-          ) : null}
-          <button type="submit">Set password</button>
+          {failed ? <p role="alert">{c.failed}</p> : null}
+          <button type="submit" className="primary">
+            {c.set}
+          </button>
         </form>
-      </main>
+      </>
     );
   }
   return (
-    <main>
-      <h1>Reset your password</h1>
+    <>
+      <h1>{c.title}</h1>
       {sent ? (
-        <p>
-          If that address has an account, an email was sent. If email is down, the host can run{" "}
-          <code>pnpm bootstrap:user</code>.
+        <p role="status">
+          {c.sentBefore}
+          <code>pnpm bootstrap:user</code>
+          {c.sentAfter}
         </p>
       ) : (
         <form action={requestPasswordReset}>
           <label>
-            Email <input name="email" type="email" autoComplete="username" required />
+            {c.email}
+            <input name="email" type="email" autoComplete="username" required />
           </label>
-          <button type="submit">Send reset email</button>
+          <button type="submit" className="primary">
+            {c.send}
+          </button>
         </form>
       )}
-      <p>
-        <Link href="/login">Back to sign in</Link>
+      <p className="muted">
+        <small>
+          <Link href="/login">{c.back}</Link>
+        </small>
       </p>
-    </main>
+    </>
   );
 }

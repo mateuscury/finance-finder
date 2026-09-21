@@ -10,6 +10,7 @@
 import type { Db } from "@/lib/supabase/types";
 import type { MarketPack } from "@/packs/types";
 import { z } from "zod";
+import { isSupportedLocale } from "@/lib/copy";
 import { fail, ok, reasonFor, type ActionResult } from "./result";
 import { BaseCurrencyInputSchema, failedFields } from "./schemas";
 
@@ -33,12 +34,11 @@ export async function changeBaseCurrency(
   return write.error ? fail(reasonFor(write.error)) : ok({ reset: locked });
 }
 
+// A locale is one the instance ships copy for (decision 34): the select on
+// Settings lists exactly these, and a hand-made request cannot name another.
 const PreferencesSchema = z.object({
   theme: z.enum(["system", "light", "dark"]),
-  locale: z
-    .string()
-    .trim()
-    .regex(/^[a-z]{2}(-[A-Z]{2})?$/, "BCP-47 language[-REGION]"),
+  locale: z.string().trim().refine(isSupportedLocale, "a shipped locale"),
 });
 
 export async function updatePreferences(client: Db, userId: string, input: unknown): Promise<ActionResult> {

@@ -305,6 +305,125 @@ export interface Copy {
       commitHelp: string;
       commit: (p: { n: number }) => string;
     };
+    /** Screen 8: deposits and withdrawals in the base currency (decision 25). */
+    cashFlows: {
+      title: string;
+      editTitle: string;
+      columns: { date: string; amount: string; note: string; actions: string };
+      fields: { date: string; amount: string; note: string };
+      /** The base currency is shown, not chosen: "Amount in BRL". */
+      amountIn: (p: { currency: string }) => string;
+      signRule: string;
+      add: string;
+      addButton: string;
+      saveButton: string;
+      edit: string;
+      delete: string;
+      backToList: string;
+    };
+    /** Screen 9 in its three sections (SPEC §9, §9.6, §12.3). */
+    settings: {
+      title: string;
+      portfolio: {
+        title: string;
+        baseCurrency: string;
+        baseCurrencyHelp: string;
+        confirmReset: string;
+        saveBaseCurrency: string;
+        packs: string;
+        packsHelp: string;
+        packCounts: (p: { instruments: number; series: number }) => string;
+        /** PACKS.md §12: what "draft" means to the person enabling it. */
+        draftNote: string;
+        unmaintainedNote: string;
+        savePacks: string;
+        preferences: string;
+        theme: string;
+        language: string;
+        savePreferences: string;
+      };
+      security: {
+        title: string;
+        signedInAs: (p: { who: string; level: string }) => string;
+        levels: { aal1: string; aal2: string };
+        password: string;
+        newPassword: string;
+        confirmPassword: string;
+        passwordRule: string;
+        changePassword: string;
+        secondFactor: string;
+        enrolled: string;
+        removeFactor: string;
+        /** The recovery line; the command is rendered in <code> around this text. */
+        recoveryBefore: string;
+        recoveryAfter: string;
+        notEnrolled: string;
+        sessions: string;
+        signOutEverywhere: string;
+        /** Strings only (no functions): they cross into the client widget as props. */
+        enrol: {
+          start: string;
+          starting: string;
+          failed: string;
+          scan: string;
+          qrAlt: string;
+          secret: string;
+          code: string;
+          confirm: string;
+        };
+      };
+      data: {
+        title: string;
+        /** SPEC §12.1, the disclosure paragraph. */
+        disclosure: string;
+        lastExport: (p: { date: string | null }) => string;
+        noBackups: string;
+        downloadJson: string;
+        downloadCsv: string;
+        restoreTitle: string;
+        restoreHelp: string;
+        restoreFile: string;
+        acknowledge: string;
+        restoreButton: string;
+        deleteTitle: string;
+        /** The phrase itself is rendered in <code> between these two parts. */
+        deleteBefore: string;
+        deleteAfter: string;
+        phrase: string;
+        password: string;
+        deleteButton: string;
+      };
+    };
+    /** Screen 10 and its two companions (SPEC §9.6). */
+    login: {
+      title: string;
+      email: string;
+      password: string;
+      /** The uniform failure line: never says which of the two was wrong. */
+      failed: string;
+      signIn: string;
+      forgot: string;
+      mfa: {
+        title: string;
+        code: string;
+        failed: string;
+        verify: string;
+      };
+      reset: {
+        title: string;
+        email: string;
+        send: string;
+        /** Always the same answer, whether or not the address has an account. */
+        sentBefore: string;
+        sentAfter: string;
+        back: string;
+        completeTitle: string;
+        newPassword: string;
+        confirm: string;
+        failed: string;
+        set: string;
+      };
+    };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {
@@ -313,6 +432,8 @@ export interface Copy {
     retry: string;
     loading: string;
   };
+  /** This language's own name, for the language select (decision 34). */
+  languageName: string;
   /** The one line under a saved form. */
   saved: string;
   /** "Check: a, b." after a field-level refusal. */

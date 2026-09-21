@@ -46,7 +46,7 @@ describe("settings", () => {
       ok: true,
       value: { newlyEnabled: ["global"] },
     });
-    expect(await updatePreferences(client, a.userId, { theme: "dark", locale: "en-GB" })).toEqual({
+    expect(await updatePreferences(client, a.userId, { theme: "dark", locale: "en" })).toEqual({
       ok: true,
       value: undefined,
     });
@@ -55,7 +55,7 @@ describe("settings", () => {
       value: undefined,
     });
     const s = await readSettings(client);
-    expect(s).toMatchObject({ enabled_packs: ["br", "global"], theme: "dark", locale: "en-GB" });
+    expect(s).toMatchObject({ enabled_packs: ["br", "global"], theme: "dark", locale: "en" });
     expect(s.last_export_at).toMatch(/^2026-09-20T12:00:00/);
   });
 

@@ -29,7 +29,8 @@ describe("nullsFirst", () => {
       fc.property(row, row, (x, y) => {
         const xy = Math.sign(cmp(x, y));
         const yx = Math.sign(cmp(y, x));
-        expect(xy).toBe(-yx);
+        // Summed, not negated: two equal rows give 0 and -0, which `toBe` (Object.is) tells apart.
+        expect(xy + yx).toBe(0);
         if (xy === 0) expect(x.id).toBe(y.id);
       }),
     );
