@@ -14,6 +14,7 @@ import type { HoldingAsset } from "@/lib/calc/types";
 import type { LedgerCounts } from "@/lib/ledger/queries";
 import type { SettingsRow } from "@/lib/ledger/rows";
 import type { SnapshotAssetRow, SnapshotTotal } from "@/lib/ledger/snapshots";
+import { sharesSummingTo100 } from "./shares";
 
 export interface OverviewInput {
   counts: LedgerCounts;
@@ -49,8 +50,6 @@ export interface OverviewModel {
   movers: Array<{ assetId: string; identifier: string; name: string; delta: string; rate: string | null }>;
 }
 
-const share2 = (part: Decimal, whole: Decimal) =>
-  whole.isZero() ? "0" : toDecimalString(part.div(whole).toDecimalPlaces(6));
 const rateOf = (from: Decimal, to: Decimal): string | null =>
   from.lte(0) ? null : toDecimalString(to.div(from).minus(1));
 
@@ -111,15 +110,14 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       kinds.set(asset.instrumentKind.id, { kind: entry.kind, value: entry.value.plus(h.marketValueBase.amount) });
     }
   }
-  const whole = [...kinds.values()].reduce((sum, k) => sum.plus(k.value), ZERO);
-  const allocation = [...kinds.values()]
-    .sort((a, b) => b.value.comparedTo(a.value))
-    .map((k) => ({
-      kindId: k.kind.id,
-      kindLabel: k.kind.label,
-      valueBase: toDecimalString(k.value),
-      share: share2(k.value, whole),
-    }));
+  const sorted = [...kinds.values()].sort((a, b) => b.value.comparedTo(a.value));
+  const shares = sharesSummingTo100(sorted.map((k) => toDecimalString(k.value)));
+  const allocation = sorted.map((k, i) => ({
+    kindId: k.kind.id,
+    kindLabel: k.kind.label,
+    valueBase: toDecimalString(k.value),
+    share: shares[i],
+  }));
 
   // Top movers: per-asset change between the last two snapshot dates.
   const prevById = new Map(input.previousRows.map((r) => [r.assetId, r]));

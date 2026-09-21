@@ -38,7 +38,9 @@ export type UnpricedReason =
   /** `assets.metadata` fails the pack's schema or lacks a field the strategy needs (decision 4: shown as unpriced, never a crash). */
   | "invalid_metadata"
   /** `curve_mark_to_market` past `maturity`: a past cash flow has no present value. */
-  | "matured";
+  | "matured"
+  /** `seriesReturn` over a `yield_curve`: a curve has no single return (Milestone 4 decision 37). */
+  | "not_a_return_series";
 
 /** Status of a value that exists. Ordered: `ok` < `carried_forward` < `stale`. */
 export type ValueStatus = "ok" | "carried_forward" | "stale";

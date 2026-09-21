@@ -151,6 +151,13 @@ flows, endValue })` builds the stream: `−startValue` when positive, flows
   as the residual. Base-currency holdings have `R_fx = 0` exactly; a `stale`
   or `unpriced` boundary is null with the reason; never held is
   `no_position`.
+- `benchmark.ts` — `seriesReturn(descriptor, market, from, to, { calendar,
+windowDays })` (Milestone 4 decision 37): one function over the closed
+  `SeriesKind` union — `index_level` → `indexReturn`; `rate_daily` /
+  `rate_annual` → `compoundRate` factor − 1 on the pack calendar;
+  `inflation_index` → interpolated level ratio − 1; `fx_rate` → rate ratio −
+  1; `yield_curve` → `unpriced` with `not_a_return_series`. Status is the
+  worse leg. This is what a pack's `benchmark` role plots.
 - `real.ts` — `realReturn(nominal, market, deflator, from, to)` =
   `(1 + R) / (level(to) / level(from)) − 1` through `inflationLevelAt`;
   status the worse leg.
@@ -172,7 +179,8 @@ flows, endValue })` builds the stream: `−startValue` when positive, flows
 
 `UnpricedReason` (closed; `staleness.ts`): `no_observation`, `series_gap`,
 `before_first_anchor`, `no_fx_series`, `no_price`,
-`indexation_not_supported`, `invalid_metadata`, `matured`. The performance
+`indexation_not_supported`, `invalid_metadata`, `matured`,
+`not_a_return_series`. The performance
 modules add `stale`, `zero_start_value` (contribution) and `no_position`
 (attribution) to their own null reasons.
 

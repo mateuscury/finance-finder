@@ -80,7 +80,7 @@ describe("overviewModel over the golden ledger", () => {
   it("allocation shares sum to exactly 1 over today's confident holdings, largest first", () => {
     const m = overviewModel(base());
     const sum = m.allocation.reduce((s, a) => s.plus(a.share), new KernelDecimal(0));
-    expect(sum.minus(1).abs().lt("1e-5")).toBe(true);
+    expect(sum.eq(1)).toBe(true);
     for (let i = 1; i < m.allocation.length; i += 1) {
       expect(new KernelDecimal(m.allocation[i - 1].valueBase).gte(m.allocation[i].valueBase)).toBe(true);
     }

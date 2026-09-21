@@ -22,4 +22,5 @@ export * from "./mwr";
 export * from "./contribution";
 export * from "./attribution";
 export * from "./real";
+export * from "./benchmark";
 export * from "./golden";
