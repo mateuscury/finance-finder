@@ -14,6 +14,18 @@ import { INSTANCE_DEFAULTS } from "./defaults";
 
 export const LOCALE_COOKIE = "ff-locale";
 export const THEME_COOKIE = "ff-theme";
+/** Which backup-nudge occurrence was dismissed (SPEC §12.3): the last-export state, or "none". */
+export const NUDGE_COOKIE = "ff-nudge-dismissed";
+/** Set by Refresh (SPEC §9.4) to the press time; the strip says "fetching in the background" while it is fresh. */
+export const REFRESHING_COOKIE = "ff-refreshing";
+export const REFRESHING_WINDOW_MS = 90_000;
+
+/** True while a Refresh press is less than the window old. The value is a client-controlled string: parsed, never trusted. */
+export function isRefreshing(value: string | undefined | null, nowMs: number): boolean {
+  if (!value || !/^\d{1,16}$/.test(value)) return false;
+  const pressed = parseInt(value, 10);
+  return nowMs - pressed >= 0 && nowMs - pressed < REFRESHING_WINDOW_MS;
+}
 
 export const THEMES = ["system", "light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];

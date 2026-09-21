@@ -34,6 +34,17 @@ export const en: Copy = {
     unpricedReason: ({ reason }) => `unpriced — ${reason}`,
     accrues: "accrues",
   },
+  strip: {
+    label: "Status",
+    unpriced: ({ n }) => (n === 1 ? "1 asset unpriced" : `${n} assets unpriced`),
+    rebuilding: ({ from, through, target }) => `history rebuilding ${from} → ${through ?? "…"} of ${target}`,
+    sourceDisabled: ({ sourceId, variable }) => `source ${sourceId} disabled: ${variable} not set`,
+    exportNudge: ({ lastExportAt }) =>
+      lastExportAt ? `last export ${lastExportAt.slice(0, 10)} — export a backup` : "no backup yet — export one",
+    refresh: "Refresh",
+    refreshing: "Fetching in the background; reload in a moment.",
+    dismiss: "Dismiss",
+  },
   errors: {
     title: "Something went wrong",
     body: "This screen could not be rendered. Nothing about your data was changed.",

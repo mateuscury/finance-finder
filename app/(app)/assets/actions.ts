@@ -78,12 +78,3 @@ export async function deleteManualPriceAction(formData: FormData): Promise<void>
   if (result.ok) revalidatePath("/assets");
   redirect(`/assets${outcomeQuery(result)}`);
 }
-
-/** Refresh (SPEC §9.4): re-run the scoped fetch for everything unpriced, then snapshots — after the response. */
-export async function refreshAction(): Promise<void> {
-  const started = Date.now();
-  const { identity } = await requireUser();
-  const spent = Date.now() - started;
-  after(() => priceThenSnapshot({ kind: "unpriced" }, [identity.userId], spent));
-  redirect("/assets?refreshing=1");
-}

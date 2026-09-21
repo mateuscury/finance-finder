@@ -9,13 +9,7 @@ import { readSettings } from "@/lib/ledger/rows";
 import { requireUser } from "@/lib/auth/session";
 import { listAssets } from "@/lib/ledger/queries";
 import { AssetForm } from "./_form";
-import {
-  createAssetThen,
-  deleteAssetAction,
-  deleteManualPriceAction,
-  refreshAction,
-  setManualPriceAction,
-} from "./actions";
+import { createAssetThen, deleteAssetAction, deleteManualPriceAction, setManualPriceAction } from "./actions";
 
 // The create action schedules the price-then-snapshot chain after the response (decision 30).
 export const maxDuration = 60;
@@ -30,10 +24,6 @@ export default async function AssetsPage({ searchParams }: PageProps<"/assets">)
     <main>
       <h1>Assets</h1>
       <Notice searchParams={params} />
-      <form action={refreshAction}>
-        <button type="submit">Refresh unpriced assets</button>
-        {params.refreshing ? <span role="status"> Fetching in the background; reload in a moment.</span> : null}
-      </form>
       {assets.length === 0 ? (
         <p>Add what you hold. Or import a CSV — unknown identifiers can be created from the preview.</p>
       ) : (

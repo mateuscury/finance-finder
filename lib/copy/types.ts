@@ -56,6 +56,17 @@ export interface Copy {
     unpricedReason: (p: { reason: string }) => string;
     accrues: string;
   };
+  /** The status strip (SPEC §9.2): present only when something is pending. */
+  strip: {
+    label: string;
+    unpriced: (p: { n: number }) => string;
+    rebuilding: (p: { from: string; through: string | null; target: string }) => string;
+    sourceDisabled: (p: { sourceId: string; variable: string }) => string;
+    exportNudge: (p: { lastExportAt: string | null }) => string;
+    refresh: string;
+    refreshing: string;
+    dismiss: string;
+  };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {
     title: string;

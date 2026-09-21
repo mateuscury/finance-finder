@@ -39,6 +39,19 @@ export const ptBR: Copy = {
     unpricedReason: ({ reason }) => `sem preço — ${reason}`,
     accrues: "rende",
   },
+  strip: {
+    label: "Situação",
+    unpriced: ({ n }) => (n === 1 ? "1 ativo sem preço" : `${n} ativos sem preço`),
+    rebuilding: ({ from, through, target }) => `histórico em reconstrução ${from} → ${through ?? "…"} de ${target}`,
+    sourceDisabled: ({ sourceId, variable }) => `fonte ${sourceId} desativada: ${variable} não definida`,
+    exportNudge: ({ lastExportAt }) =>
+      lastExportAt
+        ? `última exportação em ${lastExportAt.slice(0, 10)} — exporte um backup`
+        : "nenhum backup ainda — exporte um",
+    refresh: "Atualizar",
+    refreshing: "Buscando em segundo plano; recarregue em instantes.",
+    dismiss: "Dispensar",
+  },
   errors: {
     title: "Algo deu errado",
     body: "Esta tela não pôde ser exibida. Nada nos seus dados foi alterado.",

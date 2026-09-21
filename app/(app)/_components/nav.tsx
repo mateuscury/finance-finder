@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavLink } from "./nav-link";
 import type { Copy } from "@/lib/copy";
 import type { Theme } from "@/lib/settings/preferences";
 import { signOut } from "@/app/login/actions";
@@ -12,7 +13,7 @@ import styles from "./nav.module.css";
  * narrow viewports. The menu is a <details> so it works without JavaScript;
  * the theme control is a form so it works the same way.
  */
-export function Nav({ copy, theme, current }: { copy: Copy; theme: Theme; current: string }) {
+export function Nav({ copy, theme }: { copy: Copy; theme: Theme }) {
   const groups = [
     {
       label: copy.nav.analysis,
@@ -33,18 +34,15 @@ export function Nav({ copy, theme, current }: { copy: Copy; theme: Theme; curren
       ],
     },
   ] as const;
-  const isCurrent = (href: string) =>
-    href === "/" ? current === "/" : current === href || current.startsWith(`${href}/`);
-
   const links = groups.map((g) => (
     <div key={g.label} className={styles.group}>
       <span className={styles.groupLabel}>{g.label}</span>
       <ul className={styles.list}>
         {g.items.map(([href, label]) => (
           <li key={href}>
-            <Link href={href} aria-current={isCurrent(href) ? "page" : undefined} className={styles.link}>
+            <NavLink href={href} className={styles.link}>
               {label}
-            </Link>
+            </NavLink>
           </li>
         ))}
       </ul>
@@ -53,9 +51,9 @@ export function Nav({ copy, theme, current }: { copy: Copy; theme: Theme; curren
 
   const controls = (
     <div className={styles.controls}>
-      <Link href="/settings" aria-current={isCurrent("/settings") ? "page" : undefined} className={styles.link}>
+      <NavLink href="/settings" className={styles.link}>
         {copy.nav.settings}
-      </Link>
+      </NavLink>
       <form action={setThemeAction} className={styles.theme}>
         <label>
           <span className="visually-hidden">{copy.nav.theme}</span>
