@@ -437,8 +437,14 @@ that `PACKS.md` §14 placed here is now §5.
 - Leave the second country as a documented seam (`PACKS.md` §16) and an
   enforced neutrality test — no `packs/uk` code.
 
-Implementation plan: `docs/milestone-4-plan.md` (conventions, decisions
-33–46 to confirm before code, phases 0–8 and merge order).
+- Pay the technical debt of Milestones 1–3 first (`docs/milestone-4-plan.md`
+  "Technical debt inventory"): a CI that runs on a remote, a typed client,
+  coverage thresholds, security headers, env validation, the deferred read
+  and job fixes — before any screen is built.
+
+Implementation plan: `docs/milestone-4-plan.md` (conventions, the debt
+inventory, decisions 33–52 to confirm before code, phases 0–9 and merge
+order).
 
 ### Decisions taken 2026-09-20 (before implementation)
 
