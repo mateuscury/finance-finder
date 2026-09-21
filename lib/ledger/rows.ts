@@ -7,7 +7,7 @@
  * Callers pass the user's own RLS-scoped client; nothing here filters by
  * user id because the database already has.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import type { IsoDate, MarketCalendar, MarketPack, SeriesDescriptor } from "@/packs/types";
 import { addDays } from "@/lib/calc/dates";
 import type { PortfolioInput } from "@/lib/calc/portfolio";
@@ -171,14 +171,16 @@ export interface LedgerRead {
 }
 
 /** The user's settings row; defaults when the account has none yet. */
-export async function readSettings(client: SupabaseClient, userId?: string): Promise<SettingsRow> {
+export async function readSettings(client: Db, userId?: string): Promise<SettingsRow> {
   let q = client.from("user_settings").select(SETTINGS_SELECT);
   if (userId) q = q.eq("user_id", userId);
-  const { data, error } = await q.maybeSingle();
+  // `theme` is `text` with a CHECK constraint in the migration; the generated
+  // type cannot carry the constraint, so the row is narrowed to SettingsRow here.
+  const { data, error } = await q.maybeSingle().overrideTypes<SettingsRow, { merge: false }>();
   if (error) throw new Error(`ledger: settings (${error.code ?? "unknown"})`);
   // A bootstrapped account always has a row; a restored one may not yet.
   return (
-    (data as SettingsRow | null) ?? {
+    data ?? {
       base_currency: INSTANCE_DEFAULTS.baseCurrency,
       enabled_packs: [...INSTANCE_DEFAULTS.enabledPacks],
       locale: INSTANCE_DEFAULTS.locale,
@@ -201,7 +203,7 @@ export interface ReadLedgerOptions {
 }
 
 /** Prices have no user_id; under the service role they are read by the user's asset ids, in chunks. */
-async function readPrices(client: SupabaseClient, assetIds: string[] | null): Promise<PriceObservation[]> {
+async function readPrices(client: Db, assetIds: string[] | null): Promise<PriceObservation[]> {
   if (assetIds === null) {
     return (
       await readAll<PriceDbRow>((from, to) =>
@@ -226,7 +228,7 @@ async function readPrices(client: SupabaseClient, assetIds: string[] | null): Pr
  * the lookback, which is what a full valuation needs.
  */
 export async function readLedger(
-  client: SupabaseClient,
+  client: Db,
   registry: readonly MarketPack[],
   options: ReadLedgerOptions = {},
 ): Promise<LedgerRead> {

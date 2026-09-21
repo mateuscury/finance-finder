@@ -3,7 +3,7 @@
  * table op resolves with the response configured for it; every call is
  * recorded so a test can assert what was written. Test-only.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 
 export interface FakeResponse {
   data?: unknown;
@@ -19,7 +19,7 @@ export interface FakeCall {
 }
 
 export function fakeClient(responses: Partial<Record<string, Partial<Record<Op, FakeResponse | FakeResponse[]>>>>): {
-  client: SupabaseClient;
+  client: Db;
   calls: FakeCall[];
 } {
   const calls: FakeCall[] = [];
@@ -70,5 +70,5 @@ export function fakeClient(responses: Partial<Record<string, Partial<Record<Op, 
     };
     return builder;
   };
-  return { client: { from } as unknown as SupabaseClient, calls };
+  return { client: { from } as unknown as Db, calls };
 }

@@ -3,13 +3,13 @@
  * `portfolio_snapshots` (ARCHITECTURE §4.3). Reads go through
  * `lib/ledger/rows.ts` scoped by user id, so every numeric is text.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import type { IsoDate, MarketPack } from "@/packs/types";
 import { readLedger } from "@/lib/ledger/rows";
 import { readAll } from "@/lib/supabase/paginate";
 import type { SnapshotStore, SnapshotUser } from "./snapshots";
 
-export function createSnapshotStore(client: SupabaseClient, registry: readonly MarketPack[]): SnapshotStore {
+export function createSnapshotStore(client: Db, registry: readonly MarketPack[]): SnapshotStore {
   return {
     async listUsers(scope) {
       const settings = await readAll<{ user_id: string }>((from, to) => {
@@ -39,8 +39,8 @@ export function createSnapshotStore(client: SupabaseClient, registry: readonly M
         if (first.error) throw new Error(`snapshots: first trade (${first.error.code ?? "unknown"})`);
         users.push({
           userId: user_id,
-          lastSnapshotDate: (last.data as { date: string } | null)?.date ?? null,
-          earliestTradeDate: (first.data as { trade_date: string } | null)?.trade_date ?? null,
+          lastSnapshotDate: last.data?.date ?? null,
+          earliestTradeDate: first.data?.trade_date ?? null,
         });
       }
       // Least-recently-snapshotted first (nulls first), then by id: a long

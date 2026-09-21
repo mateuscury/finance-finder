@@ -10,9 +10,9 @@
  * render is written by `proxy.ts` on the next request instead.
  */
 import { createServerClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { publicSupabaseEnv } from "./env";
+import { publicEnv } from "@/lib/env";
+import type { Database, Db } from "./types";
 
 export const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -21,10 +21,10 @@ export const SESSION_COOKIE_OPTIONS = {
   path: "/",
 } as const;
 
-export async function createServerSupabase(): Promise<SupabaseClient> {
+export async function createServerSupabase(): Promise<Db> {
   const cookieStore = await cookies();
-  const { url, anonKey } = publicSupabaseEnv();
-  return createServerClient(url, anonKey, {
+  const { NEXT_PUBLIC_SUPABASE_URL: url, NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey } = publicEnv();
+  return createServerClient<Database>(url, anonKey, {
     cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll: () => cookieStore.getAll(),

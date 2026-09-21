@@ -7,7 +7,7 @@
  * (1,000 by default), and treating that cap as a total silently drops every
  * row past it.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { asJson, type Db } from "@/lib/supabase/types";
 import type {
   AssetRow,
   CommitCounts,
@@ -20,7 +20,7 @@ import type {
 import type { IsoDate } from "@/packs/types";
 import { PAGE_SIZE as PAGE, readAll } from "@/lib/supabase/paginate";
 
-export function createIngestStore(client: SupabaseClient): IngestStore {
+export function createIngestStore(client: Db): IngestStore {
   return {
     async listEnabledPacks(offset, limit) {
       const { data, error } = await client
@@ -55,6 +55,7 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
           .range(from, to),
       );
       return rows.map((r): WatermarkRow => ({
+        // `capability` is `text` with a CHECK constraint the generated type cannot carry.
         capability: r.capability as WatermarkRow["capability"],
         ref: r.ref,
         targetFrom: r.target_from,
@@ -150,9 +151,10 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
     },
 
     async commitChunk(payload: CommitPayload) {
-      const { data, error } = await client.rpc("commit_ingest_chunk", { payload });
+      const { data, error } = await client.rpc("commit_ingest_chunk", { payload: asJson(payload) });
       if (error) throw new Error(`store: commit failed (${error.code ?? "unknown"})`);
-      return data as CommitCounts;
+      // The RPC returns counts as jsonb; its shape is the function's contract.
+      return data as unknown as CommitCounts;
     },
   };
 }

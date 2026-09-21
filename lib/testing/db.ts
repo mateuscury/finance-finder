@@ -4,7 +4,7 @@
  * in `stack.ts` so the e2e tier can load them; this file adds the
  * `beforeAll`/`afterAll` wiring and re-exports the rest.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { afterAll, beforeAll } from "vitest";
 import { assertStackReachable, createDbTestClient, createThrowawayUser, type ThrowawayUserHandle } from "./stack";
 
@@ -17,11 +17,11 @@ export {
 } from "./stack";
 
 export interface ThrowawayUser {
-  readonly client: SupabaseClient;
+  readonly client: Db;
   /** Available inside tests and `beforeEach`; throws if read before `beforeAll` ran. */
   readonly userId: string;
   /** See `ThrowawayUserHandle.signIn`. */
-  signIn(): Promise<SupabaseClient>;
+  signIn(): Promise<Db>;
 }
 
 /**

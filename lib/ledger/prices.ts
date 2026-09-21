@@ -3,11 +3,11 @@
  * provenance a client may write, and `commit_ingest_chunk` never overwrites
  * it. An upsert lets a user correct a source's price for a date.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { fail, fromAffected, ok, reasonFor, type ActionResult } from "./result";
 import { failedFields, ManualPriceInputSchema } from "./schemas";
 
-export async function setManualPrice(client: SupabaseClient, input: unknown): Promise<ActionResult> {
+export async function setManualPrice(client: Db, input: unknown): Promise<ActionResult> {
   const parsed = ManualPriceInputSchema.safeParse(input);
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
   const asset = await client.from("assets").select("native_currency").eq("id", parsed.data.asset_id).maybeSingle();
@@ -25,7 +25,7 @@ export async function setManualPrice(client: SupabaseClient, input: unknown): Pr
   return error ? fail(reasonFor(error)) : ok(undefined);
 }
 
-export async function deleteManualPrice(client: SupabaseClient, assetId: string, date: string): Promise<ActionResult> {
+export async function deleteManualPrice(client: Db, assetId: string, date: string): Promise<ActionResult> {
   return fromAffected(
     await client
       .from("prices")

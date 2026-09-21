@@ -70,6 +70,8 @@ jobs:
             echo "NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000"
             echo "CRON_SECRET=$(openssl rand -base64 32)"
           } >> "$GITHUB_ENV"
+      - name: lib/database.types.ts matches the applied migrations (run `pnpm db:types` if this fails)
+        run: pnpm db:types && git diff --exit-code -- lib/database.types.ts
       - run: pnpm test:db
       - name: Stop the stack
         if: always()

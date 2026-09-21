@@ -15,6 +15,7 @@ import {
   createThrowawayUser,
   type ThrowawayUserHandle,
 } from "@/lib/testing/db";
+import type { UserTable } from "@/lib/supabase/types";
 import { loadGoldenFixture, seedGoldenPortfolio } from "@/lib/testing/golden";
 import { readAll } from "@/lib/supabase/paginate";
 import { readSettings } from "./rows";
@@ -116,7 +117,10 @@ describe("settings", () => {
       "portfolio_snapshots",
       "csv_imports",
     ]) {
-      const { count } = await admin.from(table).select("*", { count: "exact", head: true }).eq("user_id", a.userId);
+      const { count } = await admin
+        .from(table as UserTable)
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", a.userId);
       expect(count, table).toBe(0);
     }
     const after = await admin

@@ -3,7 +3,7 @@
  * removal, sign out everywhere. Each takes the user's own client — the
  * cookie session — and returns a fixed reason, never Auth's message.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { z } from "zod";
 
 export type SecurityReason =
@@ -14,7 +14,7 @@ const NewPassword = z
   .object({ password: z.string().min(12), confirm: z.string() })
   .refine((v) => v.password === v.confirm, { path: ["confirm"], message: "must match" });
 
-export async function changePassword(client: SupabaseClient, input: unknown): Promise<SecurityResult> {
+export async function changePassword(client: Db, input: unknown): Promise<SecurityResult> {
   const parsed = NewPassword.safeParse(input);
   if (!parsed.success) return { ok: false, reason: "invalid_input" };
   const { error } = await client.auth.updateUser({ password: parsed.data.password });
@@ -30,7 +30,7 @@ export interface Enrolment {
 }
 
 /** Starts enrolment: the factor exists as `unverified` until `confirmTotp`. Stale unverified factors are cleared first. */
-export async function enrolTotp(client: SupabaseClient): Promise<SecurityResult<Enrolment>> {
+export async function enrolTotp(client: Db): Promise<SecurityResult<Enrolment>> {
   const factors = await client.auth.mfa.listFactors();
   // `totp` lists verified factors only; unverified leftovers of an abandoned enrolment are in `all`.
   for (const f of factors.data?.all ?? [])
@@ -40,7 +40,7 @@ export async function enrolTotp(client: SupabaseClient): Promise<SecurityResult<
   return { ok: true, value: { factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret } };
 }
 
-export async function confirmTotp(client: SupabaseClient, input: unknown): Promise<SecurityResult> {
+export async function confirmTotp(client: Db, input: unknown): Promise<SecurityResult> {
   const parsed = z
     .object({
       factorId: z.string().min(1),
@@ -56,7 +56,7 @@ export async function confirmTotp(client: SupabaseClient, input: unknown): Promi
 }
 
 /** Removal of a verified factor needs an AAL2 session — the action checks `requireAal2` first. */
-export async function unenrolTotp(client: SupabaseClient): Promise<SecurityResult> {
+export async function unenrolTotp(client: Db): Promise<SecurityResult> {
   const factors = await client.auth.mfa.listFactors();
   const verified = factors.data?.totp ?? [];
   if (verified.length === 0) return { ok: false, reason: "no_factor" };
@@ -67,17 +67,13 @@ export async function unenrolTotp(client: SupabaseClient): Promise<SecurityResul
   return { ok: true, value: undefined };
 }
 
-export async function signOutEverywhere(client: SupabaseClient): Promise<SecurityResult> {
+export async function signOutEverywhere(client: Db): Promise<SecurityResult> {
   const { error } = await client.auth.signOut({ scope: "global" });
   return error ? { ok: false, reason: "auth_failed" } : { ok: true, value: undefined };
 }
 
 /** A fresh password check for destructive actions, against a throwaway client so the session is untouched. */
-export async function verifyPassword(
-  makeClient: () => SupabaseClient,
-  email: string,
-  password: string,
-): Promise<boolean> {
+export async function verifyPassword(makeClient: () => Db, email: string, password: string): Promise<boolean> {
   const { error } = await makeClient().auth.signInWithPassword({ email, password });
   return error === null;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { createIngestStore } from "./store";
 
 /**
@@ -41,7 +41,7 @@ function fakeClient(tables: Record<string, unknown[]>) {
     },
     rpc: async () => ({ data: {}, error: null }),
   };
-  return { client: client as unknown as SupabaseClient, ranges };
+  return { client: client as unknown as Db, ranges };
 }
 
 const ASSETS = [

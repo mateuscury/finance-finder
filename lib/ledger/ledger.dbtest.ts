@@ -8,7 +8,7 @@
  *
  * Runs under `pnpm test:db` only.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { compareGolden, GoldenFixtureSchema, runGolden, type GoldenFixture } from "@/lib/calc/golden";
@@ -83,7 +83,7 @@ describe("readLedger under RLS", () => {
   it("reads the golden portfolio back as text rows and the kernel reproduces expected.json", async () => {
     const owner = await newUser();
     const { goldenIdOf } = await seedGoldenPortfolio(admin, owner.userId, fixture, { series: true });
-    const client: SupabaseClient = await owner.signIn();
+    const client: Db = await owner.signIn();
 
     const read = await readLedger(client, PACKS);
     expect(read.assets).toHaveLength(N.assets);

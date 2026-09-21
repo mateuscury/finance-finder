@@ -8,7 +8,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { siteUrl } from "@/lib/supabase/env";
+import { siteUrl } from "@/lib/env";
 
 const Credentials = z.object({ email: z.string().trim().min(1), password: z.string().min(1) });
 const Code = z.object({

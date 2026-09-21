@@ -24,7 +24,8 @@ import {
 import { planRestore } from "@/lib/backup";
 import { deleteUserJob, ingestJob } from "@/lib/jobs";
 import { changeBaseCurrency, setEnabledPacks, updatePreferences } from "@/lib/ledger/settings";
-import { publicSupabaseEnv } from "@/lib/supabase/env";
+import { publicEnv } from "@/lib/env";
+import { asJson, type Database } from "@/lib/supabase/types";
 import { formValues, outcomeQuery } from "@/app/(app)/_lib/form";
 
 const SETTINGS = "/settings";
@@ -120,7 +121,7 @@ export async function restoreBackupAction(formData: FormData): Promise<void> {
     const codes = [...new Set(plan.warnings.map((w) => w.code))].join(",");
     redirect(`${SETTINGS}?restore=warnings&codes=${codes}&count=${plan.warnings.length}`);
   }
-  const { error } = await client.rpc("restore_backup", { payload: plan.payload });
+  const { error } = await client.rpc("restore_backup", { payload: asJson(plan.payload) });
   if (error) {
     const m = /restore_refused: ([a-z_]+)/.exec(error.message ?? "");
     redirect(`${SETTINGS}?restore=${m ? m[1] : "write_failed"}`);
@@ -135,10 +136,10 @@ export async function deleteEverythingAction(formData: FormData): Promise<void> 
   if ("reason" in session) redirect(`${SETTINGS}?security=aal2_required`);
   const { phrase, password } = formValues(formData, ["phrase", "password"] as const);
   if (phrase !== "delete everything" || !password || !session.identity.email) redirect(`${SETTINGS}?delete=phrase`);
-  const { url, anonKey } = publicSupabaseEnv();
+  const { NEXT_PUBLIC_SUPABASE_URL: url, NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey } = publicEnv();
   const fresh = await verifyPassword(
     () =>
-      createClient(url, anonKey, {
+      createClient<Database>(url, anonKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       }),
     session.identity.email,

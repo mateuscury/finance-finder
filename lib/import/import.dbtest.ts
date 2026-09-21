@@ -135,7 +135,7 @@ describe("CSV import on the live path", () => {
     const good = {
       asset_id: seed.uuidOf.get("fii")!,
       trade_date: "2026-04-01",
-      type: "buy",
+      type: "buy" as const,
       quantity: "1",
       unit_price: "1",
       currency: "BRL",

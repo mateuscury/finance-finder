@@ -3,7 +3,7 @@
  * upload, its parse, the saved column map, the user's assets and
  * transactions as text, and the dry run over all of it. Server-only.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import type { MarketPack } from "@/packs/types";
 import { parseCsv } from "@/lib/csv/parse";
 import {
@@ -31,10 +31,10 @@ export type LoadedImport =
       run: DryRun;
     };
 
-export async function loadDryRun(client: SupabaseClient, registry: readonly MarketPack[]): Promise<LoadedImport> {
+export async function loadDryRun(client: Db, registry: readonly MarketPack[]): Promise<LoadedImport> {
   const pending = await client.from("csv_imports").select("filename,content").maybeSingle();
   if (pending.error || !pending.data) return { kind: "none" };
-  const { filename, content } = pending.data as { filename: string; content: string };
+  const { filename, content } = pending.data;
   const parsed = parseCsv(content);
   if (!parsed.ok) return { kind: "unparsable", filename, reason: parsed.reason, line: parsed.line };
 

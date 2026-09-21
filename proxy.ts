@@ -12,13 +12,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { redirectFor, resolveAccess } from "@/lib/auth/access";
-import { publicSupabaseEnv } from "@/lib/supabase/env";
+import { publicEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/types";
 import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/server";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const { url, anonKey } = publicSupabaseEnv();
-  const supabase = createServerClient(url, anonKey, {
+  const { NEXT_PUBLIC_SUPABASE_URL: url, NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey } = publicEnv();
+  const supabase = createServerClient<Database>(url, anonKey, {
     cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll: () => request.cookies.getAll(),

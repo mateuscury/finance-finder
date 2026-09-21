@@ -3,7 +3,7 @@
  * passes the user's own client: RLS scopes every read and write, and the
  * composite `(asset_id, user_id)` keys refuse anything a check missed.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { asJson, type Db } from "@/lib/supabase/types";
 import type { IdentifierSpec, MarketPack } from "@/packs/types";
 import { fail, fromAffected, ok, reasonFor, type ActionResult } from "./result";
 import { AssetEditableSchema, AssetInputSchema, failedFields, type AssetInput } from "./schemas";
@@ -38,7 +38,7 @@ export function prepareAsset(input: unknown, registry: readonly MarketPack[]): A
   return ok({ ...parsed.data, identifier });
 }
 
-async function transactionCount(client: SupabaseClient, assetId: string): Promise<number | null> {
+async function transactionCount(client: Db, assetId: string): Promise<number | null> {
   const { count, error } = await client
     .from("transactions")
     .select("*", { count: "exact", head: true })
@@ -47,7 +47,7 @@ async function transactionCount(client: SupabaseClient, assetId: string): Promis
 }
 
 export async function createAsset(
-  client: SupabaseClient,
+  client: Db,
   registry: readonly MarketPack[],
   userId: string,
   input: unknown,
@@ -56,7 +56,7 @@ export async function createAsset(
   if (!prepared.ok) return prepared;
   const { data, error } = await client
     .from("assets")
-    .insert({ user_id: userId, ...prepared.value })
+    .insert({ user_id: userId, ...prepared.value, metadata: asJson(prepared.value.metadata) })
     .select("id")
     .single();
   if (error || !data) return fail(reasonFor(error));
@@ -64,7 +64,7 @@ export async function createAsset(
 }
 
 export async function updateAsset(
-  client: SupabaseClient,
+  client: Db,
   registry: readonly MarketPack[],
   assetId: string,
   input: unknown,
@@ -86,11 +86,14 @@ export async function updateAsset(
     if (n > 0) return fail("asset_identity_locked", ["identifier"]);
   }
   const patch = identityChanged ? prepared.value : AssetEditableSchema.parse(prepared.value);
-  const { error } = await client.from("assets").update(patch).eq("id", assetId);
+  const { error } = await client
+    .from("assets")
+    .update({ ...patch, metadata: asJson(patch.metadata) })
+    .eq("id", assetId);
   return error ? fail(reasonFor(error)) : ok(undefined);
 }
 
-export async function deleteAsset(client: SupabaseClient, assetId: string): Promise<ActionResult> {
+export async function deleteAsset(client: Db, assetId: string): Promise<ActionResult> {
   const n = await transactionCount(client, assetId);
   if (n === null) return fail("write_failed");
   if (n > 0) return fail("asset_has_transactions");

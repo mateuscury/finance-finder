@@ -10,7 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db, TableName } from "@/lib/supabase/types";
 import { GoldenFixtureSchema, type GoldenFixture } from "@/lib/calc/golden";
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -24,8 +24,10 @@ export function loadGoldenFixture(packId = "br"): { fixture: GoldenFixture; expe
   };
 }
 
-async function mustInsert(admin: SupabaseClient, table: string, rows: Record<string, unknown>[]): Promise<void> {
-  const { error } = await admin.from(table).insert(rows);
+async function mustInsert(admin: Db, table: TableName, rows: Record<string, unknown>[]): Promise<void> {
+  // Seeding writes fixture rows shaped by hand; the typed insert would
+  // demand each table's Insert type, which the golden loader does not model.
+  const { error } = await admin.from(table).insert(rows as never);
   if (error) throw new Error(`dbtest: seeding ${table} failed (${error.message})`);
 }
 
@@ -38,7 +40,7 @@ export interface SeededGolden {
 
 /** Seeds settings, assets, transactions, cash flows, prices and (when asked) the global series. */
 export async function seedGoldenPortfolio(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   fixture: GoldenFixture,
   options: { series?: boolean; enabledPacks?: string[] } = {},
@@ -120,7 +122,7 @@ export async function seedGoldenPortfolio(
 }
 
 /** Removes the fixture's global series rows (they have no user to cascade from). */
-export async function removeGoldenSeries(admin: SupabaseClient, fixture: GoldenFixture): Promise<void> {
+export async function removeGoldenSeries(admin: Db, fixture: GoldenFixture): Promise<void> {
   for (const [seriesId, points] of Object.entries(fixture.series)) {
     const dates = points.map((p) => p.date);
     const { error } = await admin.from("series_points").delete().eq("series_id", seriesId).in("date", dates);

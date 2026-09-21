@@ -3,12 +3,12 @@
  * withdrawals in the BASE currency only — the action writes it, the form
  * never asks. They enter TWR/MWR at read time and touch no snapshot.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { fail, fromAffected, ok, reasonFor, type ActionResult } from "./result";
 import { CashFlowInputSchema, failedFields } from "./schemas";
 
 export async function createCashFlow(
-  client: SupabaseClient,
+  client: Db,
   userId: string,
   baseCurrency: string,
   input: unknown,
@@ -25,7 +25,7 @@ export async function createCashFlow(
 }
 
 export async function updateCashFlow(
-  client: SupabaseClient,
+  client: Db,
   cashFlowId: string,
   baseCurrency: string,
   input: unknown,
@@ -41,6 +41,6 @@ export async function updateCashFlow(
   );
 }
 
-export async function deleteCashFlow(client: SupabaseClient, cashFlowId: string): Promise<ActionResult> {
+export async function deleteCashFlow(client: Db, cashFlowId: string): Promise<ActionResult> {
   return fromAffected(await client.from("cash_flows").delete().eq("id", cashFlowId).select("id"));
 }

@@ -7,14 +7,14 @@
  * registry: draft is allowed (the owner's informed consent, PACKS §12),
  * unmaintained and unknown are refused.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import type { MarketPack } from "@/packs/types";
 import { z } from "zod";
 import { fail, ok, reasonFor, type ActionResult } from "./result";
 import { BaseCurrencyInputSchema, failedFields } from "./schemas";
 
 export async function changeBaseCurrency(
-  client: SupabaseClient,
+  client: Db,
   userId: string,
   input: unknown,
 ): Promise<ActionResult<{ reset: boolean }>> {
@@ -41,7 +41,7 @@ const PreferencesSchema = z.object({
     .regex(/^[a-z]{2}(-[A-Z]{2})?$/, "BCP-47 language[-REGION]"),
 });
 
-export async function updatePreferences(client: SupabaseClient, userId: string, input: unknown): Promise<ActionResult> {
+export async function updatePreferences(client: Db, userId: string, input: unknown): Promise<ActionResult> {
   const parsed = PreferencesSchema.safeParse(input);
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
   const { error } = await client
@@ -55,7 +55,7 @@ export async function updatePreferences(client: SupabaseClient, userId: string, 
  * enabled before, so the caller can backfill their series after the response.
  */
 export async function setEnabledPacks(
-  client: SupabaseClient,
+  client: Db,
   userId: string,
   registry: readonly MarketPack[],
   packIds: readonly string[],
@@ -77,7 +77,7 @@ export async function setEnabledPacks(
 }
 
 /** Stamps `last_export_at` (SPEC §12.3) — the one side effect an export has. */
-export async function stampExport(client: SupabaseClient, userId: string, at = new Date()): Promise<ActionResult> {
+export async function stampExport(client: Db, userId: string, at = new Date()): Promise<ActionResult> {
   const { error } = await client
     .from("user_settings")
     .upsert({ user_id: userId, last_export_at: at.toISOString() }, { onConflict: "user_id" });

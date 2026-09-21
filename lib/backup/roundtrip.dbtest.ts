@@ -12,7 +12,6 @@
  * and signed in, because the service role bypasses the RLS and `auth.uid()`
  * the two RPCs are built on.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { compareGolden, GoldenFixtureSchema, runGolden, type GoldenFixture } from "@/lib/calc/golden";
@@ -24,6 +23,7 @@ import {
   type ThrowawayUserHandle,
 } from "@/lib/testing/db";
 import { loadGoldenFixture, seedGoldenPortfolio } from "@/lib/testing/golden";
+import { asJson, type Db, type UserTable } from "@/lib/supabase/types";
 
 const admin = createDbTestClient();
 const users: ThrowawayUserHandle[] = [];
@@ -48,7 +48,7 @@ const N = {
   prices: Object.values(fixture.prices).reduce((n, rows) => n + rows.length, 0),
 };
 
-async function exportBackup(client: SupabaseClient): Promise<Backup> {
+async function exportBackup(client: Db): Promise<Backup> {
   const { data, error } = await client.rpc("export_backup");
   if (error) throw new Error(`export_backup failed (${error.message})`);
   const parsed = parseBackup(data);
@@ -56,7 +56,7 @@ async function exportBackup(client: SupabaseClient): Promise<Backup> {
   return parsed.backup;
 }
 
-async function countFor(table: string, userId: string): Promise<number> {
+async function countFor(table: UserTable, userId: string): Promise<number> {
   const { count, error } = await admin.from(table).select("*", { head: true, count: "exact" }).eq("user_id", userId);
   if (error) throw new Error(`count ${table} failed (${error.message})`);
   return count ?? -1;
@@ -130,14 +130,14 @@ describe("export → delete → restore → export", () => {
     expect(JSON.stringify(exportA)).not.toContain("user_id");
 
     await first.remove();
-    for (const table of ["user_settings", "assets", "transactions", "cash_flows"]) {
+    for (const table of ["user_settings", "assets", "transactions", "cash_flows"] as const) {
       expect(await countFor(table, first.userId), `${table} did not cascade`).toBe(0);
     }
     expect(await countPrices([...uuidOf.values()])).toBe(0);
 
     const second = await newUser();
     const clientB = await second.signIn();
-    const restored = await clientB.rpc("restore_backup", { payload: exportA });
+    const restored = await clientB.rpc("restore_backup", { payload: asJson(exportA) });
     expect(restored.error).toBeNull();
     expect(restored.data).toEqual({
       assets: N.assets,
@@ -162,7 +162,7 @@ describe("export → delete → restore → export", () => {
     ).toEqual([]);
 
     // Refusal: the account is no longer empty.
-    const again = await clientB.rpc("restore_backup", { payload: exportA });
+    const again = await clientB.rpc("restore_backup", { payload: asJson(exportA) });
     expect(again.error?.message).toMatch(/restore_refused: account_not_empty/);
     expect(await countFor("assets", second.userId)).toBe(N.assets);
   });
@@ -177,20 +177,20 @@ describe("export → delete → restore → export", () => {
 
     // Transactions and prices point at assets that are not in the file's own set.
     const foreign = { ...theirs, assets: [] };
-    const r1 = await client.rpc("restore_backup", { payload: foreign });
+    const r1 = await client.rpc("restore_backup", { payload: asJson(foreign) });
     expect(r1.error?.message).toMatch(/restore_refused: foreign_asset_reference/);
 
     // The file's own asset rows carry ids that already exist — for the other user.
     const conflict = { ...theirs, transactions: [], cash_flows: [], prices: [] };
-    const r2 = await client.rpc("restore_backup", { payload: conflict });
+    const r2 = await client.rpc("restore_backup", { payload: asJson(conflict) });
     expect(r2.error?.message).toMatch(/restore_refused: asset_id_conflict/);
 
     // A version this build does not know.
     const future = { ...theirs, version: 2 };
-    const r3 = await client.rpc("restore_backup", { payload: future });
+    const r3 = await client.rpc("restore_backup", { payload: asJson(future) });
     expect(r3.error?.message).toMatch(/restore_refused: unsupported_version/);
 
-    for (const table of ["user_settings", "assets", "transactions", "cash_flows"]) {
+    for (const table of ["user_settings", "assets", "transactions", "cash_flows"] as const) {
       expect(await countFor(table, intruder.userId), `${table} was written`).toBe(0);
     }
     // The owner's rows are untouched, including the prices the intruder named.

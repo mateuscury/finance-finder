@@ -11,6 +11,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { setupThrowawayUser } from "@/lib/testing/db";
+import type { TableName } from "@/lib/supabase/types";
 import type { CommitPayload } from "./ingest";
 import { createIngestStore } from "./store";
 
@@ -61,8 +62,11 @@ async function priceRow(assetId: string, date: string): Promise<{ price: string;
   return data ? { price: String(data.price), source_id: String(data.source_id) } : null;
 }
 
-async function countRows(table: string, column: string, value: string): Promise<number> {
-  const { count, error } = await owner.client.from(table).select("*", { head: true, count: "exact" }).eq(column, value);
+async function countRows(table: TableName, column: string, value: string): Promise<number> {
+  const { count, error } = await owner.client
+    .from(table)
+    .select("*", { head: true, count: "exact" })
+    .eq(column as never, value);
   if (error) throw new Error(`dbtest: could not count ${table} (${error.message})`);
   return count ?? 0;
 }

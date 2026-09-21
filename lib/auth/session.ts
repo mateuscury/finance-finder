@@ -9,14 +9,14 @@
  */
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { LOGIN_PATH, MFA_PATH, resolveAccess, type Identity } from "./access";
 
 export interface Session {
   identity: Identity;
   /** The user's own RLS-scoped client. */
-  client: SupabaseClient;
+  client: Db;
 }
 
 export const requireUser = cache(async (): Promise<Session> => {

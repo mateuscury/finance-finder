@@ -21,7 +21,7 @@
     "release:check": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:db && pnpm codeowners --check && tsx scripts/check-release-readiness.ts && pnpm test:e2e && pnpm build",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > lib/database.types.ts",
+    "db:types": "tsx scripts/db-types.ts",
     "fixtures:record": "tsx --env-file-if-exists=.env.local scripts/record-fixtures.ts"
   },
   "dependencies": {

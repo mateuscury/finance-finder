@@ -3,17 +3,17 @@
  * recomputes everything downstream: the decision 20 trigger drops the
  * snapshots from the touched date on, and the next job run rebuilds them.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { fail, fromAffected, ok, reasonFor, type ActionResult } from "./result";
 import { failedFields, TransactionInputSchema } from "./schemas";
 
-async function ownsAsset(client: SupabaseClient, assetId: string): Promise<boolean> {
+async function ownsAsset(client: Db, assetId: string): Promise<boolean> {
   const { data, error } = await client.from("assets").select("id").eq("id", assetId).maybeSingle();
   return !error && data !== null;
 }
 
 export async function createTransaction(
-  client: SupabaseClient,
+  client: Db,
   userId: string,
   input: unknown,
 ): Promise<ActionResult<{ id: string }>> {
@@ -30,17 +30,13 @@ export async function createTransaction(
   return ok({ id: data.id as string });
 }
 
-export async function updateTransaction(
-  client: SupabaseClient,
-  transactionId: string,
-  input: unknown,
-): Promise<ActionResult> {
+export async function updateTransaction(client: Db, transactionId: string, input: unknown): Promise<ActionResult> {
   const parsed = TransactionInputSchema.safeParse(input);
   if (!parsed.success) return fail("invalid_input", failedFields(parsed.error));
   if (!(await ownsAsset(client, parsed.data.asset_id))) return fail("not_found", ["asset_id"]);
   return fromAffected(await client.from("transactions").update(parsed.data).eq("id", transactionId).select("id"));
 }
 
-export async function deleteTransaction(client: SupabaseClient, transactionId: string): Promise<ActionResult> {
+export async function deleteTransaction(client: Db, transactionId: string): Promise<ActionResult> {
   return fromAffected(await client.from("transactions").delete().eq("id", transactionId).select("id"));
 }

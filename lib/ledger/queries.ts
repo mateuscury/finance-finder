@@ -3,7 +3,7 @@
  * "Reads"). Lists are one page each, ordered by key; counts are
  * `head: true`, never a row read.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db, TableName, UserTable } from "@/lib/supabase/types";
 import type { MarketPack } from "@/packs/types";
 import { readAll } from "@/lib/supabase/paginate";
 import {
@@ -36,7 +36,7 @@ export interface AssetListItem extends AssetDbRow {
   sourceError: string | null;
 }
 
-export async function listAssets(client: SupabaseClient, registry: readonly MarketPack[]): Promise<AssetListItem[]> {
+export async function listAssets(client: Db, registry: readonly MarketPack[]): Promise<AssetListItem[]> {
   const rows = await readAll<AssetDbRow>((from, to) =>
     client.from("assets").select(ASSET_SELECT).order("identifier").order("id").range(from, to),
   );
@@ -52,7 +52,10 @@ export async function listAssets(client: SupabaseClient, registry: readonly Mark
           .select("asset_id,date,price,currency,source_id")
           .in("asset_id", chunk)
           .order("asset_id")
-          .range(from, to),
+          .range(from, to)
+          // A generated view type marks every column nullable; this view selects
+          // from NOT NULL columns of `prices`, so the rows are complete.
+          .overrideTypes<{ asset_id: string; date: string; price: string; currency: string; source_id: string }[]>(),
     );
     for (const p of page)
       latest.set(p.asset_id, { date: p.date, price: p.price, currency: p.currency, sourceId: p.source_id });
@@ -90,8 +93,8 @@ export interface Page<T> {
 }
 
 async function pageOf<T>(
-  client: SupabaseClient,
-  table: string,
+  client: Db,
+  table: TableName,
   select: string,
   order: string[],
   page: number,
@@ -109,7 +112,7 @@ export interface TransactionListItem extends TransactionDbRow {
   assetName: string;
 }
 
-export async function listTransactions(client: SupabaseClient, page = 1): Promise<Page<TransactionListItem>> {
+export async function listTransactions(client: Db, page = 1): Promise<Page<TransactionListItem>> {
   const result = await pageOf<
     TransactionDbRow & { assets: { identifier: string; name: string } | { identifier: string; name: string }[] | null }
   >(client, "transactions", `${TRANSACTION_SELECT},assets!inner(identifier,name)`, ["-trade_date", "id"], page);
@@ -134,10 +137,7 @@ export async function listTransactions(client: SupabaseClient, page = 1): Promis
   };
 }
 
-export function listCashFlows(
-  client: SupabaseClient,
-  page = 1,
-): Promise<Page<CashFlowDbRow & { note: string | null }>> {
+export function listCashFlows(client: Db, page = 1): Promise<Page<CashFlowDbRow & { note: string | null }>> {
   return pageOf(client, "cash_flows", `${CASH_FLOW_SELECT},note`, ["-date", "id"], page);
 }
 
@@ -147,8 +147,8 @@ export interface LedgerCounts {
   cashFlows: number;
 }
 
-export async function countLedger(client: SupabaseClient): Promise<LedgerCounts> {
-  const count = async (table: string): Promise<number> => {
+export async function countLedger(client: Db): Promise<LedgerCounts> {
+  const count = async (table: UserTable): Promise<number> => {
     const { count: n, error } = await client.from(table).select("*", { count: "exact", head: true });
     if (error) throw new Error(`ledger: count ${table} (${error.code ?? "unknown"})`);
     return n ?? 0;

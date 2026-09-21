@@ -17,7 +17,8 @@
  * Service-role only, and only here: the key never leaves the test process.
  */
 import { randomBytes, randomUUID } from "node:crypto";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import type { Database, Db } from "@/lib/supabase/types";
 
 const REQUIRED_ENV = [
   "NEXT_PUBLIC_SUPABASE_URL",
@@ -40,9 +41,9 @@ export function requireDbEnv(): { url: string; serviceRoleKey: string; anonKey: 
   return { url, serviceRoleKey, anonKey };
 }
 
-export function createDbTestClient(): SupabaseClient {
+export function createDbTestClient(): Db {
   const { url, serviceRoleKey } = requireDbEnv();
-  return createClient(url, serviceRoleKey, {
+  return createClient<Database>(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }
@@ -51,7 +52,7 @@ export function createDbTestClient(): SupabaseClient {
  * One cheap round trip before any test runs, so a stack that is down or not
  * migrated fails with a single clear message instead of a timeout per test.
  */
-export async function assertStackReachable(client: SupabaseClient): Promise<void> {
+export async function assertStackReachable(client: Db): Promise<void> {
   let failure: string | null = null;
   try {
     const { error } = await client.from("ingest_cursors").select("source_id", { head: true, count: "exact" });
@@ -81,13 +82,13 @@ export interface ThrowawayUserHandle {
    * an RPC that reads `auth.uid()` or relies on RLS, both of which the service
    * role bypasses (docs/milestone-2-plan.md Phase 6 grounding).
    */
-  signIn(): Promise<SupabaseClient>;
+  signIn(): Promise<Db>;
   /** Deletes the auth user; every user-scoped table cascades. Idempotent. */
   remove(): Promise<void>;
 }
 
 /** One throwaway auth user through the admin API. Callers own its lifetime. */
-export async function createThrowawayUser(admin: SupabaseClient): Promise<ThrowawayUserHandle> {
+export async function createThrowawayUser(admin: Db): Promise<ThrowawayUserHandle> {
   const { url, anonKey } = requireDbEnv();
   // RFC 2606 reserved domain: can never receive mail.
   const email = `dbtest-${randomUUID()}@example.com`;
@@ -102,7 +103,7 @@ export async function createThrowawayUser(admin: SupabaseClient): Promise<Throwa
     userId,
     email,
     async signIn() {
-      const client = createClient(url, anonKey, {
+      const client = createClient<Database>(url, anonKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
       const signedIn = await client.auth.signInWithPassword({ email, password });

@@ -3,7 +3,7 @@ import { PACKS } from "@/packs";
 import { Notice } from "@/app/(app)/_components/notice";
 import { requireUser } from "@/lib/auth/session";
 import { listAssets } from "@/lib/ledger/queries";
-import { TRANSACTION_SELECT, type TransactionDbRow } from "@/lib/ledger/rows";
+import { TRANSACTION_SELECT } from "@/lib/ledger/rows";
 import { TransactionForm } from "../_form";
 import { updateTransactionAction } from "../actions";
 
@@ -15,7 +15,7 @@ export default async function EditTransactionPage({ params, searchParams }: Page
     listAssets(client, PACKS),
   ]);
   if (!data) notFound();
-  const t = data as TransactionDbRow & { note: string | null };
+  const t = data;
   return (
     <main>
       <h1>Edit transaction</h1>

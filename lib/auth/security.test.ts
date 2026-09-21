@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Db } from "@/lib/supabase/types";
 import { changePassword, confirmTotp, enrolTotp, unenrolTotp, verifyPassword } from "./security";
 
 /** A fake of the auth surface these functions touch; every call is recorded. */
@@ -29,7 +29,7 @@ function fakeAuth(
         challengeAndVerify: () => res("challengeAndVerify"),
       },
     },
-  } as unknown as SupabaseClient;
+  } as unknown as Db;
   return { client, calls };
 }
 
