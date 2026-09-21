@@ -13,6 +13,10 @@ import type { SecurityReason } from "@/lib/auth/security";
 import type { DatabaseRestoreRefusal, RestoreRefusal } from "@/lib/backup";
 import type { CommitRefusal } from "@/lib/import/commit";
 import type { ActionReason } from "@/lib/ledger/result";
+import type { UnpricedReason } from "@/lib/calc/staleness";
+
+/** Every closed reason a figure can be undefined for: the kernel's unpriced reasons plus the performance modules' own. */
+export type ReasonCode = UnpricedReason | "stale" | "zero_start_value" | "no_position";
 
 /** The outcome codes the import page shows, beyond the commit planner's own. */
 export type ImportOutcome = CommitRefusal | "no_file" | "too_large" | "write_failed" | "not_found" | "invalid_input";
@@ -55,6 +59,8 @@ export interface Copy {
     unpriced: string;
     unpricedReason: (p: { reason: string }) => string;
     accrues: string;
+    /** A phrase per closed reason code, for a table cell or a banner. */
+    reasons: Record<ReasonCode, string>;
   };
   /** The status strip (SPEC §9.2): present only when something is pending. */
   strip: {
@@ -140,6 +146,27 @@ export interface Copy {
       base: string;
       stale: string;
       unresolved: (p: { n: number }) => string;
+    };
+    contribution: {
+      title: string;
+      help: string;
+      total: string;
+      gain: string;
+      share: string;
+      partial: string;
+      reason: (p: { reason: string; n: number }) => string;
+      drillIn: string;
+      attribution: string;
+      attributionHelp: string;
+      rNative: string;
+      rFx: string;
+      rBase: string;
+      identity: string;
+      baseCurrencyNote: string;
+      bdrGap: string;
+      noPosition: string;
+      back: string;
+      chained: (p: { n: number }) => string;
     };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */

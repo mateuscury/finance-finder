@@ -38,6 +38,20 @@ export const ptBR: Copy = {
     unpriced: "sem preço",
     unpricedReason: ({ reason }) => `sem preço — ${reason}`,
     accrues: "rende",
+    reasons: {
+      no_observation: "sem observação na data ou antes",
+      series_gap: "falta um dia da série do índice",
+      before_first_anchor: "antes da primeira observação do índice",
+      no_fx_series: "nenhuma série de câmbio liga as moedas",
+      no_price: "sem preço na data ou antes",
+      indexation_not_supported: "títulos indexados marcados a curva ainda não são suportados",
+      invalid_metadata: "os metadados não cabem no tipo",
+      matured: "vencido",
+      not_a_return_series: "uma curva não tem um retorno único",
+      stale: "desatualizado em uma das pontas do período",
+      zero_start_value: "nada estava investido no início",
+      no_position: "não mantido no período",
+    },
   },
   strip: {
     label: "Situação",
@@ -142,6 +156,30 @@ export const ptBR: Copy = {
         n === 1
           ? "1 posição é de um tipo que esta versão não conhece; conta pelo id."
           : `${n} posições são de tipos que esta versão não conhece; contam pelo id.`,
+    },
+    contribution: {
+      title: "Contribuição",
+      help: "A parte de cada posição no retorno simples do período: o ganho dela sobre o valor inicial mais o que você aportou. As partes somam o retorno.",
+      total: "Retorno simples",
+      gain: "Ganho",
+      share: "Contribuição",
+      partial: "Parcial: algumas posições não puderam ser medidas neste período, então o total as deixa de fora.",
+      reason: ({ reason, n }) => (n === 1 ? `1 posição: ${reason}` : `${n} posições: ${reason}`),
+      drillIn: "Ativo vs. câmbio",
+      attribution: "Atribuição",
+      attributionHelp:
+        "O retorno desta posição separado entre o que o ativo fez na própria moeda e o que o câmbio fez.",
+      rNative: "Ativo, na própria moeda",
+      rFx: "Câmbio",
+      rBase: "Na sua moeda base",
+      identity: "(1 + base) = (1 + ativo) × (1 + câmbio)",
+      baseCurrencyNote: "Cotado na sua moeda base, então o câmbio contribuiu exatamente zero.",
+      bdrGap:
+        "Um ativo cotado na sua moeda base sobre um lastro estrangeiro mostra zero aqui: o efeito do câmbio está dentro do preço, e esta versão não o separa.",
+      noPosition: "Não mantido neste período.",
+      back: "Todas as posições",
+      chained: ({ n }) =>
+        n === 1 ? "1 subperíodo encadeado." : `${n} subperíodos encadeados nas datas de transação desta posição.`,
     },
   },
   errors: {

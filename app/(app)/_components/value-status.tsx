@@ -1,4 +1,4 @@
-import type { Copy } from "@/lib/copy";
+import type { Copy, ReasonCode } from "@/lib/copy";
 
 export type ValueStatusKind = "ok" | "carried_forward" | "stale" | "unpriced" | "accrues";
 
@@ -27,7 +27,7 @@ export function ValueStatus({
         : status === "accrues"
           ? copy.status.accrues
           : reason
-            ? copy.status.unpricedReason({ reason })
+            ? copy.status.unpricedReason({ reason: copy.status.reasons[reason as ReasonCode] ?? reason })
             : copy.status.unpriced;
   const mark = status === "carried_forward" ? "↻" : status === "stale" ? "⚠" : status === "accrues" ? "∼" : "—";
   return (

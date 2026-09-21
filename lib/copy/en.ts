@@ -33,6 +33,20 @@ export const en: Copy = {
     unpriced: "unpriced",
     unpricedReason: ({ reason }) => `unpriced — ${reason}`,
     accrues: "accrues",
+    reasons: {
+      no_observation: "no observation at or before the date",
+      series_gap: "a day of the index series is missing",
+      before_first_anchor: "before the index's first observation",
+      no_fx_series: "no exchange-rate series links the currencies",
+      no_price: "no price at or before the date",
+      indexation_not_supported: "indexed curve bonds are not supported yet",
+      invalid_metadata: "the metadata does not fit the kind",
+      matured: "past maturity",
+      not_a_return_series: "a curve has no single return",
+      stale: "stale at one end of the period",
+      zero_start_value: "nothing was invested at the start",
+      no_position: "not held over the period",
+    },
   },
   strip: {
     label: "Status",
@@ -135,6 +149,30 @@ export const en: Copy = {
         n === 1
           ? "1 holding is of a kind this build does not know; it is counted under its id."
           : `${n} holdings are of kinds this build does not know; they are counted under their ids.`,
+    },
+    contribution: {
+      title: "Contribution",
+      help: "Each holding's share of the period's simple return: its gain over the starting value plus what you deposited. The shares add up to the return.",
+      total: "Simple return",
+      gain: "Gain",
+      share: "Contribution",
+      partial: "Partial: some holdings could not be measured over this period, so the total leaves them out.",
+      reason: ({ reason, n }) => (n === 1 ? `1 holding: ${reason}` : `${n} holdings: ${reason}`),
+      drillIn: "Asset vs. exchange rate",
+      attribution: "Attribution",
+      attributionHelp:
+        "This holding's return split into what the asset did in its own currency and what the exchange rate did.",
+      rNative: "Asset, in its own currency",
+      rFx: "Exchange rate",
+      rBase: "In your base currency",
+      identity: "(1 + base) = (1 + asset) × (1 + exchange rate)",
+      baseCurrencyNote: "Quoted in your base currency, so the exchange rate contributed exactly zero.",
+      bdrGap:
+        "An asset quoted in your base currency over a foreign underlying shows zero here: the rate's effect is inside its price, and this build does not separate it.",
+      noPosition: "Not held over this period.",
+      back: "All holdings",
+      chained: ({ n }) =>
+        n === 1 ? "1 sub-period chained." : `${n} sub-periods chained at this holding's own transaction dates.`,
     },
   },
   errors: {

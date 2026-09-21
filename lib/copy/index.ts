@@ -26,4 +26,4 @@ export function copyFor(locale: string): Copy {
   return isSupportedLocale(locale) ? DICTIONARIES[locale] : en;
 }
 
-export type { Copy, DeleteOutcome, ImportOutcome, RestoreOutcome } from "./types";
+export type { Copy, DeleteOutcome, ImportOutcome, ReasonCode, RestoreOutcome } from "./types";
