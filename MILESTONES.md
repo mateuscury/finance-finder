@@ -418,16 +418,51 @@ depend on. Rationale in full in the plan's "Decisions to confirm" section.
     tests, the `dbtest` tier (RLS, triggers, RPCs, sign-in, AAL, TOTP with
     an RFC 6238 generator in the test) and `next build` are the proof.
 
-## 4. Second-pack canary
+## 4. Brazil to production (MVP)
 
-- Add the minimal UK pack required by `PACKS.md` §14.
-- Prove transitive dependency resolution and curve/scalar storage across packs.
-
-## 5. UX and production readiness
+Re-sequenced 2026-09-20 (decision 32 below): this was §5, and the UK canary
+that `PACKS.md` §14 placed here is now §5.
 
 - Build the ten responsive screens, first-run card, actionable empty states,
-  stale/unpriced states, privacy mode, and accessible loading/error behavior.
-- Exercise realistic multi-year portfolios and document performance budgets.
-- Mark a pack `supported` only after all conformance evidence passes.
-- Run `pnpm release:check`; only a fully green result permits real data.
+  stale/unpriced states, privacy mode, and accessible loading/error behavior
+  — for Brazil, driven by the registry and the user's settings, with nothing
+  in `app/` or `lib/` naming Brazil outside one instance-defaults module.
+- Add `br.stock` (ações, ETFs, BDRs) so a Brazilian brokerage account is
+  representable; the rest of the BR pack is already complete.
+- Exercise a realistic multi-year portfolio and document performance budgets.
+- Mark `packs/br` and `packs/global` `supported` only after all conformance
+  evidence passes; fill `specs/PERSONAS.md`.
+- Deploy to the maintainer's Vercel and Supabase accounts by a runbook; run
+  `pnpm release:check`; only a fully green result permits real data.
+- Leave the second country as a documented seam (`PACKS.md` §16) and an
+  enforced neutrality test — no `packs/uk` code.
+
+Implementation plan: `docs/milestone-4-plan.md` (conventions, decisions
+33–46 to confirm before code, phases 0–8 and merge order).
+
+### Decisions taken 2026-09-20 (before implementation)
+
+32. **Milestone 4 is "Brazil to production"; the UK canary moves to
+    Milestone 5.** `PACKS.md` §14 argued a canary before polish would
+    catch kernel-shape flaws cheaply; three milestones in, the kernel has
+    been driven by a real pack, an independently derived golden fixture
+    and the live read, write and snapshot paths under RLS. The larger risk
+    now is polishing screens no one has used with a full ledger, and the
+    maintainer's stated goal is a workable Brazilian MVP. §14's reason is
+    preserved by two commitments in the plan: an enforced kernel-neutrality
+    test, and a written checklist of every assumption the second pack will
+    meet. Building that pack is not deferred indefinitely — it is the next
+    milestone.
+
+## 5. Second-pack canary (UK)
+
+- Add the minimal UK pack required by `PACKS.md` §14 — one instrument kind
+  (a gilt on `curve_mark_to_market`), one series (SONIA), one source.
+- Prove transitive dependency resolution, a second FX series, yield-curve
+  storage with `tenor_days > 0`, and a two-currency portfolio against a
+  second independently derived golden fixture.
+- Resolve what Milestones 2–4 deferred to it: foreign-currency cash flows
+  (decision 25), `curve_mark_to_market` with `indexation` (decision 7),
+  rate series on a day count other than `BUS/252`, and every item in
+  `PACKS.md` §16.
 
