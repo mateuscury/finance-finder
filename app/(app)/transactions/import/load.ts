@@ -6,6 +6,7 @@
 import type { Db } from "@/lib/supabase/types";
 import type { MarketPack } from "@/packs/types";
 import { parseCsv } from "@/lib/csv/parse";
+import { IsoDateSchema } from "@/packs/schema";
 import {
   dryRun,
   normalizeColumnMap,
@@ -14,6 +15,7 @@ import {
   type DryRun,
   type KnownAsset,
   type KnownTransaction,
+  type MappingResult,
 } from "@/lib/import";
 import { readSettings } from "@/lib/ledger/rows";
 import { readAll } from "@/lib/supabase/paginate";
@@ -40,27 +42,45 @@ export async function loadDryRun(client: Db, registry: readonly MarketPack[]): P
 
   const settings = await readSettings(client);
   const map = normalizeColumnMap(settings.csv_column_map);
+  const mapping = resolveColumns(parsed.header, map);
+  // Duplicate detection only needs the ledger's rows inside the file's own
+  // date range (Milestone 4 D-14): a row can only duplicate a transaction on
+  // its own trade date. Rows whose date does not parse are left out of the
+  // bound; the dry run flags them as errors regardless.
+  const bound = tradeDateBound(parsed.rows, mapping);
   const [assets, existing] = await Promise.all([
     readAll<KnownAsset>((from, to) =>
       client.from("assets").select("id,pack_id,instrument_kind,identifier,native_currency").order("id").range(from, to),
     ),
-    readAll<KnownTransaction>((from, to) =>
-      client
-        .from("transactions")
-        .select("asset_id,trade_date,type,quantity::text,unit_price::text")
-        .order("trade_date")
-        .order("id")
-        .range(from, to),
-    ),
+    bound === null
+      ? Promise.resolve([] as KnownTransaction[])
+      : readAll<KnownTransaction>((from, to) =>
+          client
+            .from("transactions")
+            .select("asset_id,trade_date,type,quantity::text,unit_price::text")
+            .gte("trade_date", bound.min)
+            .lte("trade_date", bound.max)
+            .order("trade_date")
+            .order("id")
+            .range(from, to),
+        ),
   ]);
   const run = dryRun(parsed.header, parsed.rows, map, assets, existing, registry);
-  return {
-    kind: "preview",
-    filename,
-    header: parsed.header,
-    rowCount: parsed.rows.length,
-    map,
-    mapping: resolveColumns(parsed.header, map),
-    run,
-  };
+  return { kind: "preview", filename, header: parsed.header, rowCount: parsed.rows.length, map, mapping, run };
+}
+
+/** `[min, max]` of the rows' date column over the rows whose date parses; null when none does. */
+export function tradeDateBound(rows: readonly string[][], mapping: MappingResult): { min: string; max: string } | null {
+  if (!mapping.ok) return null;
+  const index = mapping.indexOf.date;
+  if (index === null) return null;
+  let min: string | null = null;
+  let max: string | null = null;
+  for (const row of rows) {
+    const value = row[index]?.trim();
+    if (!value || !IsoDateSchema.safeParse(value).success) continue;
+    if (min === null || value < min) min = value;
+    if (max === null || value > max) max = value;
+  }
+  return min === null || max === null ? null : { min, max };
 }

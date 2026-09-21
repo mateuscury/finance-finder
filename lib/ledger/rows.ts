@@ -200,25 +200,54 @@ export interface ReadLedgerOptions {
   userId?: string;
   /** Series are read from here on; nothing caps the end — ingestion never writes a future point. */
   seriesFrom?: IsoDate;
+  /**
+   * Prices are read from here on (Milestone 4 D-13). Correct for any
+   * valuation date ≥ `pricesFrom` + the pack's staleness window: a price
+   * older than that could only be the `lastKnown` of a holding already
+   * stale at that date. Absent, every price of the user's assets is read.
+   */
+  pricesFrom?: IsoDate;
+  /**
+   * `"latest"` reads one row per asset from `asset_latest_prices` instead of
+   * the price history — valid ONLY for a valuation at today (or later),
+   * where "latest ≤ asOf" is the latest there is. The Overview's headline
+   * uses it; anything that values a past date must read `"all"`.
+   */
+  prices?: "all" | "latest";
 }
 
 /** Prices have no user_id; under the service role they are read by the user's asset ids, in chunks. */
-async function readPrices(client: Db, assetIds: string[] | null): Promise<PriceObservation[]> {
-  if (assetIds === null) {
-    return (
-      await readAll<PriceDbRow>((from, to) =>
-        client.from("prices").select(PRICE_SELECT).order("asset_id").order("date").range(from, to),
-      )
-    ).map(toPrice);
-  }
+async function readPrices(
+  client: Db,
+  assetIds: string[] | null,
+  pricesFrom: IsoDate | undefined,
+): Promise<PriceObservation[]> {
+  const page = (chunk: string[] | null) =>
+    readAll<PriceDbRow>((from, to) => {
+      let q = client.from("prices").select(PRICE_SELECT);
+      if (chunk !== null) q = q.in("asset_id", chunk);
+      if (pricesFrom !== undefined) q = q.gte("date", pricesFrom);
+      return q.order("asset_id").order("date").range(from, to);
+    });
+  if (assetIds === null) return (await page(null)).map(toPrice);
   const out: PriceObservation[] = [];
-  for (let i = 0; i < assetIds.length; i += 100) {
-    const chunk = assetIds.slice(i, i + 100);
-    const rows = await readAll<PriceDbRow>((from, to) =>
-      client.from("prices").select(PRICE_SELECT).in("asset_id", chunk).order("asset_id").order("date").range(from, to),
-    );
-    out.push(...rows.map(toPrice));
-  }
+  for (let i = 0; i < assetIds.length; i += 100) out.push(...(await page(assetIds.slice(i, i + 100))).map(toPrice));
+  return out;
+}
+
+/** One row per asset from the latest-price view; the price is already text. */
+async function readLatestPrices(client: Db, assetIds: string[] | null): Promise<PriceObservation[]> {
+  const page = (chunk: string[] | null) =>
+    readAll<PriceDbRow>((from, to) => {
+      let q = client.from("asset_latest_prices").select("asset_id,date,price,currency,source_id");
+      if (chunk !== null) q = q.in("asset_id", chunk);
+      // A generated view type marks every column nullable; the view selects
+      // from NOT NULL columns of `prices`, so the rows are complete.
+      return q.order("asset_id").range(from, to).overrideTypes<PriceDbRow[]>();
+    });
+  if (assetIds === null) return (await page(null)).map(toPrice);
+  const out: PriceObservation[] = [];
+  for (let i = 0; i < assetIds.length; i += 100) out.push(...(await page(assetIds.slice(i, i + 100))).map(toPrice));
   return out;
 }
 
@@ -251,7 +280,11 @@ export async function readLedger(
       return (userId ? q.eq("user_id", userId) : q).order("date").order("id").range(from, to);
     })
   ).map(toCashFlow);
-  const prices = await readPrices(client, userId ? assetRows.map((a) => a.id) : null);
+  const assetIds = userId ? assetRows.map((a) => a.id) : null;
+  const prices =
+    options.prices === "latest"
+      ? await readLatestPrices(client, assetIds)
+      : await readPrices(client, assetIds, options.pricesFrom);
 
   const packIds = new Set([...(settings.enabled_packs ?? []), ...assets.map((a) => a.packId)]);
   const packs = resolveActivation(registry, [...packIds]).packs;

@@ -34,22 +34,22 @@ export async function GET(req: Request) {
       now: () => new Date(),
       store,
     });
-    return NextResponse.json(
-      {
-        ok: summary.ok,
-        durationMs: summary.durationMs,
-        maxDurationSeconds: CRON_MAX_DURATION_SECONDS,
-        users: summary.users.map((u) => ({
-          status: u.status,
-          from: u.from,
-          to: u.to,
-          daysBuilt: u.daysBuilt,
-          rowsWritten: u.rowsWritten,
-          errorCode: u.errorCode,
-        })),
-      },
-      { status: 200 },
-    );
+    const body = {
+      ok: summary.ok,
+      durationMs: summary.durationMs,
+      maxDurationSeconds: CRON_MAX_DURATION_SECONDS,
+      users: summary.users.map((u) => ({
+        status: u.status,
+        from: u.from,
+        to: u.to,
+        daysBuilt: u.daysBuilt,
+        rowsWritten: u.rowsWritten,
+        errorCode: u.errorCode,
+      })),
+    };
+    // One redacted line per run for the platform's log (Milestone 4 D-19).
+    console.log(JSON.stringify({ job: "snapshots", ...body }));
+    return NextResponse.json(body, { status: 200 });
   } catch {
     return NextResponse.json({ ok: false, errorCode: "scheduler_failed" }, { status: 500 });
   }

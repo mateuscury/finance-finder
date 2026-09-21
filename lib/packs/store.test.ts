@@ -31,10 +31,12 @@ function fakeClient(tables: Record<string, unknown[]>) {
         order: () => builder,
         range: (from: number, to: number) => {
           (ranges[table] ??= []).push([from, to]);
-          return {
+          const page = {
             then: (resolve: (v: { data: unknown[]; error: null }) => unknown) =>
               resolve({ data: rows.slice(from, to + 1), error: null }),
+            overrideTypes: () => page,
           };
+          return page;
         },
       };
       return builder;
@@ -66,9 +68,10 @@ describe("createIngestStore — listAssets scopes", () => {
   it("unpriced returns ONLY assets that have no price row", async () => {
     // Previously this scope returned every asset, so a Refresh would re-fetch
     // the whole portfolio instead of just the gaps.
+    // The store reads the latest-price VIEW: one row per asset that has any price (D-12).
     const { client } = fakeClient({
       assets: ASSETS,
-      prices: [{ asset_id: "a1" }, { asset_id: "a1" }, { asset_id: "a3" }],
+      asset_latest_prices: [{ asset_id: "a1" }, { asset_id: "a3" }],
     });
     const rows = await createIngestStore(client).listAssets({ kind: "unpriced" }, ["br"]);
     expect(rows.map((r) => r.assetId)).toEqual(["a2"]);

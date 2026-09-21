@@ -398,6 +398,36 @@ export type Database = {
           },
         ]
       }
+      snapshot_markers: {
+        Row: {
+          earliest_trade_date: string | null
+          last_snapshot_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          earliest_trade_date?: never
+          last_snapshot_date?: never
+          user_id?: string | null
+        }
+        Update: {
+          earliest_trade_date?: never
+          last_snapshot_date?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      snapshot_totals: {
+        Row: {
+          base_currency: string | null
+          carried_rows: number | null
+          date: string | null
+          rows: number | null
+          stale_rows: number | null
+          total_base: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       commit_ingest_chunk: { Args: { payload: Json }; Returns: Json }

@@ -11,6 +11,8 @@
  * below is testable without a database.
  */
 import type { FetchContext, FetchRequest, IsoDate, MarketPack, PriceSource, SourceCapability } from "@/packs/types";
+import { addDays } from "@/lib/calc/dates";
+import { byString, nullsFirst } from "@/lib/util/order";
 import { resolveActivation } from "./activate";
 import { validatePoints } from "./validate";
 import type { HttpAttempt, PackHttpHandle } from "./http";
@@ -125,10 +127,6 @@ export const OVERLAP_DAYS = 5;
 export const MAX_CHUNK_DAYS = 90;
 /** Window used when a ref has no transaction history to anchor to. */
 export const DEFAULT_LOOKBACK_DAYS = 30;
-
-export function addDays(date: IsoDate, days: number): IsoDate {
-  return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
-}
 
 export function maxDate(a: IsoDate, b: IsoDate): IsoDate {
   return a > b ? a : b;
@@ -248,14 +246,12 @@ export async function runIngest(options: RunIngestOptions): Promise<IngestSummar
   const sources: Array<{ pack: MarketPack; source: PriceSource }> = activation.packs.flatMap((pack) =>
     pack.sources.map((source) => ({ pack, source })),
   );
-  sources.sort((a, b) => {
-    const ra = cursors.get(a.source.id) ?? null;
-    const rb = cursors.get(b.source.id) ?? null;
-    if (ra === null && rb !== null) return -1;
-    if (rb === null && ra !== null) return 1;
-    if (ra !== null && rb !== null && ra !== rb) return ra < rb ? -1 : 1;
-    return a.source.id < b.source.id ? -1 : 1;
-  });
+  sources.sort(
+    nullsFirst(
+      (s) => cursors.get(s.source.id) ?? null,
+      byString((s) => s.source.id),
+    ),
+  );
 
   const assets = await store.listAssets(scope, activePackIds);
   const summaries: SourceSummary[] = [];

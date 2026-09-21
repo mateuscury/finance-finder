@@ -53,32 +53,33 @@ export async function GET(req: Request) {
         createPackHttp({ source, mode: "live", signal, deadline, env: process.env }),
     });
 
+    const body = {
+      ok: summary.ok,
+      durationMs: summary.durationMs,
+      maxDurationSeconds: CRON_MAX_DURATION_SECONDS,
+      activatedPacks: summary.activatedPacks,
+      activationWarnings: summary.activationWarnings,
+      sources: summary.sources.map((s) => ({
+        sourceId: s.sourceId,
+        status: s.status,
+        statusCodes: s.statusCodes,
+        attempts: s.attempts,
+        durationMs: s.durationMs,
+        accepted: s.accepted,
+        rejected: s.rejected,
+        written: s.written,
+        manualProtected: s.manualProtected,
+        warnings: s.warnings,
+        errorCode: s.errorCode,
+      })),
+    };
+    // The platform's log is the only record a cron run leaves (Milestone 4
+    // D-19): the same redacted summary the response carries, one line.
+    console.log(JSON.stringify({ job: "prices", ...body }));
     // A run that completed with per-source failures is still a completed run:
     // 200 with ok:false. 500 is reserved for a fatal scheduler or configuration
     // failure, so alerting can tell the two apart.
-    return NextResponse.json(
-      {
-        ok: summary.ok,
-        durationMs: summary.durationMs,
-        maxDurationSeconds: CRON_MAX_DURATION_SECONDS,
-        activatedPacks: summary.activatedPacks,
-        activationWarnings: summary.activationWarnings,
-        sources: summary.sources.map((s) => ({
-          sourceId: s.sourceId,
-          status: s.status,
-          statusCodes: s.statusCodes,
-          attempts: s.attempts,
-          durationMs: s.durationMs,
-          accepted: s.accepted,
-          rejected: s.rejected,
-          written: s.written,
-          manualProtected: s.manualProtected,
-          warnings: s.warnings,
-          errorCode: s.errorCode,
-        })),
-      },
-      { status: 200 },
-    );
+    return NextResponse.json(body, { status: 200 });
   } catch {
     // The caught error may embed a connection string or a key; nothing from it
     // is echoed. The code is a fixed, reviewed literal.

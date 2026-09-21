@@ -157,10 +157,19 @@ describe("GET /api/cron/prices", () => {
         },
       ],
     });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const text = JSON.stringify(await (await GET(authorized())).json());
     for (const forbidden of ["HGLG11", "148.3", "https://", "token=", "secret"]) {
       expect(text, `response leaked '${forbidden}'`).not.toContain(forbidden);
     }
+    // The run log line (Milestone 4 D-19) is the same redacted body, one line, nothing more.
+    expect(log).toHaveBeenCalledTimes(1);
+    const line = String(log.mock.calls[0][0]);
+    expect(JSON.parse(line)).toMatchObject({ job: "prices", ok: true });
+    for (const forbidden of ["HGLG11", "148.3", "https://", "token=", "secret", '"value"', '"price"']) {
+      expect(line, `log leaked '${forbidden}'`).not.toContain(forbidden);
+    }
+    log.mockRestore();
   });
 
   it("declares a maxDuration Vercel accepts without Fluid compute", () => {

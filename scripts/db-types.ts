@@ -21,7 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /** Columns that really are integers (counts, tenors), never money or rates. */
-const INTEGER_COLUMNS = new Set(["tenor_days"]);
+const INTEGER_COLUMNS = new Set(["tenor_days", "rows", "stale_rows", "carried_rows"]);
 
 const generated = execFileSync("supabase", ["gen", "types", "typescript", "--local"], { encoding: "utf8" });
 

@@ -93,23 +93,22 @@ export function createIngestStore(client: Db): IngestStore {
       if (scope.kind === "unpriced") {
         // The Refresh scope means "assets that have no price at all", so the
         // ones that already do must be subtracted. PostgREST cannot express
-        // `not exists (...)`, so existence is resolved by reading the price
-        // rows for these assets and diffing. The read is restricted to the
-        // candidate ids and paginated; if price volume ever makes this
-        // expensive it should become a database view or RPC rather than a
-        // wider query here.
+        // `not exists (...)`; the `asset_latest_prices` view (one row per
+        // asset that has any price) answers it in one row per candidate
+        // instead of every price row (Milestone 4 D-12).
         const candidateIds = rows.map((r) => r.id);
         const pricedIds = new Set<string>();
         for (let i = 0; i < candidateIds.length; i += PAGE) {
           const chunk = candidateIds.slice(i, i + PAGE);
           const priced = await readAll<{ asset_id: string }>((from, to) =>
             client
-              .from("prices")
+              .from("asset_latest_prices")
               .select("asset_id")
               .in("asset_id", chunk)
               .order("asset_id")
-              .order("date")
-              .range(from, to),
+              .range(from, to)
+              // Nullable by view generation, NOT NULL by construction.
+              .overrideTypes<{ asset_id: string }[]>(),
           );
           for (const row of priced) pricedIds.add(row.asset_id);
         }

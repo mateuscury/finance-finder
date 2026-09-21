@@ -49,8 +49,8 @@ export interface SnapshotRow {
 export interface SnapshotStore {
   /** Users in scope, least-recently-snapshotted first (nulls first), then by id. */
   listUsers(scope: SnapshotScope): Promise<SnapshotUser[]>;
-  /** The user's ledger with series from `seriesFrom` on. */
-  readLedger(userId: string, seriesFrom: IsoDate): Promise<LedgerRead>;
+  /** The user's ledger with series from `seriesFrom` and prices from `pricesFrom` on. */
+  readLedger(userId: string, seriesFrom: IsoDate, pricesFrom: IsoDate): Promise<LedgerRead>;
   /** One day's rows in ONE statement: all or nothing. */
   writeDay(userId: string, date: IsoDate, rows: SnapshotRow[]): Promise<void>;
 }
@@ -150,7 +150,12 @@ export async function runSnapshots(options: RunSnapshotsOptions): Promise<Snapsh
       continue;
     }
     try {
-      const read = await store.readLedger(user.userId, addDays(marker, -SERIES_LOOKBACK_DAYS));
+      // Series from the marker back by the lookback; prices from the ledger's
+      // first trade back by the same lookback (Milestone 4 D-13): a rebuild
+      // may value any day since the first trade, and a price older than that
+      // could only serve a holding already stale on the day it was bought.
+      const pricesFrom = addDays(user.earliestTradeDate ?? marker, -SERIES_LOOKBACK_DAYS);
+      const read = await store.readLedger(user.userId, addDays(marker, -SERIES_LOOKBACK_DAYS), pricesFrom);
       const calendars = tradingCalendars(read);
       if (calendars.length === 0) {
         summary.status = "nothing_to_do";

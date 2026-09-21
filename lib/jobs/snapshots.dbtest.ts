@@ -254,3 +254,63 @@ describe("runSnapshots over the golden portfolio", () => {
     expect((fii27.data as { quantity: string }).quantity).toBe("130.0000000000");
   });
 });
+
+describe("the read views (Milestone 4 D-11, decision 52)", () => {
+  it("snapshot_markers: listUsers reads one row per user in one page, least-recently-snapshotted first, nulls first", async () => {
+    const [none, old, recent] = await Promise.all([newUser(), newUser(), newUser()]);
+    for (const u of [none, old, recent]) await seedGoldenPortfolio(admin, u.userId, fixture);
+    // `seedGoldenPortfolio` gives every user the golden ledger; the markers differ only by snapshots.
+    const assetOf = async (u: ThrowawayUserHandle) =>
+      (await admin.from("assets").select("id").eq("user_id", u.userId).limit(1).single()).data!.id;
+    await fakeSnapshots(old.userId, await assetOf(old), ["2026-02-10", "2026-02-12"]);
+    await fakeSnapshots(recent.userId, await assetOf(recent), ["2026-02-10", "2026-02-27"]);
+
+    const store = createSnapshotStore(admin, PACKS);
+    const listed = await store.listUsers({ kind: "users", userIds: [recent.userId, old.userId, none.userId] });
+    expect(listed.map((u) => u.userId)).toEqual([none.userId, old.userId, recent.userId]);
+    expect(listed.map((u) => u.lastSnapshotDate)).toEqual([null, "2026-02-12", "2026-02-27"]);
+    // The earliest trade date is the golden's first transaction for all three.
+    const earliest = [...fixture.transactions].map((t) => t.tradeDate).sort()[0];
+    expect(listed.map((u) => u.earliestTradeDate)).toEqual([earliest, earliest, earliest]);
+    // A user outside the scope is not listed.
+    expect((await store.listUsers({ kind: "users", userIds: [old.userId] })).map((u) => u.userId)).toEqual([
+      old.userId,
+    ]);
+  });
+
+  it("snapshot_totals: sums only ok + carried_forward rows, as text, and counts the stale ones", async () => {
+    const owner = await newUser();
+    const client = await owner.signIn();
+    const { uuidOf } = await seedGoldenPortfolio(admin, owner.userId, fixture);
+    const [a, b, c] = ["fii", "td", "cdb"].map((g) => uuidOf.get(g)!);
+    const row = (asset_id: string, market_value_base: string, status: string, carried_forward = false) => ({
+      user_id: owner.userId,
+      asset_id,
+      date: "2026-03-02",
+      quantity: "1",
+      price_native: market_value_base,
+      base_currency: "BRL",
+      market_value_base,
+      price_date: "2026-03-02",
+      status,
+      carried_forward,
+    });
+    const insert = await admin
+      .from("portfolio_snapshots")
+      .insert([row(a, "100.5", "ok"), row(b, "0.25", "carried_forward", true), row(c, "999999", "stale")]);
+    expect(insert.error).toBeNull();
+
+    // Under the user's own RLS: their own row, the stale value excluded from the total.
+    const { data, error } = await client.from("snapshot_totals").select("*").eq("date", "2026-03-02");
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data![0]).toMatchObject({ base_currency: "BRL", rows: 3, stale_rows: 1, carried_rows: 1 });
+    expect(new KernelDecimal(data![0].total_base!).eq("100.75")).toBe(true);
+    expect(typeof data![0].total_base).toBe("string");
+
+    // Another user sees nothing of it.
+    const stranger = await newUser();
+    const theirs = await (await stranger.signIn()).from("snapshot_totals").select("*").eq("date", "2026-03-02");
+    expect(theirs.data).toEqual([]);
+  });
+});

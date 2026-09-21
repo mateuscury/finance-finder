@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { addDays } from "@/lib/calc/dates";
 import { z } from "zod";
 import type { MarketPack, PriceSource, SeriesDescriptor } from "@/packs/types";
 import {
-  addDays,
   capabilityForAsset,
   capabilityForSeries,
   DEFAULT_LOOKBACK_DAYS,

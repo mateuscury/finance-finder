@@ -39,6 +39,7 @@ describe("GET /api/cron/snapshots", () => {
   });
 
   it("runs all users under the cron budget and returns counts only", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
     runSnapshots.mockResolvedValue({
       ok: true,
       durationMs: 12,
@@ -64,6 +65,12 @@ describe("GET /api/cron/snapshots", () => {
     expect(JSON.stringify(body)).not.toContain("u1");
     expect(runSnapshots.mock.calls[0][0]).toMatchObject({ scope: { kind: "all_users" } });
     expect(created.serviceClients).toBe(1);
+    // The run log line (Milestone 4 D-19) carries the same counts and no user id.
+    expect(log).toHaveBeenCalledTimes(1);
+    const line = String(log.mock.calls[0][0]);
+    expect(JSON.parse(line)).toMatchObject({ job: "snapshots", ok: true });
+    expect(line).not.toContain("u1");
+    log.mockRestore();
   });
 
   it("reports a fatal failure as a fixed code", async () => {
