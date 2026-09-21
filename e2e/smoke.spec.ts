@@ -1,13 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-/** Collects every Content-Security-Policy violation the browser reports (decision 51); assert it is empty. */
-export function cspViolations(page: Page): string[] {
-  const violations: string[] = [];
-  page.on("console", (message) => {
-    if (/content security policy/i.test(message.text())) violations.push(message.text());
-  });
-  return violations;
-}
+import { expect, test } from "@playwright/test";
+import { cspViolations } from "./helpers";
 
 /** The tier's own smoke test: the login page renders and offers no signup (SPEC §9.6). */
 test("the login page is email + password with no signup link, and violates no CSP", async ({ page }) => {
