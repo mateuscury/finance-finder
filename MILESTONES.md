@@ -569,6 +569,16 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
    testing `runGolden` on a one-date fixture (Phase 1, coverage work).
    `xirr` now returns `insufficient_flows` when every flow shares a date;
    documented in `lib/calc/mwr.ts` and the README.
+3. **Decision 34 needed a server-side edge.** `updatePreferences` accepted
+   any well-formed BCP-47 tag, so a hand-made request could store a locale
+   no dictionary exists for and the app would silently fall back to
+   English. It now refuses anything outside `LOCALES` (through
+   `isSupportedLocale`, never a literal); the Settings select lists exactly
+   those, each language named in its own words from its own dictionary.
+4. **Strings that reach a Client Component are props.** The TOTP widget's
+   copy group had a function leaf; a Server Component cannot pass one
+   across the boundary. That group holds strings only, and the per-reason
+   lines it shows come from `copy.security`, which already were.
 
 ### Advisories recorded
 
@@ -585,6 +595,27 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
   exceeded vitest's 5 s default in two of nine coverage runs (5.24 s
   observed) with 61 workers contending; never a counterexample. It now
   carries the 60 s budget its sibling property already had.
+- **P5-U2, `html, body { overflow-x: hidden }` hides overflow from the
+  test too.** A too-wide table cell was clipped rather than scrolled, so
+  `scrollWidth <= clientWidth` passed while a link was cut off at 400 px.
+  `e2e/helpers.ts expectNoHorizontalOverflow` now measures element boxes,
+  skipping `.table-scroll` and visually hidden ancestors. Found by looking
+  at the screenshot's width, not by the assertion.
+- **P5-U2, a `<form>` inside a `<p>`.** The import page's file line nested
+  the discard form in a paragraph — invalid HTML, a hydration error in
+  the console, visible only in the dev server's log during e2e. Now a
+  `<div>`. The e2e run's server log is worth reading each time.
+- **P5-U3, `0` versus `-0`.** `lib/util/order.test.ts` asserted
+  antisymmetry as `expect(sign(xy)).toBe(-sign(yx))`; when fast-check
+  drew two equal rows both signs were zero and `Object.is(0, -0)` is
+  false. A latent flake since Phase 1 (one failure in roughly thirty
+  coverage runs). The property now asserts `xy + yx === 0`.
+- **P5, pack metadata labels are English in both languages.** Field labels
+  on the asset form are the pack schema's keys humanised (P5-U1 by
+  design: packs own their field names). A Portuguese label for "maturity"
+  or "issuer" would be a pack-supplied mapping — a `PACK_API_VERSION`
+  question for the UK canary, not a kernel string. Left as is; noted in
+  the plan's debt inventory.
 
 ## 5. Second-pack canary (UK)
 
