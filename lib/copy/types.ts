@@ -67,6 +67,45 @@ export interface Copy {
     refreshing: string;
     dismiss: string;
   };
+  /** SPEC §9.3: the first-run card, one step per row of the table. */
+  firstRun: {
+    title: string;
+    baseCurrency: (p: { currency: string }) => string;
+    firstAsset: string;
+    firstTransaction: string;
+    priced: string;
+    pricedPending: (p: { n: number }) => string;
+    done: string;
+  };
+  /** SPEC §9.5: the empty states, verbatim. */
+  empty: {
+    overviewHeadline: (p: { n: number }) => string;
+    overviewHistory: string;
+    performanceHistory: string;
+    performanceBenchmarks: string;
+    allocation: string;
+    contribution: string;
+    maturities: string;
+    assets: string;
+    assetsImport: string;
+    transactions: string;
+    cashFlows: string;
+    login: string;
+  };
+  /** Per-screen strings, filled as each screen is designed (Milestone 4 Phases 2–5). */
+  screens: {
+    overview: {
+      title: string;
+      headline: string;
+      dayChange: string;
+      periodChange: (p: { from: string; to: string }) => string;
+      staleExcluded: (p: { n: number }) => string;
+      carried: (p: { n: number }) => string;
+      allocation: string;
+      movers: string;
+      history: string;
+    };
+  };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {
     title: string;

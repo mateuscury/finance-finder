@@ -52,6 +52,46 @@ export const ptBR: Copy = {
     refreshing: "Buscando em segundo plano; recarregue em instantes.",
     dismiss: "Dispensar",
   },
+  firstRun: {
+    title: "Monte sua carteira",
+    baseCurrency: ({ currency }) => `Moeda base: ${currency} — troque antes da primeira transação; depois ela trava.`,
+    firstAsset: "Adicione o que você tem: pacote → tipo de instrumento → identificador.",
+    firstTransaction: "Lance uma à mão, ou importe um CSV do seu histórico.",
+    priced: "Precificado — preenche sozinho assim que uma fonte responder.",
+    pricedPending: ({ n }) =>
+      n === 1
+        ? "1 ativo aguarda preço. Se uma fonte estiver desativada ou falhando, a linha de situação avisa; um preço manual é sempre possível."
+        : `${n} ativos aguardam preço. Se uma fonte estiver desativada ou falhando, a linha de situação avisa; um preço manual é sempre possível.`,
+    done: "feito",
+  },
+  empty: {
+    overviewHeadline: ({ n }) => (n === 1 ? "1 ativo sem preço" : `${n} ativos sem preço`),
+    overviewHistory: "O histórico começa depois da foto de hoje à noite.",
+    performanceHistory: "Precisa de dois dias de histórico para traçar um retorno.",
+    performanceBenchmarks: "Os índices chegam com a coleta noturna.",
+    allocation: "Nada para alocar ainda.",
+    contribution: "A contribuição precisa de histórico ao longo do período.",
+    maturities: "Nenhuma renda fixa ainda. Adicione um Tesouro Direto, CDB, LCI…",
+    assets: "Adicione o que você tem.",
+    assetsImport: "ou importe um CSV — identificadores desconhecidos podem ser criados a partir da prévia.",
+    transactions: "Nenhuma transação ainda.",
+    cashFlows: "Aportes e resgates são o que separa seu retorno das suas contribuições.",
+    login: "Instância de dono único — a conta é criada com `pnpm bootstrap:user`.",
+  },
+  screens: {
+    overview: {
+      title: "Visão geral",
+      headline: "Valor da carteira hoje",
+      dayChange: "Variação do dia",
+      periodChange: ({ from, to }) => `${from} → ${to}`,
+      staleExcluded: ({ n }) =>
+        n === 1 ? "1 posição desatualizada fora do total" : `${n} posições desatualizadas fora do total`,
+      carried: ({ n }) => (n === 1 ? "1 posição com valor repetido" : `${n} posições com valor repetido`),
+      allocation: "Alocação por tipo",
+      movers: "Maiores variações",
+      history: "Valor ao longo do tempo",
+    },
+  },
   errors: {
     title: "Algo deu errado",
     body: "Esta tela não pôde ser exibida. Nada nos seus dados foi alterado.",

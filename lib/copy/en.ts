@@ -45,6 +45,46 @@ export const en: Copy = {
     refreshing: "Fetching in the background; reload in a moment.",
     dismiss: "Dismiss",
   },
+  firstRun: {
+    title: "Set up your portfolio",
+    baseCurrency: ({ currency }) =>
+      `Base currency: ${currency} — change it before your first transaction; it locks after.`,
+    firstAsset: "Add what you hold: pack → instrument kind → identifier.",
+    firstTransaction: "Enter one by hand, or import a CSV of your history.",
+    priced: "Priced — fills in automatically once a source answers.",
+    pricedPending: ({ n }) =>
+      n === 1
+        ? "1 asset is waiting for a price. If a source is disabled or failing, the status line says so; a manual price is always possible."
+        : `${n} assets are waiting for a price. If a source is disabled or failing, the status line says so; a manual price is always possible.`,
+    done: "done",
+  },
+  empty: {
+    overviewHeadline: ({ n }) => (n === 1 ? "1 asset unpriced" : `${n} assets unpriced`),
+    overviewHistory: "History starts after tonight's snapshot.",
+    performanceHistory: "Needs two days of history to plot a return.",
+    performanceBenchmarks: "Benchmarks arrive with the nightly ingest.",
+    allocation: "Nothing to allocate yet.",
+    contribution: "Contribution needs history across the period.",
+    maturities: "No fixed-income holdings yet. Add a Tesouro Direto, CDB, LCI…",
+    assets: "Add what you hold.",
+    assetsImport: "or import a CSV — unknown identifiers can be created from the preview.",
+    transactions: "No transactions yet.",
+    cashFlows: "Deposits and withdrawals are what separate your return from your contributions.",
+    login: "Single-owner instance — the account is created with `pnpm bootstrap:user`.",
+  },
+  screens: {
+    overview: {
+      title: "Overview",
+      headline: "Portfolio value today",
+      dayChange: "Day change",
+      periodChange: ({ from, to }) => `${from} → ${to}`,
+      staleExcluded: ({ n }) => (n === 1 ? "1 stale holding excluded" : `${n} stale holdings excluded`),
+      carried: ({ n }) => (n === 1 ? "1 holding carried forward" : `${n} holdings carried forward`),
+      allocation: "Allocation by kind",
+      movers: "Top movers",
+      history: "Value over time",
+    },
+  },
   errors: {
     title: "Something went wrong",
     body: "This screen could not be rendered. Nothing about your data was changed.",

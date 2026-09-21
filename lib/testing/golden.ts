@@ -12,6 +12,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Db, TableName } from "@/lib/supabase/types";
 import { GoldenFixtureSchema, type GoldenFixture } from "@/lib/calc/golden";
+import type { LedgerRead } from "@/lib/ledger/rows";
+import type { MarketPack } from "@/packs/types";
 
 const ROOT = path.resolve(__dirname, "../..");
 
@@ -128,4 +130,60 @@ export async function removeGoldenSeries(admin: Db, fixture: GoldenFixture): Pro
     const { error } = await admin.from("series_points").delete().eq("series_id", seriesId).in("date", dates);
     if (error) throw new Error(`dbtest: cleaning series_points failed (${error.message})`);
   }
+}
+
+/**
+ * The golden portfolio as a `LedgerRead` — exactly what the store hands the
+ * snapshot job and a page hands a view model — without a database. Ids are
+ * the fixture's own.
+ */
+export function goldenLedgerRead(fixture: GoldenFixture, registry: readonly MarketPack[], packId = "br"): LedgerRead {
+  const pack = registry.find((p) => p.id === packId);
+  if (!pack) throw new Error(`goldenLedgerRead: no pack '${packId}'`);
+  const deps = (pack.dependencies ?? [])
+    .map((id) => registry.find((p) => p.id === id))
+    .filter((p): p is MarketPack => p !== undefined);
+  const kindOf = (id: string) => {
+    const kind = pack.instruments.find((k) => k.id === id);
+    if (!kind) throw new Error(`goldenLedgerRead: unknown kind '${id}'`);
+    return kind;
+  };
+  const identifierToId = new Map(fixture.assets.map((a) => [a.identifier, a.id] as const));
+  return {
+    settings: {
+      base_currency: fixture.baseCurrency,
+      enabled_packs: [packId],
+      locale: pack.locale,
+      theme: "system",
+      last_export_at: null,
+      csv_column_map: null,
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+    },
+    assets: fixture.assets.map((a) => ({
+      id: a.id,
+      packId,
+      instrumentKind: kindOf(a.instrumentKind),
+      identifier: a.identifier,
+      nativeCurrency: a.nativeCurrency,
+      metadata: a.metadata,
+    })),
+    unresolved: [],
+    transactions: fixture.transactions,
+    cashFlows: fixture.cashFlows,
+    prices: Object.entries(fixture.prices).flatMap(([identifier, rows]) =>
+      rows.map((r) => ({
+        assetId: identifierToId.get(identifier)!,
+        date: r.date,
+        price: r.price,
+        currency: r.currency,
+        sourceId: r.sourceId,
+      })),
+    ),
+    series: Object.entries(fixture.series).flatMap(([seriesId, rows]) =>
+      rows.map((r) => ({ seriesId, date: r.date, value: r.value, tenorDays: r.tenorDays })),
+    ),
+    packs: [pack, ...deps],
+    names: Object.fromEntries(fixture.assets.map((a) => [a.id, a.identifier])),
+  };
 }

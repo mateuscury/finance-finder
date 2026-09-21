@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { PACKS } from "@/packs";
 import { brCalendar } from "@/packs/br/calendar";
-import { globalPack } from "@/packs/global";
-import { brPack } from "@/packs/br";
 import { valuePortfolio } from "@/lib/calc/portfolio";
 import { toPortfolioInput, type LedgerRead } from "@/lib/ledger/rows";
-import { loadGoldenFixture } from "@/lib/testing/golden";
+import { goldenLedgerRead, loadGoldenFixture } from "@/lib/testing/golden";
 import {
   isTradingDay,
   markerFor,
@@ -18,45 +17,7 @@ import {
 
 const { fixture, expected } = loadGoldenFixture();
 
-/** The golden portfolio as a LedgerRead, exactly what the store would hand the job. */
-function goldenRead(): LedgerRead {
-  const kindOf = (id: string) => brPack.instruments.find((k) => k.id === id)!;
-  const identifierToId = new Map(fixture.assets.map((a) => [a.identifier, a.id] as const));
-  return {
-    settings: {
-      base_currency: "BRL",
-      enabled_packs: ["br"],
-      locale: "pt-BR",
-      theme: "system",
-      last_export_at: null,
-      csv_column_map: null,
-    },
-    assets: fixture.assets.map((a) => ({
-      id: a.id,
-      packId: "br",
-      instrumentKind: kindOf(a.instrumentKind),
-      identifier: a.identifier,
-      nativeCurrency: a.nativeCurrency,
-      metadata: a.metadata,
-    })),
-    unresolved: [],
-    transactions: fixture.transactions,
-    cashFlows: fixture.cashFlows,
-    prices: Object.entries(fixture.prices).flatMap(([identifier, rows]) =>
-      rows.map((r) => ({
-        assetId: identifierToId.get(identifier)!,
-        date: r.date,
-        price: r.price,
-        currency: r.currency,
-        sourceId: r.sourceId,
-      })),
-    ),
-    series: Object.entries(fixture.series).flatMap(([seriesId, rows]) =>
-      rows.map((r) => ({ seriesId, date: r.date, value: r.value, tenorDays: r.tenorDays })),
-    ),
-    packs: [brPack, globalPack],
-  };
-}
+const goldenRead = () => goldenLedgerRead(fixture, PACKS);
 
 interface Fake {
   store: SnapshotStore;

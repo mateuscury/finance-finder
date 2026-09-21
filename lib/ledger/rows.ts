@@ -34,6 +34,9 @@ export interface SettingsRow {
   last_export_at: string | null;
   /** The CSV header map chosen once (decision 24); shape validated by `normalizeColumnMap`. */
   csv_column_map: unknown;
+  /** `updated_at > created_at` means the owner touched Settings (SPEC §9.3 step 1). */
+  created_at: string;
+  updated_at: string;
 }
 export interface AssetDbRow {
   id: string;
@@ -81,7 +84,8 @@ export const CASH_FLOW_SELECT = "id,date,amount::text,currency";
 export const PRICE_SELECT = "asset_id,date,price::text,currency,source_id";
 export const SERIES_SELECT = "series_id,date,value::text,tenor_days";
 export const ASSET_SELECT = "id,pack_id,instrument_kind,identifier,name,native_currency,metadata";
-export const SETTINGS_SELECT = "base_currency,enabled_packs,locale,theme,last_export_at,csv_column_map";
+export const SETTINGS_SELECT =
+  "base_currency,enabled_packs,locale,theme,last_export_at,csv_column_map,created_at,updated_at";
 
 // --- Row mappers: snake_case text rows → kernel input rows ---------------------
 
@@ -168,6 +172,8 @@ export interface LedgerRead {
   series: SeriesObservation[];
   /** Enabled packs ∪ the packs of held assets, with dependencies. */
   packs: MarketPack[];
+  /** Display names by asset id — the kernel's `HoldingAsset` carries none. */
+  names: Record<string, string>;
 }
 
 /** The user's settings row; defaults when the account has none yet. */
@@ -187,6 +193,8 @@ export async function readSettings(client: Db, userId?: string): Promise<Setting
       theme: INSTANCE_DEFAULTS.theme,
       last_export_at: null,
       csv_column_map: null,
+      created_at: "",
+      updated_at: "",
     }
   );
 }
@@ -311,7 +319,8 @@ export async function readLedger(
     ).map(toSeries);
   }
 
-  return { settings, assets, unresolved, transactions, cashFlows, prices, series, packs };
+  const names = Object.fromEntries(assetRows.map((a) => [a.id, a.name]));
+  return { settings, assets, unresolved, transactions, cashFlows, prices, series, packs, names };
 }
 
 /** The kernel's input, from a read. Calendars and series descriptors come from the packs in scope. */
