@@ -181,6 +181,22 @@ export const ptBR: Copy = {
       chained: ({ n }) =>
         n === 1 ? "1 subperíodo encadeado." : `${n} subperíodos encadeados nas datas de transação desta posição.`,
     },
+    maturities: {
+      title: "Vencimentos",
+      help: "Toda posição cujo tipo declara um vencimento, por data. O valor no vencimento aparece só onde o contrato o fixa.",
+      asOf: ({ date }) => `Valores em ${date}.`,
+      ladder: "Escada",
+      timeline: "Linha do tempo",
+      maturity: "Vence",
+      daysToGo: ({ n }) => (n < 0 ? `há ${-n} dias` : n === 0 ? "hoje" : n === 1 ? "em 1 dia" : `em ${n} dias`),
+      current: "Valor hoje",
+      atMaturity: "No vencimento",
+      dependsOnIndex: "O valor final depende do índice.",
+      navNoProjection: "Marcado ao preço publicado; sem valor contratado.",
+      matured: "Vencido — registre o resgate.",
+      recordRedemption: "Registrar a venda",
+      noValueToday: "Sem valor hoje",
+    },
   },
   errors: {
     title: "Algo deu errado",

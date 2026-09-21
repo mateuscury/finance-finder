@@ -143,8 +143,8 @@ fallback so the run continues end to end.
 | P3-U1 | Snapshot readers and `seriesReturn`                                     | P2-U6        | done `aa6014d` |
 | P3-U2 | Performance                                                             | P3-U1        | done `311e4e5` |
 | P3-U3 | Allocation                                                              | P3-U1        | done `df1bf25` |
-| P4-U1 | Contribution and attribution drill-in                                   | P3-U1        | not started    |
-| P4-U2 | Maturities                                                              | P3-U1        | not started    |
+| P4-U1 | Contribution and attribution drill-in                                   | P3-U1        | done `186c88b` |
+| P4-U2 | Maturities                                                              | P3-U1        | done `(next)`  |
 | P5-U1 | Schema-driven fields and the asset form                                 | P2-U6        | not started    |
 | P5-U2 | Assets, Transactions and Import designed                                | P5-U1        | not started    |
 | P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1        | not started    |

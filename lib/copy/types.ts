@@ -168,6 +168,22 @@ export interface Copy {
       back: string;
       chained: (p: { n: number }) => string;
     };
+    maturities: {
+      title: string;
+      help: string;
+      asOf: (p: { date: string }) => string;
+      ladder: string;
+      timeline: string;
+      maturity: string;
+      daysToGo: (p: { n: number }) => string;
+      current: string;
+      atMaturity: string;
+      dependsOnIndex: string;
+      navNoProjection: string;
+      matured: string;
+      recordRedemption: string;
+      noValueToday: string;
+    };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {

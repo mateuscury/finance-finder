@@ -174,6 +174,22 @@ export const en: Copy = {
       chained: ({ n }) =>
         n === 1 ? "1 sub-period chained." : `${n} sub-periods chained at this holding's own transaction dates.`,
     },
+    maturities: {
+      title: "Maturities",
+      help: "Every holding whose kind declares a maturity, by date. The value at maturity is shown only where the contract fixes it.",
+      asOf: ({ date }) => `Values as of ${date}.`,
+      ladder: "Ladder",
+      timeline: "Timeline",
+      maturity: "Matures",
+      daysToGo: ({ n }) => (n < 0 ? `${-n} days ago` : n === 0 ? "today" : n === 1 ? "in 1 day" : `in ${n} days`),
+      current: "Value today",
+      atMaturity: "At maturity",
+      dependsOnIndex: "Final amount depends on the index.",
+      navNoProjection: "Marked at the published price; no contracted amount.",
+      matured: "Matured — record the redemption.",
+      recordRedemption: "Record the sell",
+      noValueToday: "No value today",
+    },
   },
   errors: {
     title: "Something went wrong",
