@@ -33,7 +33,7 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
 
     async listCursors() {
       const rows = await readAll<{ source_id: string; last_run_at: string | null }>((from, to) =>
-        client.from("ingest_cursors").select("source_id,last_run_at").range(from, to),
+        client.from("ingest_cursors").select("source_id,last_run_at").order("source_id").range(from, to),
       );
       return rows.map((r): CursorRow => ({ sourceId: r.source_id, lastRunAt: r.last_run_at }));
     },
@@ -50,6 +50,8 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
           .from("ingest_watermarks")
           .select("capability,ref,target_from,last_date,unavailable_before")
           .eq("source_id", sourceId)
+          .order("capability")
+          .order("ref")
           .range(from, to),
       );
       return rows.map(
@@ -83,7 +85,8 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
                   .in("pack_id", packIds)
                   .in("id", scope.assetIds)
               : client.from("assets").select("id,pack_id,instrument_kind,identifier").in("pack_id", packIds);
-          return filtered.range(from, to);
+          // Ordered by key: an unordered offset page can overlap or skip between requests.
+          return filtered.order("id").range(from, to);
         },
       );
 
@@ -101,7 +104,7 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
         for (let i = 0; i < candidateIds.length; i += PAGE) {
           const chunk = candidateIds.slice(i, i + PAGE);
           const priced = await readAll<{ asset_id: string }>((from, to) =>
-            client.from("prices").select("asset_id").in("asset_id", chunk).range(from, to),
+            client.from("prices").select("asset_id").in("asset_id", chunk).order("asset_id").order("date").range(from, to),
           );
           for (const row of priced) pricedIds.add(row.asset_id);
         }
@@ -129,6 +132,7 @@ export function createIngestStore(client: SupabaseClient): IngestStore {
           .select("trade_date,assets!inner(identifier)")
           .in("assets.identifier", identifiers)
           .order("trade_date", { ascending: true })
+          .order("id")
           .range(from, to),
       );
       const out: Record<string, IsoDate> = {};

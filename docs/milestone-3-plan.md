@@ -39,7 +39,7 @@ finished.
 | 4 — Asset, transaction, cash-flow and manual-price flows | (this commit) | merged |
 | 5 — CSV import | (this commit) | merged |
 | 6 — Settings: security and your data | (this commit) | merged |
-| 7 — Documentation and gates | — | not started |
+| 7 — Documentation and gates | (this commit) | merged |
 
 ## Why the conventions below are written down first
 

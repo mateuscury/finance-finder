@@ -40,11 +40,13 @@ conformance suite in `packs/conformance/`. `pnpm test:packs` is the gate.
 
 ## Status
 
-Milestones 1 (trusted ingestion) and 2 (financial kernel and recovery) are
-complete: the kernel reproduces the BR golden portfolio to 1e-8 and a backup
-round-trips through a real Postgres. Packs `br` and `global` are draft; there
-is no login or screen yet (Milestones 3 and 5). Status of record:
-`MILESTONES.md`.
+Milestones 1 (trusted ingestion), 2 (financial kernel and recovery) and 3
+(authenticated ledger) are complete: the kernel reproduces the BR golden
+portfolio to 1e-8, a backup round-trips through a real Postgres, and the
+owner can sign in (password + TOTP), keep the ledger, import a CSV, and
+see daily snapshots rebuilt by a resumable job. Pages are functional and
+unstyled until Milestone 5; packs `br` and `global` are draft. Status of
+record: `MILESTONES.md`.
 
 **Do not enter real portfolio data yet.** Normal CI validates development work,
 including explicitly skipped draft-pack tests. `pnpm release:check` is the

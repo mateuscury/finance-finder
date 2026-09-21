@@ -315,7 +315,7 @@ accrual is `daily` and every BR asset is BRL — so all six are contract.
     reproduce. `assets.updated_at` IS exported and restored alongside
     `created_at`, so two exports of the same data stay byte-identical.
 
-## 3. Authenticated ledger
+## 3. Authenticated ledger — complete (2026-09-20)
 
 - Implement cookie auth using verified `getUser()`, mandatory AAL2 challenges
   for enrolled owners, and uniform login failure behavior.
@@ -327,7 +327,48 @@ accrual is `daily` and every BR asset is BRL — so all six are contract.
   history-changing write.
 
 Implementation plan: `docs/milestone-3-plan.md` (conventions, phases 0–7
-and merge order).
+and merge order; every phase carries a Grounding note).
+
+Delivered: cookie sessions through `@supabase/ssr` with a `proxy.ts` that
+only redirects optimistically and a DAL that verifies with `getUser()` on
+every page and action; login, TOTP challenge and password reset; text-cast
+paginated readers that reproduce the golden portfolio through RLS; snapshot
+invalidation as database triggers and a resumable snapshot job plus the
+second cron route; validated asset, transaction, cash-flow and manual-price
+flows; a dry-run, all-or-nothing CSV import; Settings with packs, base
+currency, security and your data. `pnpm release:check` is red only on the
+two draft packs and `specs/PERSONAS.md`.
+
+### Contract corrections found while implementing
+
+1. **No browser Supabase client is needed.** `mfa.enroll()` returns the QR,
+   so enrolment is a server action rendered by one small client widget;
+   the session cookie can therefore be `httpOnly` as SPEC §9.6 requires.
+2. **Password reset needs `NEXT_PUBLIC_SITE_URL`, `app/auth/callback` and
+   a redirect-URL glob in `supabase/config.toml`** — the link's origin
+   must come from configuration (a Host header can be spoofed), and
+   Supabase's one-time code needs a landing route that continues only to a
+   same-origin path.
+3. **A `ledger_reads` migration**: the latest price per asset is a
+   `DISTINCT ON` PostgREST cannot express, so a `security_invoker` view
+   serves it under the caller's RLS; SPEC §9.4's "unpriced — source:
+   reason" needs SELECT on `ingest_cursors`. Every paginated read orders by
+   its key before `.range()`; Milestone 1's store did not and now does.
+4. **The snapshot job's series read has no end cap** — capped at today it
+   disagreed with the golden runner on identical data — and decision 21's
+   "enabled packs" means the holdable ones: `global`, a 7-day dependency,
+   must not make every day a trading day.
+5. **A transient `csv_imports` table** holds an upload between preview and
+   commit so the commit re-runs the dry run on the same bytes; the
+   preview hash is over parsed values, so creating an unresolved asset from
+   the preview does not invalidate it.
+6. **Export is a route handler** (a download needs `Content-Disposition`);
+   restore acknowledges warnings by re-upload.
+7. `runSnapshots` takes no `registry` (the store owns it); the
+   after-response wrappers live in `lib/jobs/index.ts`;
+   `changeBaseCurrency` landed with the ledger flows since AC-004.6 is
+   US-004's; `assetsUnpriced` as a count waits for its only consumer, the
+   Milestone 5 status strip.
 
 ### Decisions taken 2026-09-20 (before implementation)
 

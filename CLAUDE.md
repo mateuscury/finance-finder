@@ -45,9 +45,16 @@ is the threshold for adding one.
 packs/            market packs (data + mappings). types.ts/schema.ts/index.ts are KERNEL-owned
   br/ global/     one dir per pack: index.ts manifest, calendar, instruments, series, sources/, fixtures/, README.md
   conformance/    `pnpm test:packs` — the merge gate for pack PRs (PACKS.md §11)
-lib/calc/         kernel math, pure functions (TWR, MWR, valuation, series returns, FX)
+lib/calc/         kernel math, pure functions (TWR, MWR, valuation, series returns, FX, golden runner)
 lib/packs/        kernel pack runtime: PackHttp impl (rate limit/retry/fixtures), activation, ingest job
-app/              Next.js routes. app/api/cron/* = the only two crons (by design)
+lib/auth/         identity: access decision, DAL (`requireUser`), security writes
+lib/ledger/       the ledger behind RLS: text-cast readers, zod schemas, typed-result writes
+lib/jobs/         after-response work under the service role: ingest wrappers, snapshot job, delete
+lib/csv/ lib/import/  RFC 4180 reader/writer; column map, dry run, commit planner
+lib/backup/       backup v1 schema, deterministic serializer, restore planner
+lib/supabase/     public env, cookie server client, paginate; service.ts (cron + lib/jobs only)
+proxy.ts          session refresh + optimistic redirects (Next 16 proxy)
+app/              Next.js routes. app/(app)/* data pages; app/login/*; app/auth/callback; app/api/cron/* = the only two crons
 supabase/         config + migrations. Packs ship ZERO migrations.
 scripts/          generate-codeowners.ts (CODEOWNERS is generated — never hand-edit)
 ```
@@ -102,38 +109,39 @@ pnpm db:start / db:reset # local Supabase (Docker)
 
 ## Current state (2026-09-20)
 
-Milestones 1 (trusted ingestion) and 2 (financial kernel and recovery) are
-complete; `packs/br` and `packs/global` remain `draft`.
+Milestones 1 (trusted ingestion), 2 (financial kernel and recovery) and 3
+(authenticated ledger) are complete; `packs/br` and `packs/global` remain
+`draft`. `pnpm release:check` is red only on the two draft packs and
+`specs/PERSONAS.md`. Next: Milestone 4 (UK pack canary) and 5 (the ten
+designed screens — today's pages are functional and unstyled, decision 19).
 
-From Milestone 1: five real adapters — `global.bcb_ptax` (Olinda CSV),
-`br.bcb_sgs` (CDI/SELIC), `br.ibge_sidra` (IPCA número-índice), `br.brapi`
-(FII spot/historical + `^BVSP`/`IFIX.SA`), `br.tesouro_transparente`
-(`PU Base Manha`, ODbL) — each with recorded success / empty / 5xx / 429
-fixtures that replay offline; `lib/packs` (`http`, `redact`, `fixtures`,
-`validate`, `activate`, `ingest`, `store`); `PACK_API_VERSION` 3; forward
-migrations `initial_schema_hardening`, `ingest_watermarks` and the atomic
-`commit_ingest_chunk` RPC. `GET /api/cron/prices` returns a redacted run
-summary.
+From Milestone 1: five real adapters with offline fixtures; `lib/packs`;
+`PACK_API_VERSION` 3; forward migrations `initial_schema_hardening`,
+`ingest_watermarks`, `commit_ingest_chunk`. The initial migration is applied
+and frozen — never edit it in place.
 
 From Milestone 2: `lib/calc/` is the whole pure kernel (module map in its
-README): decimal/money/dates/calendar, FIFO positions, one function per
-series kind, FX, one module per valuation strategy, the portfolio builder,
-TWR, MWR, contribution, attribution, real returns, and `golden.ts`.
-`packs/br` has six instrument kinds; its golden portfolio is derived
-independently by `packs/br/fixtures/derive_expected.py` and reproduced to
-`1e-8` — `pnpm test:packs` ends at exactly 1 skip. `lib/backup` +
-`export_backup()` / `restore_backup(jsonb)` (forward migration
-`backup_rpcs`) round-trip a ledger through a real Postgres in
-`lib/backup/roundtrip.dbtest.ts`. `pnpm test:db` needs
-`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` (`supabase status -o env`)
-and applies new migrations with `supabase migration up --local`. Every
-kernel convention and the eighteen decisions live in
-`docs/milestone-2-plan.md` and `MILESTONES.md` §2. Local Auth: keep
-`[auth.email] enable_signup = true` — on this CLI it is the email PROVIDER,
-and signups are refused by `[auth] enable_signup = false`.
+README); the BR golden portfolio is derived independently by
+`packs/br/fixtures/derive_expected.py` and reproduced to `1e-8`;
+`lib/backup` + `export_backup()` / `restore_backup(jsonb)` round-trip a
+ledger through a real Postgres.
 
-`pnpm release:check` is red only on `app/login/page.tsx`, the two draft
-packs and `specs/PERSONAS.md`. Not built: the snapshot cron route
-(Milestone 3, decision 6), login, the ledger flows, the UK canary, the ten
-screens.
+From Milestone 3 (`docs/milestone-3-plan.md`, decisions 19–31 in
+`MILESTONES.md` §3): cookie sessions through `@supabase/ssr` with
+`proxy.ts` (optimistic) and `lib/auth/session.ts` `requireUser()`
+(authoritative, `getUser()` only — `getSession()` is lint-banned); login,
+TOTP challenge and password reset; `lib/ledger` text-cast readers and
+typed-result writes; snapshot invalidation as database triggers
+(`invalidate_snapshots`) and `runSnapshots` behind `GET /api/cron/snapshots`;
+CSV import (dry run, all-or-nothing commit, transient `csv_imports`);
+Settings with packs, base currency, security and your data. The service
+role is constructed only in `app/api/cron/**` and `lib/jobs/**` (lint).
+Migrations through `csv_imports` are applied locally.
+
+Local stack: `supabase start -x logflare,studio,vector`; apply a new
+migration with `supabase migration up --local`. `pnpm test:db` needs
+`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` (`supabase status -o env`);
+the app also needs `NEXT_PUBLIC_SITE_URL`. Keep `[auth.email]
+enable_signup = true` — on this CLI it is the email PROVIDER; signups are
+refused by `[auth] enable_signup = false`.
