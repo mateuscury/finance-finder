@@ -407,3 +407,18 @@ main {
   height: 0.6rem;
   border-radius: 1px;
 }
+
+.line-legend {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+}
+.line-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}

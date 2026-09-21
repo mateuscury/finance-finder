@@ -91,6 +91,42 @@ export const ptBR: Copy = {
       movers: "Maiores variações",
       history: "Valor ao longo do tempo",
     },
+    performance: {
+      title: "Desempenho",
+      period: "Período",
+      periods: { "1m": "1M", ytd: "No ano", "1y": "1A", all: "Tudo" },
+      twr: "Retorno ponderado pelo tempo",
+      mwr: "Retorno ponderado pelo dinheiro",
+      twrHelp: "O que os ativos da carteira fizeram, independentemente de quando você aportou ou resgatou.",
+      mwrHelp: "Seu retorno anualizado, com o momento dos aportes e resgates incluído.",
+      benchmarks: "Índices",
+      none: "Nenhum",
+      nominal: "Nominal",
+      real: "Real",
+      realHelp: ({ series }) => `Deflacionado por ${series}.`,
+      chart: "Retorno acumulado",
+      portfolio: "Carteira",
+      skipped: ({ n }) =>
+        n === 1 ? "1 subperíodo ignorado: sem valor no início." : `${n} subperíodos ignorados: sem valor no início.`,
+      ignored: ({ n }) =>
+        n === 1
+          ? "1 aporte/resgate depois da última foto ainda não conta."
+          : `${n} aportes/resgates depois da última foto ainda não contam.`,
+      droppedFlows: ({ n }) =>
+        n === 1
+          ? "1 aporte/resgate em outra moeda não pôde ser convertido e ficou de fora."
+          : `${n} aportes/resgates em outra moeda não puderam ser convertidos e ficaram de fora.`,
+      excludedDates: ({ n }) =>
+        n === 1
+          ? "1 dia ficou de fora: uma posição estava desatualizada ou sem preço nele."
+          : `${n} dias ficaram de fora: uma posição estava desatualizada ou sem preço neles.`,
+      chainSpan: ({ from, to }) => `Os números cobrem ${from} → ${to}, os dias em que toda posição tinha valor.`,
+      mwrReason: {
+        insufficient_flows: "Precisa de um aporte e de um valor posterior para resolver.",
+        no_root: "Nenhuma taxa resolve esses fluxos.",
+      },
+      over: ({ from, to }) => `${from} → ${to}`,
+    },
   },
   errors: {
     title: "Algo deu errado",

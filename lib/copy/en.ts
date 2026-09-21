@@ -84,6 +84,42 @@ export const en: Copy = {
       movers: "Top movers",
       history: "Value over time",
     },
+    performance: {
+      title: "Performance",
+      period: "Period",
+      periods: { "1m": "1M", ytd: "YTD", "1y": "1Y", all: "All" },
+      twr: "Time-weighted return",
+      mwr: "Money-weighted return",
+      twrHelp: "What the portfolio's holdings did, independent of when you deposited or withdrew.",
+      mwrHelp: "Your own annualised return, timing of deposits and withdrawals included.",
+      benchmarks: "Benchmarks",
+      none: "None",
+      nominal: "Nominal",
+      real: "Real",
+      realHelp: ({ series }) => `Deflated by ${series}.`,
+      chart: "Cumulative return",
+      portfolio: "Portfolio",
+      skipped: ({ n }) =>
+        n === 1 ? "1 sub-period skipped: no value at its start." : `${n} sub-periods skipped: no value at their start.`,
+      ignored: ({ n }) =>
+        n === 1
+          ? "1 cash flow after the last snapshot is not counted yet."
+          : `${n} cash flows after the last snapshot are not counted yet.`,
+      droppedFlows: ({ n }) =>
+        n === 1
+          ? "1 cash flow in another currency could not be converted and is left out."
+          : `${n} cash flows in another currency could not be converted and are left out.`,
+      excludedDates: ({ n }) =>
+        n === 1
+          ? "1 day is left out: a holding was stale or unpriced on it."
+          : `${n} days are left out: a holding was stale or unpriced on them.`,
+      chainSpan: ({ from, to }) => `Figures cover ${from} → ${to}, the dates on which every holding had a value.`,
+      mwrReason: {
+        insufficient_flows: "Needs a deposit and a later value to solve for.",
+        no_root: "No rate solves these flows.",
+      },
+      over: ({ from, to }) => `${from} → ${to}`,
+    },
   },
   errors: {
     title: "Something went wrong",

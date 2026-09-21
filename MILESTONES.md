@@ -545,7 +545,15 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
 
 ### Contract corrections found while implementing
 
-1. **XIRR over a single-date stream returned the bracket's first grid point
+1. **Decision 53 needed the unpriced case too.** A holding that goes
+   `unpriced` leaves NO snapshot row, so "a date with any stale row" missed
+   the golden's own history: once its CDI series ends, the % CDI accruals
+   vanish from the confident total and the chain read a −30 % move that
+   never happened. A date is now a valuation point only when every asset
+   with open lots on it has a confident row (`coverTotals`: `staleRows ===
+0 && rows ≥ openHoldings`); the screen states the span the figures
+   cover and how many days were left out.
+2. **XIRR over a single-date stream returned the bracket's first grid point
    as a rate.** Every flow on one date makes the NPV a constant; a zero
    constant made `bisection` return −0.999999 as "the" root. Found while
    testing `runGolden` on a one-date fixture (Phase 1, coverage work).

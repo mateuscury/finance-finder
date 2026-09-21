@@ -105,6 +105,29 @@ export interface Copy {
       movers: string;
       history: string;
     };
+    performance: {
+      title: string;
+      period: string;
+      periods: Record<"1m" | "ytd" | "1y" | "all", string>;
+      twr: string;
+      mwr: string;
+      twrHelp: string;
+      mwrHelp: string;
+      benchmarks: string;
+      none: string;
+      nominal: string;
+      real: string;
+      realHelp: (p: { series: string }) => string;
+      chart: string;
+      portfolio: string;
+      skipped: (p: { n: number }) => string;
+      ignored: (p: { n: number }) => string;
+      droppedFlows: (p: { n: number }) => string;
+      excludedDates: (p: { n: number }) => string;
+      chainSpan: (p: { from: string; to: string }) => string;
+      mwrReason: Record<"insufficient_flows" | "no_root", string>;
+      over: (p: { from: string; to: string }) => string;
+    };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {
