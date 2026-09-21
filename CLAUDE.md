@@ -53,8 +53,12 @@ lib/jobs/         after-response work under the service role: ingest wrappers, s
 lib/csv/ lib/import/  RFC 4180 reader/writer; column map, dry run, commit planner
 lib/backup/       backup v1 schema, deterministic serializer, restore planner
 lib/supabase/     public env, cookie server client, paginate; service.ts (cron + lib/jobs only)
+lib/settings/     INSTANCE_DEFAULTS — the ONLY literal site for a pack id, currency or locale (Milestone 4)
+lib/copy/         UI copy dictionaries, en + pt-BR, one Copy type (Milestone 4)
+lib/format/       money/quantity/percent/date formatting FROM DECIMAL STRINGS, never a float (Milestone 4)
 proxy.ts          session refresh + optimistic redirects (Next 16 proxy)
 app/              Next.js routes. app/(app)/* data pages; app/login/*; app/auth/callback; app/api/cron/* = the only two crons
+app/(app)/_charts/  the ONE place a decimal string becomes a number (a chart coordinate) — Milestone 4
 supabase/         config + migrations. Packs ship ZERO migrations.
 scripts/          generate-codeowners.ts (CODEOWNERS is generated — never hand-edit)
 ```
@@ -107,13 +111,21 @@ pnpm db:start / db:reset # local Supabase (Docker)
 5. `fixtures/portfolio.json` + hand-computed `fixtures/expected.json` (the real gate).
 6. `README.md` with Coverage, Sources, Quirks. `pnpm test:packs` green. `pnpm codeowners`.
 
-## Current state (2026-09-20)
+## Current state (2026-09-21)
 
 Milestones 1 (trusted ingestion), 2 (financial kernel and recovery) and 3
 (authenticated ledger) are complete; `packs/br` and `packs/global` remain
 `draft`. `pnpm release:check` is red only on the two draft packs and
-`specs/PERSONAS.md`. Next: Milestone 4 (UK pack canary) and 5 (the ten
-designed screens — today's pages are functional and unstyled, decision 19).
+`specs/PERSONAS.md`.
+
+**Milestone 4 — "Brazil to production (MVP)" — is in progress.** Plan:
+`docs/milestone-4-plan.md` (conventions, decisions 32–52 — all confirmed
+and recorded in `MILESTONES.md` §4 — and the technical-debt inventory paid
+in Phase 1). Runbook: `docs/milestone-4-execution.md` (one unit per commit;
+its index is the live status). Today's pages are functional and unstyled
+(decision 19); the ten designed screens, `br.stock`, budgets, smoke
+journeys, `supported` packs and the first deploy are this milestone. The UK
+canary is Milestone 5.
 
 From Milestone 1: five real adapters with offline fixtures; `lib/packs`;
 `PACK_API_VERSION` 3; forward migrations `initial_schema_hardening`,

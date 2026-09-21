@@ -74,31 +74,35 @@ building it** and ask.
 
 ## 3. Tech stack (pinned)
 
-What is installed is authoritative (`package.json`, `pnpm-lock.yaml`). Items
-marked *planned* are agreed choices not yet added — propose in chat before
-installing, per the rule below.
+What is installed is authoritative (`package.json`, `pnpm-lock.yaml`). This
+table is the one place a choice is recorded as agreed; a row that names a
+milestone is scheduled there and not installed before it.
 
 | Layer | Choice | State |
 |---|---|---|
 | Framework | Next.js (App Router) | 16.3.x installed — read `AGENTS.md`: APIs differ from older Next.js |
-| UI runtime | React | 19.2.x installed |
+| UI runtime | React | 19.x installed |
 | Language | TypeScript (strict) | 5.x installed |
 | Runtime | Node.js | 22.x (`engines: >=22`; CI uses 22) |
 | Package manager | pnpm | 10.x (`packageManager` field) — never npm/yarn |
-| Styling | CSS Modules today | Tailwind CSS + shadcn/ui *planned* for the dashboard build-out |
-| Database & auth | Supabase (Postgres 17, per `supabase/config.toml`) via CLI migrations in `supabase/migrations/`; email + password, TOTP MFA optional, signups disabled | `@supabase/supabase-js` + `@supabase/ssr` *planned* (not yet installed) |
-| Charts | Recharts | *planned* |
+| Styling | Plain CSS on the `SPEC.md` §10 tokens (`app/globals.css`), CSS Modules where a component needs scoping | No utility framework, no component library (`MILESTONES.md` §4 decision 47) |
+| Database & auth | Supabase (Postgres 17, per `supabase/config.toml`) via CLI migrations in `supabase/migrations/`; email + password, TOTP MFA optional, signups disabled | `@supabase/supabase-js` 2.116 + `@supabase/ssr` 0.12.7 installed; cookie sessions through `proxy.ts` and `lib/auth/session.ts` |
+| Charts | Recharts | installed in Milestone 4 Phase 0, exact-pinned; the only place a decimal string becomes a `number` is `app/(app)/_charts/**` (decision 35) |
 | Money math | decimal.js | 10.6.x installed; kernel only — packs pass strings |
-| Date math | UTC helpers in-repo | date-fns *planned* if needed |
-| Forms | react-hook-form + zod | react-hook-form *planned* |
+| Date math | UTC helpers in `lib/calc/dates.ts` | no date library |
+| Forms | Native `<form action>` + server actions + zod | react-hook-form is not adopted (decision 48) |
 | Validation | zod | **4.x** installed (`z.iso.date()`, `z.url()` are v4 APIs) |
+| UI copy | `lib/copy/<locale>.ts` dictionaries sharing one `Copy` type; English and pt-BR | selected by `user_settings.locale` (decision 34) |
+| Formatter | Prettier | Milestone 4 Phase 1, checked in CI (decision 50) |
+| Security headers | Nonce-based CSP set by `proxy.ts`; HSTS, `frame-ancestors 'none'`, `no-referrer` in `next.config.ts` | Milestone 4 Phase 1 (decision 51) |
 | Hosting | Vercel | Hobby tier |
 | Cron | Vercel Cron via `vercel.json` | **Two jobs by design**, not by platform cap (Hobby currently allows up to 100 entries, each at most daily) |
-| Testing | Vitest 5 + fast-check 4 | installed; React Testing Library *planned* |
+| Testing | Vitest 5 + fast-check 4; `*.dbtest.ts` against the local stack; Playwright (`pnpm test:e2e`) | Playwright installed in Milestone 4 Phase 0; React Testing Library is not adopted — pure view models are unit-tested, the browser is covered by the journeys (decision 50) |
 
 **Do not add libraries without asking first.** If a problem seems to need a new
-dependency, propose it in chat before touching `package.json`. **Packs add zero
-npm dependencies** (see `PACKS.md`).
+dependency, propose it in chat before touching `package.json`. Milestone 4
+added `recharts`, `@playwright/test` and `prettier`; anything further is a
+decision. **Packs add zero npm dependencies** (see `PACKS.md`).
 
 **Do not upgrade major versions** unless explicitly asked. Patch/minor is fine.
 
@@ -176,35 +180,49 @@ delete cascades from `auth.users`. Full text in `SPEC.md` §12.
 
 ## 5. File structure
 
-Directories that exist today are unmarked; *(planned)* marks routes and
-modules scheduled by the milestones but not yet created.
+Directories that exist today are unmarked; *(Milestone 4)* marks routes and
+modules scheduled by `docs/milestone-4-plan.md` and not yet created.
 
 ```
 FInance_Finder/
 ├─ app/
-│  ├─ (dashboard)/               (planned) authed routes, server components — SPEC §9
-│  │  ├─ page.tsx                Overview
-│  │  ├─ performance/  allocation/  contribution/  maturities/
-│  │  ├─ assets/  transactions/  cash-flows/
-│  │  └─ settings/               base currency, enabled packs, theme, locale
-│  ├─ login/                     (planned)
+│  ├─ (app)/                     authed routes, server components — SPEC §9; every page calls requireUser() first
+│  │  ├─ page.tsx                Overview (first-run card, headline, sparkline — Milestone 4)
+│  │  ├─ performance/  allocation/  contribution/  maturities/     (Milestone 4)
+│  │  ├─ assets/  transactions/ (+ import/)  cash-flows/
+│  │  ├─ settings/               base currency, packs, theme, locale; security; your data (export route)
+│  │  ├─ _components/ _lib/      shared server components and form plumbing
+│  │  ├─ _models/ _charts/       (Milestone 4) pure view models; Recharts client components
+│  │  ├─ loading.tsx  error.tsx  (Milestone 4)
+│  │  └─ layout.tsx              nav, status strip
+│  ├─ login/                     email + password; mfa/ (TOTP challenge); reset/
+│  ├─ auth/callback/             the one-time-code landing for password reset
 │  └─ api/cron/
-│     ├─ prices/route.ts         GET — iterate enabled packs' sources (Milestone 1)
-│     └─ snapshots/route.ts      GET — daily valuation snapshots (Milestones 1–3)
+│     ├─ prices/route.ts         GET — iterate enabled packs' sources
+│     └─ snapshots/route.ts      GET — daily valuation snapshots
+├─ proxy.ts                      session refresh + optimistic redirects (Next 16 proxy)
 ├─ lib/
 │  ├─ calc/                      PURE functions only (§4.5) — see lib/calc/README.md
 │  │  ├─ money.ts                Money wrapper around decimal.js (§4.4)
 │  │  ├─ positions.ts            derive positions from transactions
 │  │  ├─ valuation/              one module per closed ValuationStrategy kind
 │  │  ├─ series/                 one cumulative-return function per closed SeriesKind
-│  │  ├─ twr.ts  mwr.ts  contribution.ts  attribution.ts  real.ts
+│  │  ├─ twr.ts  mwr.ts  contribution.ts  attribution.ts  real.ts  golden.ts
 │  │  └─ fx.ts                   base-currency resolution, USD triangulation, staleness
 │  ├─ packs/                     kernel-side pack runtime — see lib/packs/README.md
 │  │  ├─ http.ts                 PackHttp: rate limit, retry, user-agent, fixture record/replay
 │  │  ├─ activate.ts             enabled_packs → manifests, resolving dependencies
-│  │  └─ ingest.ts               single-invocation price job with per-source budget + cursors
-│  ├─ supabase/                  (planned) server.ts (RLS client) · service.ts (cron ONLY, §4.3)
-│  └─ database.types.ts          generated by `pnpm db:types`
+│  │  └─ ingest.ts  store.ts     single-invocation price job with per-source budget + cursors
+│  ├─ auth/                      access decision, DAL (`requireUser`), security writes
+│  ├─ ledger/                    text-cast readers, zod schemas, typed-result writes
+│  ├─ jobs/                      after-response work under the service role; the snapshot job
+│  ├─ csv/  import/              RFC 4180 reader/writer; column map, dry run, commit planner
+│  ├─ backup/                    backup v1 schema, deterministic serializer, restore planner
+│  ├─ supabase/                  server.ts (RLS client) · service.ts (cron + lib/jobs ONLY, §4.3) · paginate.ts
+│  ├─ settings/                  (Milestone 4) INSTANCE_DEFAULTS — the only literal site (decision 42)
+│  ├─ copy/  format/             (Milestone 4) dictionaries in two languages; formatting from decimal strings
+│  ├─ testing/                   the dbtest harness and test-only helpers; never imported by lib/calc
+│  └─ database.types.ts          generated by `pnpm db:types`; committed from Milestone 4 Phase 1
 ├─ packs/                        market packs (see PACKS.md)
 │  ├─ types.ts  schema.ts        KERNEL-owned pack API and its zod twin — packs import, never edit
 │  ├─ index.ts                   static registry: one import line per pack
@@ -212,13 +230,14 @@ FInance_Finder/
 │  ├─ conformance/               `pnpm test:packs` — the merge gate for pack PRs
 │  ├─ global/                    FX fixings, crypto, multi-market vendors
 │  └─ br/                        Brazil: instruments, series, sources/, calendar, fixtures/, README.md
+├─ e2e/                          (Milestone 4) Playwright journeys — `pnpm test:e2e`
 ├─ scripts/generate-codeowners.ts   .github/CODEOWNERS is generated — never hand-edit
 ├─ scripts/bootstrap-user.ts        `pnpm bootstrap:user` — creates the single owner (§8)
 ├─ supabase/
 │  ├─ config.toml
-│  └─ migrations/                initial schema; packs ship ZERO migrations
+│  └─ migrations/                forward migrations; packs ship ZERO migrations
 ├─ vercel.json                   the two crons
-└─ *.test.ts                     Vitest, colocated; `pnpm test:calc` is the highest-value suite
+└─ *.test.ts  *.dbtest.ts        Vitest, colocated; `pnpm test:calc` is the highest-value suite
 ```
 
 `lib/calc/valuation/` and `lib/calc/series/` hold the **closed sets** that

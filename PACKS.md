@@ -210,6 +210,11 @@ Omitting `index` gives a plain fixed rate. These three modes cover every
 Brazilian private-credit structure in the original spec and standard UK fixed
 deposits — evidence the abstraction is at the right level.
 
+An instrument kind whose `metadataSchema` includes `maturity: IsoDate` is
+treated as a fixed-income holding by the Maturities screen (`MILESTONES.md`
+§4 decision 38); the kernel never reads it (§2 decision 14) — a lot accrues
+until a sell closes it.
+
 **`curve_mark_to_market`** — value is the present value of remaining cash flows
 discounted off a published curve. Tesouro Direto, gilts, US Treasuries.
 
@@ -491,6 +496,11 @@ Suggested insertion: the kernel and `packs/br` share Milestones 1–3 as
 specified; the canary `packs/uk` and the conformance suite become Milestone 4,
 ahead of any polish work.
 
+*Re-sequenced 2026-09-20 (`MILESTONES.md` §4 decision 32): the conformance
+suite shipped with Milestone 1; the canary is Milestone 5, after Brazil
+reaches production. The reason above is preserved by §16 and the
+neutrality test, not by the order.*
+
 ---
 
 ## 15. Open questions
@@ -499,6 +509,50 @@ ahead of any polish work.
   first transaction? Recommend locking for v1 with an explicit reset path.
 - Cross-pack asset identity (the same ETF listed in two markets) — deferred with
   the public asset catalog decision already deferred in `SPEC.md` §2.
-- UI string translation. Packs currently supply `locale` for number and date
-  formatting only; interface copy stays as-is. Revisit when a contributor asks,
-  not before.
+- ~~UI string translation~~ — closed by `MILESTONES.md` §4 decision 34: UI
+  copy is kernel-owned. `lib/copy/<locale>.ts` dictionaries share one `Copy`
+  type and are selected by `user_settings.locale`; English and Brazilian
+  Portuguese ship first. A pack's `locale` field drives number and date
+  formatting only. A new language is a new dictionary file, contributed like
+  a pack but reviewed as kernel.
+
+---
+
+## 16. What the second pack will meet
+
+The assumptions Milestones 2–4 made while only Brazil existed, each with the
+decision that made it. Milestone 5's UK canary ticks every line against its
+own independently derived golden fixture; a line that cannot be ticked is a
+kernel change with a `PACK_API_VERSION` bump, not a pack workaround (§1).
+
+- Cash flows are entered in the base currency only (`MILESTONES.md` §3
+  decision 25); the kernel already converts a non-base flow at its date.
+- FX resolves direct, inverted, or through a USD pivot from one `fx_rate`
+  series per pair (`lib/calc/fx.ts`); a second FX series (GBP/USD, hence
+  GBP/BRL by triangulation) has never been exercised.
+- The snapshot calendar is the union of the holdable packs' business days
+  (§3 decision 21); two national calendars have never been unioned.
+- The Maturities convention: `maturity: IsoDate` in `metadataSchema` (§4
+  decision 38) — a gilt must carry it.
+- `curve_mark_to_market` is implemented for nominal bonds only; `indexation`
+  returns `unpriced` with `indexation_not_supported` (§2 decision 7). A
+  linker needs an index base date the §5 shape does not carry.
+- Rate series have only been exercised on `BUS/252` daily compounding (§2
+  decisions 9, 13); SONIA on `ACT/365` exercises `rate_daily` with a
+  different day count and `compoundRate`'s `ACT/365` branch.
+- Staleness windows come from `stalenessWindowDays` over the pack calendar
+  (the longest closure run + 1); a calendar with a different closure
+  pattern (UK bank holidays) yields its own window.
+- **The "two calendars per pack" question**: B3 does not trade on 24 and
+  31 December while CDI is still published, so `packs/br` uses the ANBIMA
+  calendar and a missing FII quote on those days looks like an ingestion
+  failure (`packs/br/README.md` Quirks). The LSE-vs-bank-holiday split is
+  the same question. Whether `MarketCalendar` becomes two calendars (trading
+  and settlement/publication) is a `PACK_API_VERSION` question the canary
+  answers with evidence.
+- Nothing in `app/` or `lib/` names a pack, a currency or a locale outside
+  `lib/settings/defaults.ts` (and locale literals in `lib/copy/index.ts`);
+  `packs/conformance/kernel-neutrality.test.ts` enforces it (§4 decision
+  42). That test is the proof that nothing else was assumed.
+
+Milestone 5 ticks each item with the UK golden fixture.
