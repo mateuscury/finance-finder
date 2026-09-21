@@ -101,6 +101,10 @@ pnpm db:start / db:reset # local Supabase (Docker)
 - `pnpm release:check` must pass before real portfolio data is entered. Green
   scaffold CI is not a production-readiness signal.
 - `PACK_API_VERSION` bump ⇒ same PR updates every in-repo pack.
+- Dependencies: patch bumps freely, minor bumps under the full gate, major
+  bumps are a recorded decision (`MILESTONES.md`); `pnpm outdated` at the
+  start of every milestone. Prettier is the formatter (`pnpm format`); CI
+  runs `format:check`.
 
 ## Adding a pack (contributor path)
 
