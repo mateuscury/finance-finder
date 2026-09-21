@@ -1331,92 +1331,146 @@ recorded in the index.
 
 ### P3-U1 — Snapshot readers and `seriesReturn`
 
-**Goal.** Every time-series read the analysis screens need, text-cast and
-date-ranged; the one kernel addition of the milestone.
+**Grounded 2026-09-21** against the tree after Phase 2. What Phase 2 already
+built: `lib/ledger/snapshots.ts` (`readSnapshotTotals`, `readSnapshotRange`,
+`readSnapshotRowsAt`, `readSnapshotRowsBetween`), `app/(app)/_models/`
+with the golden-ledger test pattern (`goldenLedgerRead` + `expected.json`),
+`app/(app)/_charts/` (`toCoordinate`, `useReducedMotion`, the tooltip
+class), `lib/format`, `<Amount>`, `<ValueStatus>`, `copy.screens.*`. No
+per-asset series reader is added until a screen consumes it (drift rule).
 
-**Read first.** `lib/ledger/snapshots.ts` (P2-U5); `lib/calc/series/*.ts`
-(`indexReturn`, `compoundRate`, `inflationLevelAt`, `Observed`); `lib/calc/
-staleness.ts`; `lib/calc/README.md`; `packs/types.ts` `SeriesKind`.
+**Goal.** The one kernel addition of the milestone, and the shared period
+logic every analysis screen uses.
+
+**Read first.** `lib/calc/series/{index-level,rate,inflation,fx-rate}.ts`
+(`indexReturn(market, id, from, to, windowDays)`, `compoundRate(market, id,
+kind, calendar, from, to)` → `{ factor }`, `inflationLevelAt(market, id,
+date, interpolation)`, `fxRateAt`); `lib/calc/staleness.ts` (`Observed<T>`,
+`UnpricedReason`, `worseOf`, `hasValue`); `lib/calc/twr.ts` (`SubPeriod`
+carries `return`); `lib/calc/portfolio.ts` (`stalenessWindowFor`, `toBase`);
+`lib/calc/README.md`; `packs/br/series.ts` (roles).
 
 **Steps.**
 
-1. `lib/ledger/snapshots.ts` gains `readAssetSeries(client, assetId, { from,
-to })` (per-asset `market_value_base::text` by date) and
-   `readSnapshotRowsBetween(client, from, to)` (for contribution's
-   per-asset endpoints when the kernel is not re-run — see P4-U1).
-2. `lib/calc/benchmark.ts`: `seriesReturn(descriptor: SeriesDescriptor,
-market: MarketData, from: IsoDate, to: IsoDate, calendar?: MarketCalendar):
-Observed<KernelDecimal> | { status: "unpriced"; reason }` — `index_level`
-   → `indexReturn`; `rate_daily`/`rate_annual` → `compoundRate(…) − 1` (with
-   the descriptor's `dayCount`; needs the calendar for business days — take
-   it as a parameter, never import a pack); `inflation_index` → level ratio
-   − 1 via `inflationLevelAt`; `fx_rate` → rate ratio − 1 via `fxRateAt`;
-   `yield_curve` → `{ status: "unpriced", reason: "not_a_return_series" }`
-   — add that reason to the closed `UnpricedReason` set in `staleness.ts`
-   (a curve has no single return; it is not a contract violation, so not a
-   `KernelError`) and to the README's reason list. Status is the worse
-   leg, as `indexReturn` does. Export from `lib/calc/index.ts`; README module map
+1. `lib/calc/benchmark.ts` — `seriesReturn(descriptor: SeriesDescriptor,
+market: MarketData, from: IsoDate, to: IsoDate, ctx: { calendar:
+MarketCalendar; windowDays: number }): Observed<KDecimal>`:
+   `index_level` → `indexReturn(market, id, from, to, windowDays)`;
+   `rate_daily` / `rate_annual` → `compoundRate(market, id, kind, calendar,
+from, to)` → `factor − 1` as `{ status: "ok", value, observedOn: to }`, a
+   `series_gap` passes through as `unpriced`; `inflation_index` → level
+   ratio − 1 through `inflationLevelAt` at both ends (worse status wins,
+   like `indexReturn`); `fx_rate` → `fxRateAt` ratio − 1; `yield_curve` →
+   `unpriced` with the new closed reason `not_a_return_series` (added to
+   `UnpricedReason` in `staleness.ts` and the README's reason list — a
+   curve has no single return; not a contract violation). `from > to` is a
+   `KernelError("invalid_input")`. Export from `lib/calc/index.ts`; README
    entry under Performance.
+2. `app/(app)/_models/period.ts` — pure: `PERIOD_KEYS = ["1m", "ytd", "1y",
+"all"]`, `resolvePeriod(key, today, range: SnapshotRange, totals:
+SnapshotTotal[]): { key; from; to } | null` — `to` = the last snapshot
+   date; `from` = the latest snapshot date ≤ the period's start
+   (`addMonths(to, −1)`, `${year}-01-01`, `addMonths(to, −12)`, the first
+   date), so the first sub-period has a start value; `defaultPeriod(range)`
+   = `"all"` when the span is under a year, else `"1y"` (AC-010.1); null
+   below two snapshots.
+3. `app/(app)/_models/shares.ts` — `sharesSummingTo100(values: string[]):
+string[]` — integer basis points by largest remainder so two-decimal
+   shares sum to exactly `"100.00"` (AC-011.1); returns unit shares as
+   decimal strings (`"0.4567"`). Overview's donut switches to it.
+4. `app/(app)/_models/flows.ts` — `baseFlowsOf(read: LedgerRead, input:
+PortfolioInput): { flows: BaseFlow[]; dropped: number }` — a flow in the
+   base currency maps directly; another currency (reachable only from a
+   restored file, decision 25 forbids it at entry) is converted with
+   `toBase(input, money, date, packId)` under the first holdable pack's
+   window; `unpriced` → dropped and counted (decision 54).
 
-**Tests.** `benchmark.test.ts`: hand cases per kind; the two properties
-(`index_level` equals `indexReturn`; constant `rate_daily` r over n
-business days equals `(1 + r)^n − 1` within `1e-30`); staleness propagates.
-`snapshots.dbtest.ts`: the readers over the golden snapshots equal
-`expected.json` per date and per asset.
+**Tests.** `benchmark.test.ts`: hand cases per kind; the two decision-37
+properties (`index_level` equals `indexReturn`; a constant `rate_daily` r
+over n business days equals `(1 + r)^n − 1` within `1e-30`); stale
+propagation; `yield_curve` → `not_a_return_series`. `period.test.ts`: each
+key over the golden dates, the default rule, null below two snapshots.
+`shares.test.ts`: a property that the two-decimal shares of any positive
+vector sum to exactly 100.00 and each is within 0.01 of the exact share.
+`flows.test.ts`: base flows pass through; a foreign flow converts or drops.
 
-**Done when.** `pnpm test:calc` includes the new properties; readers proven
-against real rows.
+**Done when.** `pnpm test:calc` includes the new properties; `pnpm
+test:packs` still 1 skip.
 
 **Gate & QA.** Gate + `test:packs`. `/qa-code-quality lib/calc/benchmark.ts
-lib/ledger/snapshots.ts` · `/qa-spec-fidelity against MILESTONES §4
-decision 37 and lib/calc/README.md rules`.
+app/(app)/_models/{period,shares,flows}.ts` · `/qa-spec-fidelity against
+MILESTONES §4 decisions 37, 53, 54 and lib/calc/README.md rules`.
 
-**Commit.** `Milestone 4 Phase 3: snapshot readers and seriesReturn`
+**Commit.** `Milestone 4 Phase 3: seriesReturn, periods, shares, base flows`
 
 ---
 
 ### P3-U2 — Performance
 
-**Goal.** SPEC §9 screen 2 exactly: period selector, TWR, MWR, the chart with
-registry-driven benchmark toggles, nominal/real.
+**Goal.** SPEC §9 screen 2 exactly: period selector, TWR, MWR, the chart
+with registry-driven benchmark toggles, nominal/real.
 
-**Read first.** `SPEC.md` §9 screen 2, §6 (TWR/MWR/real formulas), §9.5 row 3;
-`lib/calc/twr.ts` (does the result expose sub-period factors? if not, add
-`periods: { date: IsoDate; factor: string }[]` to it — a tested kernel
-addition that leaves the golden untouched), `lib/calc/mwr.ts`,
-`lib/calc/real.ts`; `MILESTONES.md` §2 decisions 1, 2, 16; the `benchmark`
-and `deflator` roles in `packs/br/series.ts`.
+**Read first.** `SPEC.md` §9 screen 2, §6, §9.5 row 3; `lib/calc/twr.ts`
+(`twr(points, flows)` → `{ twr, subPeriods[{from,to,return}], skipped,
+ignored }`), `lib/calc/mwr.ts` (`mwr({ from, to, startValue, flows,
+endValue })` → `{ status, rate | reason, ignored }`), `lib/calc/real.ts`
+(`realReturn(nominal, market, deflator, from, to)`); `MILESTONES.md` §2
+decisions 1, 2, 10, 16; `lib/calc/golden.ts` `runGolden` (the reference
+wiring); `app/(app)/page.tsx` (the read pattern).
 
 **Steps.**
 
-1. `app/(app)/_models/performance.ts` — pure `performanceModel(input: {
-totals: SnapshotTotal[]; cashFlows: ExternalCashFlow[] (base currency,
-decision 25); period: { from, to, key }; benchmarks: { descriptor,
-series: { date, return: Observed }[] }[]; deflator?: …; real: boolean })`
-   → `{ twr: { rate: string | null; reason?; skipped: … }, mwr, series: {
-date, portfolio: string (cumulative), [benchmarkId]: string | null }[],
-stale dates, empties }`. Period keys `1m | ytd | 1y | all`; `from` is the
-   last snapshot date ≤ the period start (so the first sub-period has a
-   start value); default per AC-010.1.
-2. `app/(app)/performance/page.tsx`: `searchParams` `period`, `benchmarks`
-   (comma list of series ids; default: the first `benchmark`-role series of
-   the user's holdable pack), `real=1`. Reads: totals in range, cash flows in
-   range, `readLedger` full mode with `seriesFrom = from − lookback` for the
-   series data (`buildMarketData`), then per date `seriesReturn(descriptor,
-market, from, date, calendar)`; `realReturn` when `real` and a `deflator`
-   series exists. Toggles are links (server-rendered `<a>` with the query
-   string) — no client state. Chart `app/(app)/_charts/performance-chart.tsx`
-   (`LineChart`, portfolio in `--accent`, benchmarks in `--text-muted`,
-   direct labels at the line ends, stale dates marked in the tooltip).
-3. §9.5 empties verbatim; MWR null → its reason from `copy.reasons`.
+1. `app/(app)/_models/performance.ts` — pure `performanceModel(input)`:
+   - input: `{ period; totals: SnapshotTotal[] (in [from, to]); flows:
+BaseFlow[]; droppedFlows: number; benchmarks: Array<{ descriptor;
+points: Array<{ date; value: Observed<KDecimal> }> }>; real:
+Observed<KDecimal>[] | null (the cumulative points deflated) }`.
+   - **Decision 53:** the valuation points handed to `twr()` are the
+     totals whose `staleRows === 0`; a stale date is not a point — it is
+     listed in `staleDates` and drawn as a gap with the mark.
+   - `twr`: `{ rate: string | null; skipped: count; ignored: count }`;
+     `mwr`: `{ rate: string | null; reason? }`; `series`: one row per
+     point `{ date, portfolio: cumulative string (Π(1 + r) − 1 over
+`subPeriods` up to that date), [benchmarkId]: string | null }`;
+     `partial` when flows were dropped or sub-periods skipped.
+2. `app/(app)/performance/page.tsx` — `searchParams`: `period`
+   (`PERIOD_KEYS`, else the default), `benchmarks` (comma-separated series
+   ids; default the first `benchmark`-role series of the user's holdable
+   packs), `real=1`. Reads: `readSnapshotRange`, then `readSnapshotTotals`
+   in the resolved window, `readLedger(client, PACKS, { seriesFrom:
+addDays(from, −SERIES_LOOKBACK_DAYS), prices: "latest" })` — the series
+   are what `seriesReturn` and `realReturn` need; prices are not (the
+   portfolio line comes from the totals). Per benchmark descriptor (from
+   `read.packs`, role `benchmark`, id in the selection), per point date
+   `d`: `seriesReturn(descriptor, market, from, d, { calendar: the
+descriptor's pack calendar, windowDays: stalenessWindowFor(input,
+packId, d) })`. The `deflator` role (first in the packs) drives the
+   real toggle; hidden when none. Toggles are `<Link>`s that rewrite the
+   query — no client state.
+3. `app/(app)/_charts/performance-chart.tsx` (`"use client"`): Recharts
+   `LineChart`, x = formatted date, y = coordinate; the portfolio line in
+   `--accent` at 1.5 px, benchmarks in `--text-muted` at 1 px, direct
+   labels at the line ends (the last point's formatted value), a hidden
+   `YAxis` with `domain={["dataMin", "dataMax"]}`, `XAxis` with 4–6 ticks,
+   the tooltip printing the row's formatted strings (all points formatted
+   server-side and passed in), stale dates as `connectNulls={false}` gaps
+   marked with `⚠` in the tooltip; `isAnimationActive={!reduced}`.
+4. Copy: `copy.screens.performance` (title, period labels, twr, mwr,
+   benchmarks, nominal, real, skipped/dropped notes) in both languages.
+5. §9.5 empties verbatim; MWR null → `copy.reasons`-style line for
+   `insufficient_flows` / `no_root` (added under `copy.screens.performance`).
 
-**Tests.** `performance.test.ts` over the golden totals and flows: the TWR
-shown equals `expected.json`'s `twr` over the golden dates and the MWR its
-`mwr`; the cumulative series' last point equals the TWR; a benchmark
-toggled off is absent; real toggle divides by the level ratio.
+**Tests.** `performance.test.ts` over the golden: with the six golden
+totals as points and the fixture's flows, the model's TWR equals
+`expected.json`'s `twr` to `1e-8` and the MWR its `mwr`; the cumulative
+series' last point equals the TWR; a stale date is excluded from the
+chain and listed; a benchmark's points are pass-through; the real
+transform applies. `benchmark` selection and defaults are unit-tested on
+a small pure helper (`benchmarkSelection(packs, param)`).
 
-**Done when.** `/performance` renders the chart with ≥ 2 snapshots and both
-empties otherwise; the figures match the golden.
+**Done when.** `/performance` on the golden ledger with snapshots shows the
+golden TWR and MWR; toggles rewrite the query; empties verbatim at 0 and 1
+snapshots.
 
 **Gate & QA.** Gate + build. `/qa-spec-fidelity app/(app)/performance
 app/(app)/_models/performance.ts against US-010` · `/qa-code-quality` same
@@ -1431,23 +1485,27 @@ app/(app)/_models/performance.ts against US-010` · `/qa-code-quality` same
 **Goal.** SPEC §9 screen 3 from the latest snapshot rows.
 
 **Read first.** `SPEC.md` §9 screen 3, §9.5 row 4; `readSnapshotRowsAt`;
-`lib/ledger/rows.ts` `resolveAssets`.
+`resolveAssets`; `sharesSummingTo100`.
 
 **Steps.**
 
-1. `app/(app)/_models/allocation.ts` — pure: rows + assets + registry →
-   `{ byKind, byPack, byCurrency }` each `{ label, valueBase, share }[]` with
-   shares as 2-decimal strings summing to exactly `100.00` (largest
-   remainder), `exposure: { currency, native: string, base: string }[]`
-   (native = Σ quantity × price_native per currency), stale rows listed
-   aside, empty when no priced position.
-2. `app/(app)/allocation/page.tsx`: three donuts or bars (one `<Donut>`
-   reused) plus the exposure table; `<Amount>` on every value; empty state
-   → `/assets`.
+1. `app/(app)/_models/allocation.ts` — pure over `{ rows: SnapshotAssetRow[]
+(at the last date); assets: HoldingAsset[]; names }`: `byKind`, `byPack`,
+   `byCurrency` each `Array<{ key, label, valueBase, share }>` (shares via
+   `sharesSummingTo100`, largest first); `exposure: Array<{ currency,
+native: string (Σ quantity × priceNative), base: string (Σ
+marketValueBase) }>`; `stale: Array<{ assetId, identifier, lastKnownBase,
+priceDate }>` listed aside and excluded from shares; `empty` when no
+   confident row.
+2. `app/(app)/allocation/page.tsx`: three `<Donut>`s (one component, reused)
+   with their legends, the exposure table (`<Amount>` on every value),
+   the stale list with `<ValueStatus status="stale">`, the empty state →
+   `/assets`. Copy `copy.screens.allocation`.
 
-**Tests.** `allocation.test.ts` over the golden `asOf` rows: shares sum to
-100.00; a stale row is excluded from shares and listed; BRL-only exposure
-has native = base.
+**Tests.** `allocation.test.ts` over the golden `asOf` rows (from
+`valuePortfolio` as in `overview.test.ts`): shares sum to exactly 100.00 in
+each view; the seven kinds appear; a stale row is excluded from shares and
+listed; BRL-only exposure has native = base.
 
 **Done when.** `/allocation` renders over the golden; empty state verbatim.
 
@@ -1462,39 +1520,53 @@ AC-011.4` · `/qa-code-quality` · `/qa-ux /allocation`.
 
 **Goal.** SPEC §9 screen 4 with the per-asset drill-in.
 
-**Read first.** `SPEC.md` §9 screen 4, §6 contribution/attribution, §11 BDR
-gap, §9.5 row 5; `lib/calc/contribution.ts`, `lib/calc/attribution.ts`
-(inputs; both need `PortfolioInput` and the period); `MILESTONES.md` §2
-decision 15.
+**Read first.** `SPEC.md` §9 screen 4, §6, §11 BDR gap, §9.5 row 5;
+`lib/calc/contribution.ts` (`contribution({ input, from, to, start, end,
+flows })` → `{ assets[{ assetId, contribution | null, reason? }], total,
+partial, denominator }`), `lib/calc/attribution.ts` (`attribution(input,
+assetId, from, to)` → `{ boundaries, rNative, rBase, rFx, reason? }`);
+`MILESTONES.md` §2 decision 15; `lib/calc/golden.ts` lines 228–262.
 
 **Steps.**
 
-1. `app/(app)/_models/contribution.ts`: pure wrapper turning
-   `contribution()`'s result into rows `{ assetId, name, kindLabel, gain:
-string | null, share: string | null, reason? }`, `partial` with reasons,
-   the total equal to the simple return; `attributionModel` for one asset:
-   `R_native`, `R_fx`, `R_base`, the identity line, `no_position` handling.
-2. `app/(app)/contribution/page.tsx`: period selector (same keys as
-   Performance), `readLedger` full mode with `pricesFrom = from − window`
-   and `seriesFrom`, `contribution(input, from, to)`; horizontal bars
-   (`app/(app)/_charts/bars.tsx`, `--pos/--neg` plus sign), partial banner,
-   each asset links to `/contribution/[assetId]`.
-3. `app/(app)/contribution/[assetId]/page.tsx`: `attribution(input, assetId,
-from, to)`; for a base-currency asset state "R_fx = 0 — this asset is
-   quoted in your base currency" (`copy.screens.contribution`). Kinds
-   carry no BDR flag, so the SPEC §11 gap is stated once on the page as
-   general copy: "an asset quoted in your base currency over a foreign
-   underlying shows 0 FX here" — no currency named (neutrality).
+1. `app/(app)/_models/contribution.ts` — pure: `contributionModel({ result:
+ContributionResult; names; identifiers; droppedFlows })` → rows
+   `{ assetId, identifier, name, gain: string | null, share: string | null
+(contribution / denominator... no: the kernel's `contribution`IS the
+share of the simple return — carry it as`contribution: string | null`),
+reason? }` sorted by |contribution| desc, `total: string | null`,
+   `partial`, `reasons: count per reason`; `attributionModel(a: Attribution,
+baseCurrency)` → `{ rNative, rBase, rFx (all string | null), reason?,
+isBaseCurrency (rFx === "0") }`.
+2. `app/(app)/contribution/page.tsx`: the period selector (P3-U1's
+   `resolvePeriod` and the same links), `readLedger(client, PACKS, {
+pricesFrom: addDays(from, −SERIES_LOOKBACK_DAYS), seriesFrom: the same })`
+   → `input = toPortfolioInput(read)`, `start = valuePortfolio(input, from)`,
+   `end = valuePortfolio(input, to)`, `flows = baseFlowsOf(read, input)`,
+   `contribution({ input, from, to, start, end, flows })`; horizontal bars
+   (`app/(app)/_charts/bars.tsx`: `BarChart` layout vertical, `--pos` /
+   `--neg` cells, the formatted value as the label), the partial banner
+   listing reasons through `copy.status.unpricedReason`, each row linking
+   to `/contribution/[assetId]?period=`.
+3. `app/(app)/contribution/[assetId]/page.tsx`: the same read; `attribution(
+input, assetId, from, to)`; a three-line table R_native / R_fx / R_base
+   with `formatPercent`, the identity line `(1 + R_base) = (1 + R_native) ×
+(1 + R_fx)` stated in copy, "quoted in your base currency, so R_fx = 0"
+   when `rFx` is exactly zero, the §11 gap sentence once (no currency
+   named), `no_position` and null legs through `<ValueStatus>`-style copy.
+4. Copy `copy.screens.contribution` both languages; §9.5 empty verbatim.
 
-**Tests.** `contribution.test.ts` over the golden: Σ shares equals the
-simple return between the first and last golden dates; the attribution of
-each BR asset has `R_fx = "0"`; a missing-FX case (fake) is null with
-`no_fx_series` and marks partial.
+**Tests.** `contribution.test.ts` over the golden between its first and
+last valuation dates: every asset's contribution equals `expected.json`'s
+`contribution.assets[id]` to `1e-8` and the total its `total`; sorted by
+magnitude; a fake missing-FX case yields `no_fx_series` and `partial`.
+`attributionModel` over each golden asset has `rFx === "0"` and
+`isBaseCurrency`.
 
-**Done when.** Both routes render; empties verbatim.
+**Done when.** Both routes render on the golden; empties verbatim.
 
-**Gate & QA.** Gate + build. `/qa-spec-fidelity against US-011 AC-011.2–3` ·
-`/qa-code-quality` · `/qa-ux /contribution`.
+**Gate & QA.** Gate + build. `/qa-spec-fidelity against US-011 AC-011.2–3`
+· `/qa-code-quality` · `/qa-ux /contribution`.
 
 **Commit.** `Milestone 4 Phase 4: Contribution and the FX attribution drill-in`
 
@@ -1505,38 +1577,51 @@ each BR asset has `R_fx = "0"`; a missing-FX case (fake) is null with
 **Goal.** SPEC §9 screen 5 by the decision 38 convention.
 
 **Read first.** `SPEC.md` §9 screen 5, §9.5 row 6; `PACKS.md` §5 (the
-sentence from P0-U1); `lib/calc/valuation/index.ts` (`valueHolding`,
-`ValuationContext`), `accrual.ts`; `lib/calc/positions.ts` (`lotsAt`);
-`packs/br/instruments.ts` (which kinds carry `maturity`, which are plain).
+maturity sentence); `lib/calc/valuation/index.ts` (`valueHolding(asset,
+lots, asOf, ctx: { market, calendar, windowDays, series })` → `HoldingValue`),
+`lib/calc/positions.ts` (`lotsAt(transactions, date)` — per asset: filter
+the ledger's transactions by `assetId` first); `packs/br/instruments.ts`
+(`maturity` on `PrivateCreditMetadata` and `TesouroDiretoMetadata`; plain
+= `convention.index === undefined`).
 
 **Steps.**
 
-1. `lib/ledger/maturity.ts`: `hasMaturity(kind: InstrumentKind): boolean` —
-   inspects `kind.metadataSchema` for a `maturity` key (zod object shape;
-   unwrap optional) — and `maturityOf(asset): IsoDate | null` (parse the
-   metadata through `z.object({ maturity: IsoDateSchema })` loosely).
-   Neither names a kind id.
-2. `app/(app)/_models/maturities.ts` — pure: for each held asset (open lots
-   at today) with a maturity: `{ assetId, name, kindLabel, maturity,
-daysToGo (calendar), current: HoldingValue, contracted: string | null
-(plain-rate accrual only: `valueHolding(asset, lots, maturity, ctx)`),
-indexed: boolean, matured: boolean }` sorted by date; timeline groups by
-   `YYYY-MM`.
-3. `app/(app)/maturities/page.tsx`: ladder table + timeline; `<Amount>`,
-   `<ValueStatus>`; matured-but-held rows marked with the AC-012.2 copy;
-   empty state → `/assets`.
+1. `lib/ledger/maturity.ts` — `hasMaturity(kind: InstrumentKind): boolean`
+   (zod v4: `kind.metadataSchema instanceof z.ZodObject && "maturity" in
+kind.metadataSchema.shape`); `maturityOf(asset: HoldingAsset): IsoDate |
+null` (`z.object({ maturity: IsoDateSchema }).loose().safeParse(
+asset.metadata)`); `isPlainRateAccrual(kind)`. No kind id anywhere.
+2. `app/(app)/_models/maturities.ts` — pure over `{ read: LedgerRead; today;
+valuation: PortfolioValuation (today, latest-mode read) }`: for each
+   asset with open lots at `today` and a maturity: `{ assetId, identifier,
+name, kindLabel, maturity, daysToGo: number (calendar), matured:
+maturity < today, current: the asset's `HoldingRow`| excluded entry,
+contracted: string | null — plain-rate accrual only:`valueHolding(asset,
+   lotsAt(txnsOf(asset), today), maturity, ctx)`with`ctx = { market,
+   calendar: pack calendar, windowDays: stalenessWindowFor(input, packId,
+   maturity), series }`→`native.amount`when`ok`/`carried_forward`,
+indexed: `convention.index !== undefined` }` sorted by maturity;
+   `timeline: Array<{ month: IsoDate (first of month); items }>`; `empty`
+   when none.
+3. `app/(app)/maturities/page.tsx`: the ladder table (date, days to go,
+   current with `<ValueStatus>`, contracted or the "depends on the index"
+   line, matured mark with the AC-012.2 copy and a link to add the sell)
+   and the timeline grouped by `formatMonth`; `<Amount>` on every value;
+   empty → `/assets`. Copy `copy.screens.maturities`.
 
-**Tests.** `maturities.test.ts` over the golden: `br.cdb_prefixado`'s
-contracted value equals `valueAccrual` at its maturity date; indexed kinds
-show no projection; `br.tesouro_direto` appears (it has `maturity`) with no
-contracted value (NAV kind); a matured date flags.
+**Tests.** `maturity.test.ts`: `hasMaturity` true for the four BR
+fixed-income kinds and TD, false for FII and stock, by shape alone;
+`maturityOf` on the golden metadata. `maturities.test.ts` over the golden
+at `asOf`: five assets in date order (TD + four credits); the prefixado's
+contracted value equals `valueAccrual` at its maturity date; the % CDI and
+IPCA+ kinds show no projection; TD shows none (NAV); with `today` past a
+maturity the row is `matured`.
 
-**Done when.** `/maturities` lists the four fixed-income golden assets in
-date order.
+**Done when.** `/maturities` lists the golden's fixed income in date order.
 
-**Gate & QA.** Gate + build. `/qa-spec-fidelity against US-012 and MILESTONES
-§4 decision 38` · `/qa-code-quality lib/ledger/maturity.ts` · `/qa-ux
-/maturities`.
+**Gate & QA.** Gate + build. `/qa-spec-fidelity against US-012 and
+MILESTONES §4 decision 38` · `/qa-code-quality lib/ledger/maturity.ts` ·
+`/qa-ux /maturities`.
 
 **Commit.** `Milestone 4 Phase 4: Maturities — Phase 4 complete`
 

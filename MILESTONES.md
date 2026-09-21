@@ -532,6 +532,17 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
 52. **Forward migrations this milestone are read views and function bodies
     only; no new user-data tables.**
 
+### Decisions taken 2026-09-21 (grounding Phases 3–4)
+
+53. **A stale date is not a valuation point.** Excluded from the TWR
+    chain and the cumulative line, listed and drawn as a gap with the
+    mark: its confident total omits a holding and would read as a move
+    that never happened (decision 10 applied to time series).
+54. **A cash flow in another currency is converted with `toBase` at its
+    date, never thrown**; unconvertible → dropped, counted, the figure
+    marked partial. Unreachable from the forms (decision 25); reachable
+    from a restored file.
+
 ### Contract corrections found while implementing
 
 1. **XIRR over a single-date stream returned the bracket's first grid point

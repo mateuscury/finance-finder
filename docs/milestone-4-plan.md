@@ -367,6 +367,23 @@ says to propose in chat before installing — this is the proposal.
     migrations, and a view is the right answer to a read PostgREST cannot
     express (as `asset_latest_prices` was).
 
+## Decisions to confirm before Phases 3–4 (grounding, 2026-09-21)
+
+Found while grounding the analysis screens against the kernel as built.
+Neither changes the golden numbers; both apply decision 10 to time series.
+
+53. **A stale date is not a valuation point.** A snapshot date with any
+    `stale` row is excluded from the TWR chain and the cumulative line,
+    listed, and drawn as a gap with the stale mark. Its confident total
+    omits a holding, so including it would read as a loss and then a gain
+    that never happened; decision 10 says stale is never summed. Overview's
+    day and period change already read confident totals and are unchanged.
+54. **A cash flow in another currency is converted, never thrown.**
+    Decision 25 makes a non-base flow unreachable from the forms, but a
+    restored file could carry one; the read path converts it with `toBase`
+    at its date under the first holdable pack's window and, when that is
+    `unpriced`, drops it, counts it, and marks the figure partial.
+
 ## Definition of done
 
 - The ten screens of SPEC §9 exist under `app/(app)/` with the §10 design
