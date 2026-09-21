@@ -6,7 +6,7 @@
 > the design document that owns its behaviour, and the QA gates in
 > `.claude/CLAUDE.md` check implementations against the acceptance criteria
 > below.
-> Last updated: 2026-09-20 (Milestone 3 stories)
+> Last updated: 2026-09-21 (Milestone 4 stories)
 
 ## Product Vision
 
@@ -23,9 +23,10 @@ no analytics, and never computes a tax or fiscal figure (ARCHITECTURE §2).
 Stories are added per milestone as that milestone is planned. Milestones 0–1
 (safety baseline, trusted ingestion) were delivered before this file was
 filled; their evidence is `MILESTONES.md` §0–§1 and the recorded fixtures.
-Milestone 3 (ledger, login) and Milestone 5 (screens) stories arrive with
-their plans; `PERSONAS.md` is filled with Milestone 5, the first
-user-facing one.
+Milestone 3 (ledger, login) stories arrived with its plan; Milestone 4
+("Brazil to production": the ten designed screens, `br.stock`, budgets,
+smoke journeys, the first deploy) adds US-009 to US-014 and fills
+`PERSONAS.md`, this being the first user-facing milestone.
 
 ## User Stories
 
@@ -499,6 +500,343 @@ Then:  the auth user is gone, every user table has zero rows for that id
 
 ---
 
+### US-009: See my portfolio at a glance
+
+**As a** the owner (Marina, `PERSONAS.md`)
+**I want** the Overview to show what my portfolio is worth today in my base
+currency, how it moved, how it is allocated, and — on a fresh instance —
+exactly what to do next
+**So that** one screen answers the first question every evening, and the
+product teaches itself instead of hiding behind a wizard (root SPEC §9
+screen 1, §9.2, §9.3, §9.5)
+
+**Acceptance Criteria** (`docs/milestone-4-plan.md` Phase 2; decisions 36,
+39, 40; `docs/milestone-4-execution.md` P2-U3–P2-U5):
+- [ ] AC-009.1: `/` renders the §9.2 navigation — the Analysis and Ledger
+      groups always fully visible, the theme toggle, sign out — with a
+      hairline rule beneath, and the status strip only when something is
+      pending, each item linking to the screen that resolves it, Refresh
+      its only control. (SPEC §9.2)
+- [ ] AC-009.2: The §9.3 first-run card renders above the content, derived
+      from row counts on every render; it disappears as steps complete and
+      reappears if data is deleted; steps are ordered but never gated.
+      (SPEC §9.3)
+- [ ] AC-009.3: The headline is the kernel's confident total at today in
+      the base currency (`valuePortfolio` over a latest-price ledger read);
+      "—" with *N assets unpriced* when no position is priced; stale and
+      unpriced holdings are never summed into it. (SPEC §9.5 row 1, §11)
+- [ ] AC-009.4: Day change comes from the last two snapshot totals and
+      period change from the first total in range — signed, coloured with
+      `--pos`/`--neg`, with an arrow; below two snapshots the copy is
+      "History starts after tonight's snapshot." (SPEC §9.5 row 2)
+- [ ] AC-009.5: A sparkline of confident totals, an allocation donut by
+      instrument kind from today's holdings, and top movers by per-asset
+      day change. (SPEC §9 screen 1)
+- [ ] AC-009.6: Every value is printed by `lib/format` from a decimal
+      string per `user_settings.locale`; the only `Number(` on a value in
+      `app/` or `lib/` source is `app/(app)/_charts/coordinate.ts`.
+      (plan "The number boundary"; decision 35)
+- [ ] AC-009.7: Every string a person reads comes from `lib/copy` in the
+      user's locale — English or Brazilian Portuguese. (decision 34)
+
+**Test Scenarios**:
+```
+Given: a fresh instance — one bootstrapped owner, zero rows elsewhere
+When:  the owner opens /
+Then:  the four-step card shows with steps 1–4 open; the headline is "—";
+       no status strip; the nav shows every route
+
+Given: one asset created without BRAPI_TOKEN set
+When:  the owner opens /
+Then:  the strip says "1 asset unpriced" and "source br.brapi disabled:
+       BRAPI_TOKEN not set", each linking to its screen; the headline is "—"
+
+Given: the golden ledger restored and snapshots built through 2026-02-27
+When:  the owner opens / with locale pt-BR
+Then:  the headline equals expected.json's total at asOf formatted
+       "R$ 1.234,56"-style; day change shows a sign and an arrow; the
+       sparkline has six points; the card is gone
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 Phase 2)
+
+---
+
+### US-010: Compare my return
+
+**As a** the owner
+**I want** to see my time-weighted and money-weighted returns over a chosen
+period against the benchmarks my market publishes, nominal or real
+**So that** I know whether my decisions beat simply holding the index, and
+whether I beat inflation (root SPEC §9 screen 2, §6)
+
+**Acceptance Criteria** (plan Phase 3; decisions 36, 37; runbook P3-U1,
+P3-U2):
+- [ ] AC-010.1: A period selector 1M / YTD / 1Y / All (All = from the first
+      snapshot); the default is All when history is shorter than a year,
+      else 1Y. (plan Phase 3)
+- [ ] AC-010.2: TWR over the period from snapshot confident totals and cash
+      flows through `twr()` (start-of-day flows, `MILESTONES.md` §2
+      decision 1), with skipped sub-periods listed; MWR through `mwr()`; a
+      null figure shows its reason from `lib/copy`. (SPEC §6)
+- [ ] AC-010.3: The chart plots the portfolio's cumulative return (the
+      accent) against togglable `benchmark`-role series (muted), each point
+      from `seriesReturn` at that snapshot date; the toggles come from the
+      registry with no kind-specific code. (decision 37; ARCHITECTURE §8
+      "Adding a new benchmark")
+- [ ] AC-010.4: A nominal/real toggle applies the `deflator`-role series
+      through `realReturn`; the toggle is hidden when the user's packs
+      register no deflator. (SPEC §6)
+- [ ] AC-010.5: The §9.5 empty states verbatim: "Needs two days of history
+      to plot a return." below two snapshots; "Benchmarks arrive with the
+      nightly ingest." when no benchmark series has points. (SPEC §9.5
+      row 3)
+- [ ] AC-010.6: A date with any stale row carries the stale mark in the
+      tooltip; `prefers-reduced-motion` disables chart animation. (SPEC
+      §11; plan "Accessibility")
+
+**Test Scenarios**:
+```
+Given: the golden ledger with snapshots on its six valuation dates
+When:  /performance?period=all
+Then:  the TWR shown equals expected.json's twr to 1e-8 before formatting,
+       the MWR its mwr, and the cumulative series' last point equals the TWR
+
+Given: one snapshot only
+When:  /performance
+Then:  "Needs two days of history to plot a return." and no chart
+
+Given: br.ibovespa toggled off and br.cdi on
+When:  the page re-renders
+Then:  the chart has the portfolio line and one muted CDI line
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 Phase 3)
+
+---
+
+### US-011: See what I hold and what drove it
+
+**As a** the owner
+**I want** my allocation by kind, market and currency, and each asset's
+contribution to the period's return — with the FX share separated for
+foreign holdings
+**So that** I can see concentration and know which decision, not which
+exchange rate, made the difference (root SPEC §9 screens 3–4, §6, §11)
+
+**Acceptance Criteria** (plan Phases 3–4; `MILESTONES.md` §2 decision 15;
+runbook P3-U3, P4-U1):
+- [ ] AC-011.1: Allocation by instrument kind, by pack and by currency from
+      the latest snapshot rows, plus native-vs-base exposure; shares are
+      2-decimal strings summing to exactly 100.00 (largest remainder);
+      stale rows are excluded from shares and listed aside. (SPEC §9
+      screen 3)
+- [ ] AC-011.2: Contribution bars per asset over the period from
+      `contribution()`; a partial total is flagged with its reasons; the
+      sum shown equals the simple return shown. (SPEC §6)
+- [ ] AC-011.3: `/contribution/[assetId]` shows `attribution()`'s R_native,
+      R_fx and R_base with the identity `(1 + R_base) = (1 + R_native) ×
+      (1 + R_fx)` stated; a base-currency asset shows R_fx = 0 as a stated
+      fact; the §11 BDR gap is stated once on the page. (SPEC §6, §11)
+- [ ] AC-011.4: The §9.5 empty states verbatim: "Nothing to allocate yet."
+      → Assets; "Contribution needs history across the period." (SPEC §9.5
+      rows 4–5)
+
+**Test Scenarios**:
+```
+Given: the golden asOf snapshot rows
+When:  /allocation
+Then:  six kinds (seven with br.stock) with shares summing to 100.00; BRL
+       exposure native equals base
+
+Given: the golden ledger over its six dates
+When:  /contribution?period=all
+Then:  the per-asset shares sum to the simple return between the first and
+       last dates; every BR asset's drill-in shows R_fx = 0
+
+Given: an asset whose FX series is missing on the period's start
+When:  /contribution
+Then:  that asset is null with reason no_fx_series and the total is flagged
+       partial
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 Phases 3–4)
+
+---
+
+### US-012: Know what matures when
+
+**As a** the owner
+**I want** a ladder of my fixed-income holdings by maturity date with what
+each is worth now and, where the contract fixes it, at maturity
+**So that** I plan liquidity and notice a matured bond whose redemption I
+never recorded (root SPEC §9 screen 5; `MILESTONES.md` §2 decision 14, §4
+decision 38)
+
+**Acceptance Criteria** (plan Phase 4; PACKS §5 maturity sentence; runbook
+P4-U2):
+- [ ] AC-012.1: The ladder lists every held asset whose kind's
+      `metadataSchema` has a `maturity` key, ordered by date, with days to
+      go, the current value with its status mark, the contracted value at
+      maturity for plain-rate accrual kinds (`valueHolding` at that date),
+      and "final amount depends on the index" for indexed kinds. (decision
+      38)
+- [ ] AC-012.2: A matured asset still held is marked "matured — record the
+      redemption" and never valued as if alive without saying so.
+      (decision 14)
+- [ ] AC-012.3: A timeline view groups the ladder by month. (SPEC §9
+      screen 5)
+- [ ] AC-012.4: The §9.5 empty state verbatim ("No fixed-income holdings
+      yet. Add a Tesouro Direto, CDB, LCI…" → Assets); detection reads the
+      schema shape, never a kind id. (decision 42)
+
+**Test Scenarios**:
+```
+Given: the golden ledger at asOf
+When:  /maturities
+Then:  four fixed-income assets in date order; br.cdb_prefixado's contracted
+       value equals valueAccrual at its maturity; br.cdb_ipca shows the
+       index sentence; br.tesouro_direto (NAV) shows no contracted value
+
+Given: a CDB with maturity 2025-01-01 still held today
+When:  /maturities
+Then:  the row carries the matured mark
+
+Given: a portfolio of FIIs only
+When:  /maturities
+Then:  the empty state with the Assets link
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 Phase 4)
+
+---
+
+### US-013: Use it on my phone, in my theme, in front of others
+
+**As a** the owner
+**I want** every screen to work on my phone in light or dark, in my
+language, with amounts hidden at a tap, and every stale or missing number
+marked as such
+**So that** I check my portfolio wherever I am without a confident number
+ever being wrong or seen by the wrong person (root SPEC §10, §11, §12.3,
+§9.5, §9 screens 6–10)
+
+**Acceptance Criteria** (plan Phases 2, 5, 7; decisions 34, 40, 47, 48;
+runbook P2-U1, P2-U3, P5-U1–P5-U3, P7-U2):
+- [ ] AC-013.1: `app/globals.css` defines exactly the §10 tokens for light
+      and dark; `data-theme` on `<html>` comes from the user's setting with
+      no flash; `system` follows `prefers-color-scheme`; the nav toggle
+      persists the setting. (SPEC §10; ARCHITECTURE §7)
+- [ ] AC-013.2: Instrument Serif through `next/font` for display headings
+      and large figures, the system sans stack elsewhere, tabular numerals
+      on every figure. (SPEC §10, §12.1 fonts)
+- [ ] AC-013.3: Privacy mode — a toggle beside the theme switch, remembered
+      in `localStorage`, masks every amount and quantity as `•••` through
+      one `<Amount>` component; names, percentages and returns stay
+      visible; nothing is sent to the server. (SPEC §12.3; decision 40)
+- [ ] AC-013.4: Every screen works at 400 px: the nav collapses to a menu,
+      tables stack or scroll inside their own container, the page never
+      scrolls horizontally. (SPEC §9.2; ARCHITECTURE §2 mobile browsers)
+- [ ] AC-013.5: Landmarks, a skip link, labelled controls, visible focus,
+      `aria-live` on the strip, `loading.tsx` and `error.tsx` with fixed
+      copy and no stack, AA contrast for every token pair in both themes,
+      reduced motion respected. (plan "Accessibility")
+- [ ] AC-013.6: `<ValueStatus>` marks carried-forward, stale and unpriced on
+      every screen; an unpriced position shows its quantity and *unpriced*,
+      never zero. (SPEC §9.5 last paragraph, §11)
+- [ ] AC-013.7: Assets, Transactions, Import, Cash flows, Settings, Login,
+      MFA and reset are restyled on the tokens; the asset form is pack →
+      kind → generated metadata fields → currency
+      (`lib/forms/zod-fields.ts`); the JSON textarea is gone. (SPEC §9
+      screen 6; decision 45)
+- [ ] AC-013.8: Changing `locale` in Settings changes the copy language and
+      the formatting; both dictionaries are complete (a test proves it).
+      (decision 34)
+
+**Test Scenarios**:
+```
+Given: the owner sets theme dark and locale pt-BR in Settings
+When:  they reload any page
+Then:  <html data-theme="dark" lang="pt-BR"> is in the first HTML response;
+       no light frame paints; every string is Portuguese
+
+Given: privacy mode on
+When:  the owner opens /assets
+Then:  every amount and quantity cell reads •••; identifiers and percentages
+       are visible; reloading keeps the mask
+
+Given: a 400 px viewport
+When:  every route is opened
+Then:  document.scrollWidth equals the viewport width on each; the menu
+       opens and lists every route
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 Phases 2–7)
+
+---
+
+### US-014: Run it in production
+
+**As a** the owner
+**I want** to deploy the app to my own Vercel and Supabase accounts by a
+runbook, with a CI that proves every tier and a release gate that permits
+real data only when everything is green
+**So that** the first real transaction I enter lands in an instance that
+has been tested end to end, not in a scaffold (root SPEC §12; PACKS §12;
+ARCHITECTURE §8; `MILESTONES.md` production-data gate)
+
+**Acceptance Criteria** (plan Phases 1, 6–9; decisions 41, 43, 44, 46, 49,
+50, 51; runbook P1-U1–P1-U8, P6-U1–P9-U1):
+- [ ] AC-014.1: CI on the GitHub remote runs typecheck, lint, format:check,
+      test with coverage thresholds, test:packs, test:db, the
+      `lib/database.types.ts` diff, audit, e2e and build, and is green on
+      `main`. (decisions 49, 50; plan D-01–D-04)
+- [ ] AC-014.2: Every response carries decision 51's headers; the CSP nonce
+      is per request; the e2e journeys record zero CSP violations.
+      (decision 51)
+- [ ] AC-014.3: `docs/performance-budgets.md` records `runSnapshots` ≥ 50
+      days/s and every screen read < 500 ms p50 on the synthetic
+      five-year, twenty-asset ledger. (decision 44)
+- [ ] AC-014.4: `pnpm test:e2e` passes the eight journeys of decision 46
+      plus the security-boundary journey of decision 40 (every data route
+      redirects when signed out and at AAL1 with a factor). (decisions 40,
+      46)
+- [ ] AC-014.5: `packs/br` and `packs/global` are `supported` with fixtures
+      at most 90 days old; `pnpm test:packs` reports exactly one skip
+      (`global`, no instruments). (PACKS §12; decision 41)
+- [ ] AC-014.6: `docs/DEPLOY.md` and `.env.example` are complete; `pnpm
+      release:check` is green locally and in CI. (ARCHITECTURE §8;
+      decision 43)
+- [ ] AC-014.7: The first deploy is recorded in `MILESTONES.md` §4 with
+      both crons observed firing (maintainer). (decision 43)
+
+**Test Scenarios**:
+```
+Given: a push to main
+When:  CI runs
+Then:  every job is green, including test:db against a stack the job
+       started and the e2e journeys against a built app
+
+Given: a signed-out browser
+When:  it requests /, /performance, /settings and /settings/export/json
+Then:  every response is a redirect to /login carrying the CSP, HSTS (in
+       production), nosniff, no-referrer and frame-ancestors headers
+
+Given: the synthetic five-year ledger seeded for a throwaway user
+When:  runSnapshots runs with a generous budget
+Then:  it builds at ≥ 50 days per second and the number is in the doc
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 Phases 1–9)
+
+---
+
 ## Technical Constraints
 
 From `CLAUDE.md` non-negotiables and the root `SPEC.md` §12; these apply to
@@ -529,12 +867,14 @@ Explicitly NOT building (ARCHITECTURE §2; `docs/milestone-2-plan.md`
 - Tax or fiscal reporting of any kind — ever.
 - Broker integrations, order execution, or any write to an external account.
 - Analytics, telemetry, or error-reporting services.
-- In Milestone 3 specifically: the design system, the analysis screens,
-  the status strip, the first-run card, privacy mode, empty-state copy and
-  an accessibility pass (Milestone 5); OAuth, a signup route, email-link
-  MFA recovery; foreign-currency cash flows, broker-specific or multi-file
-  import, assets in bulk; the UK pack; deriving `fx_rate` on transactions;
-  a browser end-to-end runner.
+- In Milestone 3 specifically: OAuth, a signup route, email-link MFA
+  recovery; foreign-currency cash flows, broker-specific or multi-file
+  import, assets in bulk; deriving `fx_rate` on transactions.
+- In Milestone 4 specifically (`docs/milestone-4-plan.md` "Non-goals"): a
+  third language or per-pack copy; `packs/uk`, a second FX series,
+  `indexation` for curve bonds, foreign-currency cash flows (Milestone 5);
+  new user-data tables (migrations are read views and function bodies,
+  decision 52); a cache for computed returns; a crypto source.
 
 ## Success Metrics
 
@@ -551,6 +891,13 @@ How we know this works:
 | Snapshot invariant (M3) | every history-changing write drops snapshots from its date forward | `pnpm test:db` trigger family |
 | Import idempotence (M3) | re-importing a file inserts 0 rows | `fast-check` + `pnpm test:db` |
 | Release gate (M3) | `release:check` red only on draft packs, `PERSONAS.md` | `pnpm release:check` — met 2026-09-20 |
+| Neutrality (M4) | 0 pack/currency/locale literals in `app/` and `lib/` source outside the allowlist | `packs/conformance/kernel-neutrality.test.ts` |
+| Golden with seven kinds (M4) | every figure within `1e-8` after `br.stock` joins | `pnpm test:packs`, 1 skip |
+| Copy completeness (M4) | `en` and `pt-BR` have identical key sets, no empty leaf | `lib/copy/copy.test.ts` |
+| Budgets (M4) | `runSnapshots` ≥ 50 days/s; every screen read < 500 ms p50 | `FF_BUDGETS=1 pnpm test:db` → `docs/performance-budgets.md` |
+| Journeys (M4) | 9 e2e specs green, 0 CSP violations | `pnpm test:e2e` |
+| Coverage (M4) | `lib/calc` ≥ 95 %, the other `lib/` modules ≥ 85 % | `pnpm test:coverage` |
+| Release gate (M4) | `release:check` fully green | `pnpm release:check` in CI |
 
 ---
 
@@ -564,3 +911,4 @@ How we know this works:
 | 2026-09-20 | US-001 and US-002 done; every AC ticked; AC-002.7 restated as canonical-form equality; scenario 1 has four flows | Milestone 2 Phases 3–7 delivered (`docs/milestone-2-plan.md`) |
 | 2026-09-20 | US-003 to US-008 added; out-of-scope and metrics extended for Milestone 3 | Milestone 3 Phase 0 step 5 (`docs/milestone-3-plan.md`) |
 | 2026-09-20 | US-003 to US-008 done; every AC ticked | Milestone 3 Phases 1–7 delivered (`docs/milestone-3-plan.md`) |
+| 2026-09-21 | US-009 to US-014 added; out-of-scope and metrics extended for Milestone 4 | Milestone 4 Phase 0 (`docs/milestone-4-execution.md` P0-U2) |
