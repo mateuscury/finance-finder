@@ -1,17 +1,94 @@
+/*
+ * The design system (root SPEC.md §10; ARCHITECTURE §7): editorial and
+ * financial, restrained, data-first, hairline rules. Exactly the nine colour
+ * tokens §10 lists, both themes first-class. `--pos` and `--neg` are never the
+ * only carrier of meaning — every change and return also carries a sign and
+ * an arrow (lib/format, <Change>). Contrast pairs are verified for WCAG AA in
+ * both themes by lib/testing/contrast.test.ts (Milestone 4 Phase 7).
+ *
+ * Theme resolution: `data-theme` on <html> is the user's setting — "light",
+ * "dark", or absent for "system", which follows prefers-color-scheme.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* colour — light */
+  --bg: #fffdf9;
+  --bg-subtle: #f5f1e9;
+  --surface: #ffffff;
+  --border-hairline: #e3ddd2;
+  --text: #1b1a17;
+  --text-muted: #625d55;
+  --pos: #1b6f47;
+  --neg: #a8261f;
+  --accent: #b24e24;
+
+  /* type */
+  --font-display: var(--font-instrument-serif), "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-body:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-display: clamp(2.25rem, 6vw, 3.5rem);
+  --leading: 1.5;
+
+  /* space and shape */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --measure: 72rem;
+  --hairline: 1px solid var(--border-hairline);
+  --radius: 2px;
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #121211;
+  --bg-subtle: #1a1917;
+  --surface: #1f1e1b;
+  --border-hairline: #2f2d29;
+  --text: #ece7dd;
+  --text-muted: #a59f94;
+  --pos: #63c48e;
+  --neg: #f07a70;
+  --accent: #e28b5b;
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: #121211;
+    --bg-subtle: #1a1917;
+    --surface: #1f1e1b;
+    --border-hairline: #2f2d29;
+    --text: #ece7dd;
+    --text-muted: #a59f94;
+    --pos: #63c48e;
+    --neg: #f07a70;
+    --accent: #e28b5b;
+    color-scheme: dark;
   }
+}
+
+/* ---- base ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html {
   height: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 html,
@@ -21,29 +98,250 @@ body {
 }
 
 body {
+  margin: 0;
   min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0 0 var(--space-3);
+}
+h1 {
+  font-size: var(--text-xl);
+}
+h2 {
+  font-size: var(--text-lg);
+  margin-top: var(--space-8);
+}
+h3 {
+  font-size: var(--text-md);
+  font-family: var(--font-body);
+  font-weight: 600;
+  margin-top: var(--space-6);
+}
+
+p {
+  margin: 0 0 var(--space-3);
 }
 
 a {
   color: inherit;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: var(--border-hairline);
+  text-underline-offset: 0.15em;
+}
+a:hover {
+  text-decoration-color: currentColor;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+hr {
+  border: 0;
+  border-top: var(--hairline);
+  margin: var(--space-6) 0;
+}
+
+/* Every figure a person reads: tabular numerals, never proportional. */
+.figure,
+td.num,
+th.num,
+[data-figure] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+td.num,
+th.num {
+  text-align: right;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+.pos {
+  color: var(--pos);
+}
+.neg {
+  color: var(--neg);
+}
+
+/* ---- controls ------------------------------------------------------------- */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  background: var(--surface);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  min-height: 2.5rem;
+  max-width: 100%;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button {
+  background: var(--surface);
+  border: 1px solid var(--text);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+button.primary {
+  background: var(--text);
+  color: var(--bg);
+}
+button.quiet {
+  border-color: var(--border-hairline);
+  color: var(--text-muted);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+label {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+label > input:not([type="checkbox"]):not([type="radio"]),
+label > select,
+label > textarea {
+  display: block;
+  margin-top: var(--space-1);
+  width: 100%;
+  max-width: 28rem;
+}
+
+fieldset {
+  border: var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+legend {
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+}
+
+/* ---- tables --------------------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+th,
+td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--hairline);
+  vertical-align: top;
+}
+th {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---- notices -------------------------------------------------------------- */
+
+[role="alert"],
+[role="status"] {
+  border-left: 2px solid var(--accent);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-subtle);
+  margin: 0 0 var(--space-4);
+}
+[role="status"] {
+  border-left-color: var(--pos);
+}
+
+/* ---- layout --------------------------------------------------------------- */
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-12);
+}
+@media (min-width: 640px) {
+  main {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+/* Privacy mode (SPEC §12.3): every amount masked through one component. */
+[data-privacy="on"] .amount {
+  position: relative;
+  color: transparent;
+  user-select: none;
+}
+[data-privacy="on"] .amount::after {
+  content: "•••";
+  position: absolute;
+  inset: 0;
+  color: var(--text);
+  letter-spacing: 0.1em;
+}
+
+/* Skip link: visible only when focused. */
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -3rem;
+  background: var(--text);
+  color: var(--bg);
+  padding: var(--space-2) var(--space-3);
+  z-index: 10;
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

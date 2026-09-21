@@ -9,6 +9,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/env";
+import { readSettings } from "@/lib/ledger/rows";
+import { clearPreferenceCookies, setPreferenceCookies } from "@/lib/settings/cookies";
 
 const Credentials = z.object({ email: z.string().trim().min(1), password: z.string().min(1) });
 const Code = z.object({
@@ -24,12 +26,19 @@ export async function signIn(formData: FormData): Promise<void> {
   const parsed = Credentials.safeParse({ email: formData.get("email"), password: formData.get("password") });
   const supabase = await createServerSupabase();
   const failed = !parsed.success || (await supabase.auth.signInWithPassword(parsed.data)).error !== null;
+  if (!failed) {
+    // Mirror the user's theme and language into the preference cookies once,
+    // so every following render paints and speaks them without a read.
+    const settings = await readSettings(supabase);
+    await setPreferenceCookies({ theme: settings.theme, locale: settings.locale });
+  }
   redirect(failed ? "/login?failed=1" : "/");
 }
 
 export async function signOut(): Promise<void> {
   const supabase = await createServerSupabase();
   await supabase.auth.signOut({ scope: "local" });
+  await clearPreferenceCookies();
   redirect("/login");
 }
 

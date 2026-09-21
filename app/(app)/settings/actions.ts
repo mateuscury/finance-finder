@@ -27,6 +27,7 @@ import { changeBaseCurrency, setEnabledPacks, updatePreferences } from "@/lib/le
 import { publicEnv } from "@/lib/env";
 import { asJson, type Database } from "@/lib/supabase/types";
 import { formValues, outcomeQuery } from "@/app/(app)/_lib/form";
+import { clearPreferenceCookies, setPreferenceCookies } from "@/lib/settings/cookies";
 
 const SETTINGS = "/settings";
 
@@ -57,7 +58,10 @@ export async function setEnabledPacksAction(formData: FormData): Promise<void> {
 
 export async function updatePreferencesAction(formData: FormData): Promise<void> {
   const { client, identity } = await requireUser();
-  const result = await updatePreferences(client, identity.userId, formValues(formData, ["theme", "locale"] as const));
+  const values = formValues(formData, ["theme", "locale"] as const);
+  const result = await updatePreferences(client, identity.userId, values);
+  // Mirror the saved preference so the next render speaks and paints it (P2-U1).
+  if (result.ok) await setPreferenceCookies(values);
   redirect(`${SETTINGS}${outcomeQuery(result)}`);
 }
 
@@ -96,6 +100,7 @@ export async function unenrolTotpAction(): Promise<void> {
 export async function signOutEverywhereAction(): Promise<void> {
   const { client } = await requireUser();
   await signOutEverywhere(client);
+  await clearPreferenceCookies();
   redirect("/login");
 }
 

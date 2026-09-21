@@ -144,6 +144,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated reports.
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
   {
     // PACKS.md §7 rule 1 and §11.7: packs use ctx.http only, add no npm
