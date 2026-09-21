@@ -113,7 +113,7 @@ export class TokenBucket {
 export function parseRetryAfter(value: string | undefined, nowMs: number): number | null {
   if (!value) return null;
   const trimmed = value.trim();
-  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+  if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10) * 1000;
   const at = Date.parse(trimmed);
   return Number.isNaN(at) ? null : Math.max(0, at - nowMs);
 }

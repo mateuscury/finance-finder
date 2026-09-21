@@ -4,6 +4,7 @@ import { AssetForm } from "@/app/(app)/assets/_form";
 import { createAssetThen } from "@/app/(app)/assets/actions";
 import { requireUser } from "@/lib/auth/session";
 import { CANONICAL_COLUMNS, REQUIRED_COLUMNS } from "@/lib/import";
+import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 import { commitImportAction, discardImportAction, saveMappingAction, uploadCsvAction } from "./actions";
 import { loadDryRun } from "./load";
 
@@ -107,7 +108,7 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                       {u.registered ? (
                         <AssetForm
                           action={createAssetThen.bind(null, "/transactions/import")}
-                          values={{ pack_id: u.pack_id, instrument_kind: u.instrument_kind, identifier: u.identifier, name: u.identifier, native_currency: "BRL" }}
+                          values={{ pack_id: u.pack_id, instrument_kind: u.instrument_kind, identifier: u.identifier, name: u.identifier, native_currency: INSTANCE_DEFAULTS.baseCurrency }}
                           submitLabel="Create this asset"
                         />
                       ) : (

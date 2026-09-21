@@ -1,4 +1,5 @@
 import type { AssetListItem } from "@/lib/ledger/queries";
+import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 
 export interface TransactionFormValues {
   asset_id?: string;
@@ -45,7 +46,7 @@ export function TransactionForm({ action, assets, values = {}, submitLabel }: { 
         Unit price <input name="unit_price" inputMode="decimal" defaultValue={values.unit_price ?? ""} required />
       </label>
       <label>
-        Currency <input name="currency" defaultValue={values.currency ?? assets[0]?.native_currency ?? "BRL"} pattern="[A-Z]{3}" required />
+        Currency <input name="currency" defaultValue={values.currency ?? assets[0]?.native_currency ?? INSTANCE_DEFAULTS.baseCurrency} pattern="[A-Z]{3}" required />
       </label>
       <label>
         Fees <input name="fees" inputMode="decimal" defaultValue={values.fees ?? "0"} />

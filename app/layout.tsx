@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang={INSTANCE_DEFAULTS.locale} className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>{children}</body>
     </html>
   );

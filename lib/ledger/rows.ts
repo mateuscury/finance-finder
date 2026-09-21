@@ -21,6 +21,7 @@ import {
   type TransactionType,
 } from "@/lib/calc/types";
 import { resolveActivation } from "@/lib/packs/activate";
+import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 import { readAll } from "@/lib/supabase/paginate";
 
 // --- PostgREST row shapes, exactly as selected below -------------------------
@@ -143,7 +144,7 @@ export async function readSettings(client: SupabaseClient, userId?: string): Pro
   const { data, error } = await q.maybeSingle();
   if (error) throw new Error(`ledger: settings (${error.code ?? "unknown"})`);
   // A bootstrapped account always has a row; a restored one may not yet.
-  return (data as SettingsRow | null) ?? { base_currency: "BRL", enabled_packs: [], locale: "pt-BR", theme: "system", last_export_at: null, csv_column_map: null };
+  return (data as SettingsRow | null) ?? { base_currency: INSTANCE_DEFAULTS.baseCurrency, enabled_packs: [...INSTANCE_DEFAULTS.enabledPacks], locale: INSTANCE_DEFAULTS.locale, theme: INSTANCE_DEFAULTS.theme, last_export_at: null, csv_column_map: null };
 }
 
 export interface ReadLedgerOptions {

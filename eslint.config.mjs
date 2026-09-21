@@ -77,10 +77,14 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    // Ledger, import, CSV and job code carry values as decimal strings from the
-    // form to the kernel; the same float ban as lib/calc applies.
-    files: ["lib/ledger/**/*.ts", "lib/csv/**/*.ts", "lib/import/**/*.ts", "lib/jobs/**/*.ts", "lib/backup/**/*.ts"],
-    ignores: ["**/*.test.ts", "**/*.dbtest.ts"],
+    // Every value under app/ and lib/ is a decimal string from the form or
+    // the database to the kernel and back to lib/format; the float ban of
+    // lib/calc applies to all of it (docs/milestone-4-plan.md "The number
+    // boundary"). The ONE exemption is app/(app)/_charts/**, where a decimal
+    // string becomes a chart coordinate (MILESTONES.md §4 decision 35);
+    // coordinate.test.ts proves that directory is the only caller.
+    files: ["lib/**/*.ts", "app/**/*.ts", "app/**/*.tsx", "proxy.ts"],
+    ignores: ["**/*.test.ts", "**/*.dbtest.ts", "lib/testing/**", "lib/calc/**", "app/(app)/_charts/**"],
     rules: { "no-restricted-syntax": ["error", noGetSession, ...floatBans] },
   },
   // Override default ignores of eslint-config-next.

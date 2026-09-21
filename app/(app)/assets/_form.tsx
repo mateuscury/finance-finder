@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { InstrumentKind } from "@/packs/types";
 import { PACKS } from "@/packs";
+import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 
 /** The metadata keys a kind's schema declares, as a hint for the JSON textarea. */
 export function metadataKeys(kind: InstrumentKind): string[] {
@@ -49,7 +50,7 @@ export function AssetForm({ action, values = {}, lockIdentity = false, submitLab
         Name <input name="name" defaultValue={values.name ?? ""} required />
       </label>
       <label>
-        Native currency <input name="native_currency" defaultValue={values.native_currency ?? "BRL"} pattern="[A-Z]{3}" disabled={lockIdentity} required />
+        Native currency <input name="native_currency" defaultValue={values.native_currency ?? INSTANCE_DEFAULTS.baseCurrency} pattern="[A-Z]{3}" disabled={lockIdentity} required />
       </label>
       <label>
         Metadata (JSON) <textarea name="metadata" defaultValue={JSON.stringify(values.metadata ?? {}, null, 2)} rows={4} />
