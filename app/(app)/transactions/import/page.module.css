@@ -1,0 +1,35 @@
+.format {
+  background: var(--bg-subtle);
+  border: var(--hairline);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+}
+.fileLine {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.mapGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 var(--space-4);
+}
+@media (min-width: 640px) {
+  .mapGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.badRow td {
+  background: color-mix(in srgb, var(--neg) 8%, transparent);
+}
+.dupRow td {
+  background: var(--bg-subtle);
+}
+.dup {
+  margin: 0;
+  display: inline;
+}

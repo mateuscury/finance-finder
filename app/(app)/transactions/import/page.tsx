@@ -3,42 +3,76 @@ import { PACKS } from "@/packs";
 import { AssetForm } from "@/app/(app)/assets/_form";
 import { kindOptions } from "@/app/(app)/assets/_kinds";
 import { createAssetThen } from "@/app/(app)/assets/actions";
+import { Amount } from "@/app/(app)/_components/amount";
 import { requireUser } from "@/lib/auth/session";
 import { CANONICAL_COLUMNS, REQUIRED_COLUMNS } from "@/lib/import";
-import { currentCopy, type ImportOutcome } from "@/lib/copy/server";
+import { copyFor, type ImportOutcome } from "@/lib/copy";
+import { formatPrice, formatQuantity } from "@/lib/format";
+import { readSettings } from "@/lib/ledger/rows";
 import { INSTANCE_DEFAULTS } from "@/lib/settings/defaults";
 import { commitImportAction, discardImportAction, saveMappingAction, uploadCsvAction } from "./actions";
 import { loadDryRun } from "./load";
+import styles from "./page.module.css";
 
 // The commit schedules the snapshot rebuild after the response (decision 30).
 export const maxDuration = 60;
 
+const EXAMPLE = "2024-03-14,buy,br,br.fii,HGLG11,100,162.40,BRL,2.50,";
+
+type Step = "upload" | "map" | "preview" | "commit";
+
 /** SPEC §9.1: upload → map columns → dry run → create unresolved assets inline → commit all or nothing. */
 export default async function ImportPage({ searchParams }: PageProps<"/transactions/import">) {
   const { client } = await requireUser();
-  const copy = await currentCopy();
   const params = await searchParams;
+  const [loaded, settings] = await Promise.all([loadDryRun(client, PACKS), readSettings(client)]);
+  const copy = copyFor(settings.locale);
+  const locale = settings.locale;
+  const c = copy.screens.import;
   const error = typeof params.error === "string" ? params.error : null;
-  const loaded = await loadDryRun(client, PACKS);
+  const current: Step =
+    loaded.kind !== "preview"
+      ? "upload"
+      : !loaded.run.ok
+        ? "map"
+        : loaded.run.counts.errors > 0 || loaded.run.counts.unresolved > 0
+          ? "preview"
+          : "commit";
+  const steps: Step[] = ["upload", "map", "preview", "commit"];
+
   return (
     <main>
-      <h1>Import transactions from CSV</h1>
-      <p>
-        <Link href="/transactions">Back to transactions</Link>
+      <p className="muted">
+        <Link href="/transactions">{c.back}</Link>
       </p>
+      <h1>{c.title}</h1>
+      <ol className="steps">
+        {steps.map((s) => (
+          <li key={s} aria-current={s === current ? "step" : undefined}>
+            {c.steps[s]}
+          </li>
+        ))}
+      </ol>
       {error ? <p role="alert">{copy.import[error as ImportOutcome] ?? copy.import.write_failed}</p> : null}
-      {params.saved ? <p role="status">Column mapping saved.</p> : null}
+      {params.saved ? <p role="status">{loaded.kind === "preview" ? c.mappingSaved : copy.saved}</p> : null}
 
       {loaded.kind === "none" ? (
         <>
-          <p>
-            Canonical columns: <code>{CANONICAL_COLUMNS.join(",")}</code>. Column order does not matter, unknown columns
-            are ignored, and you can map your broker&apos;s headers on the next step. Nothing is written until you
-            commit.
-          </p>
-          <form action={uploadCsvAction}>
-            <input type="file" name="file" accept=".csv,text/csv" required />{" "}
-            <button type="submit">Upload and preview</button>
+          <h2 className="section-label">{c.formatTitle}</h2>
+          <p className="muted">{c.formatHelp}</p>
+          <pre className={styles.format}>
+            {CANONICAL_COLUMNS.join(",")}
+            {"\n"}
+            {EXAMPLE}
+          </pre>
+          <form action={uploadCsvAction} className="row-form">
+            <label>
+              {c.chooseFile}
+              <input type="file" name="file" accept=".csv,text/csv" required />
+            </label>
+            <button type="submit" className="primary">
+              {c.upload}
+            </button>
           </form>
         </>
       ) : null}
@@ -46,62 +80,71 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
       {loaded.kind === "unparsable" ? (
         <>
           <p role="alert">
-            {loaded.filename} could not be read as CSV ({loaded.reason.replace(/_/g, " ")} at line {loaded.line}).
+            {c.unparsable({ filename: loaded.filename, reason: loaded.reason.replace(/_/g, " "), line: loaded.line })}
           </p>
           <form action={discardImportAction}>
-            <button type="submit">Discard</button>
+            <button type="submit" className="quiet">
+              {c.discard}
+            </button>
           </form>
         </>
       ) : null}
 
       {loaded.kind === "preview" ? (
         <>
-          <p>
-            {loaded.filename}: {loaded.rowCount} data rows.{" "}
-          </p>
-          <form action={discardImportAction}>
-            <button type="submit">Discard this upload</button>
-          </form>
+          <div className={styles.fileLine}>
+            <span>{c.file({ filename: loaded.filename, rows: loaded.rowCount })}</span>
+            <form action={discardImportAction} className="inline-form">
+              <button type="submit" className="quiet">
+                {c.discard}
+              </button>
+            </form>
+          </div>
 
-          <h2>Columns</h2>
+          <h2 className="section-label">{c.mapTitle}</h2>
+          <p className="muted">{c.mapHelp}</p>
           <form action={saveMappingAction}>
-            {CANONICAL_COLUMNS.map((col) => (
-              <label key={col}>
-                {col}
-                {REQUIRED_COLUMNS.includes(col) ? " (required)" : ""}{" "}
-                <select
-                  name={`map_${col}`}
-                  defaultValue={loaded.map[col] ?? loaded.header.find((h) => h.trim().toLowerCase() === col) ?? ""}
-                >
-                  <option value="">— not in file —</option>
-                  {loaded.header.map((h, i) => (
-                    <option key={`${h}-${i}`} value={h}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-            <button type="submit">Save mapping</button>
+            <div className={styles.mapGrid}>
+              {CANONICAL_COLUMNS.map((col) => (
+                <label key={col}>
+                  <code>{col}</code>
+                  {REQUIRED_COLUMNS.includes(col) ? <span className="muted"> ({c.required})</span> : null}
+                  <select
+                    name={`map_${col}`}
+                    defaultValue={loaded.map[col] ?? loaded.header.find((h) => h.trim().toLowerCase() === col) ?? ""}
+                  >
+                    <option value="">{c.notInFile}</option>
+                    {loaded.header.map((h, i) => (
+                      <option key={`${h}-${i}`} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <button type="submit">{c.saveMapping}</button>
           </form>
 
           {!loaded.run.ok ? (
-            <p role="alert">Required columns missing: {loaded.run.missing.join(", ")}. Map them above.</p>
+            <p role="alert">{c.missingColumns({ columns: loaded.run.missing.join(", ") })}</p>
           ) : (
             <>
-              <h2>Preview</h2>
-              <p>
-                {loaded.run.counts.total} rows · {loaded.run.counts.valid} ready · {loaded.run.counts.errors} with
-                errors · {loaded.run.counts.unresolved} unresolved · {loaded.run.counts.duplicates} duplicates
-              </p>
+              <h2 className="section-label">{c.previewTitle}</h2>
+              <p className="muted">{c.counts(loaded.run.counts)}</p>
               {loaded.run.unresolved.length > 0 ? (
                 <>
-                  <h3>Unresolved identifiers</h3>
+                  <h3>{c.unresolvedTitle}</h3>
                   {loaded.run.unresolved.map((u) => (
-                    <section key={`${u.pack_id}|${u.instrument_kind}|${u.identifier}`}>
-                      <p>
-                        {u.pack_id} · {u.instrument_kind} · {u.identifier} — rows {u.rows.map((r) => r + 1).join(", ")}
-                      </p>
+                    <details key={`${u.pack_id}|${u.instrument_kind}|${u.identifier}`} className="panel" open>
+                      <summary>
+                        {c.unresolvedRows({
+                          pack: u.pack_id,
+                          kind: u.instrument_kind,
+                          identifier: u.identifier,
+                          rows: u.rows.map((r) => r + 1).join(", "),
+                        })}
+                      </summary>
                       {u.registered ? (
                         <AssetForm
                           action={createAssetThen.bind(null, "/transactions/import")}
@@ -114,66 +157,99 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                             name: u.identifier,
                             native_currency: INSTANCE_DEFAULTS.baseCurrency,
                           }}
-                          submitLabel="Create this asset"
+                          submitLabel={c.createAsset}
                           copy={{ ...copy.screens.assetForm, reasons: copy.reasons }}
                         />
                       ) : (
-                        <p>This instrument kind is not registered in this build; these rows cannot be imported.</p>
+                        <p role="alert">{c.unregisteredKind}</p>
                       )}
-                    </section>
+                    </details>
                   ))}
                 </>
               ) : null}
               <form action={commitImportAction}>
                 <input type="hidden" name="preview_hash" value={loaded.run.previewHash} />
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Identifier</th>
-                      <th>Quantity</th>
-                      <th>Unit price</th>
-                      <th>Fees</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loaded.run.rows.map((r) => (
-                      <tr key={r.index}>
-                        <td>{r.index + 1}</td>
-                        <td>{r.values.date}</td>
-                        <td>{r.values.type}</td>
-                        <td>{r.values.identifier}</td>
-                        <td>{r.values.quantity}</td>
-                        <td>
-                          {r.values.unit_price} {r.values.currency}
-                        </td>
-                        <td>{r.values.fees}</td>
-                        <td>
-                          {r.errors.length > 0 ? (
-                            `error: ${r.errors.join(", ")}`
-                          ) : r.assetId === null ? (
-                            "unresolved"
-                          ) : r.duplicate ? (
-                            <label>
-                              duplicate — <input type="checkbox" name="force" value={r.index} /> include anyway
-                            </label>
-                          ) : (
-                            "ready"
-                          )}
-                        </td>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>{c.columns.row}</th>
+                        <th>{c.columns.date}</th>
+                        <th>{c.columns.type}</th>
+                        <th>{c.columns.identifier}</th>
+                        <th className="num">{c.columns.quantity}</th>
+                        <th className="num">{c.columns.unitPrice}</th>
+                        <th className="num">{c.columns.fees}</th>
+                        <th>{c.columns.status}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p>
-                  Commit writes every ready row in one transaction, skips duplicates unless included, and refuses if any
-                  row has an error or an unresolved identifier.
-                </p>
-                <button type="submit" disabled={loaded.run.counts.errors > 0 || loaded.run.counts.unresolved > 0}>
-                  Commit {loaded.run.counts.valid - loaded.run.counts.duplicates} rows
+                    </thead>
+                    <tbody>
+                      {loaded.run.rows.map((r) => {
+                        const bad = r.errors.length > 0;
+                        return (
+                          <tr key={r.index} className={bad ? styles.badRow : r.duplicate ? styles.dupRow : undefined}>
+                            <td className="figure">{r.index + 1}</td>
+                            <td className="figure">{r.values.date}</td>
+                            <td>{r.values.type}</td>
+                            <td>{r.values.identifier}</td>
+                            <td className="num">
+                              {r.parsed ? (
+                                <Amount
+                                  value={formatQuantity(r.parsed.quantity, locale)}
+                                  hiddenLabel={copy.nav.amountHidden}
+                                />
+                              ) : (
+                                r.values.quantity
+                              )}
+                            </td>
+                            <td className="num">
+                              {r.parsed ? (
+                                <Amount
+                                  value={formatPrice(r.parsed.unit_price, locale)}
+                                  hiddenLabel={copy.nav.amountHidden}
+                                />
+                              ) : (
+                                r.values.unit_price
+                              )}{" "}
+                              {r.values.currency}
+                            </td>
+                            <td className="num">
+                              {r.parsed ? (
+                                <Amount
+                                  value={formatPrice(r.parsed.fees, locale)}
+                                  hiddenLabel={copy.nav.amountHidden}
+                                />
+                              ) : (
+                                r.values.fees
+                              )}
+                            </td>
+                            <td>
+                              {bad ? (
+                                <span className="neg">⚠ {c.status.error({ fields: r.errors.join(", ") })}</span>
+                              ) : r.assetId === null ? (
+                                <span className="muted">— {c.status.unresolved}</span>
+                              ) : r.duplicate ? (
+                                <label className={styles.dup}>
+                                  ↻ {c.status.duplicate} — <input type="checkbox" name="force" value={r.index} />{" "}
+                                  {c.status.include}
+                                </label>
+                              ) : (
+                                <span className="pos">✓ {c.status.ready}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="muted">{c.commitHelp}</p>
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={loaded.run.counts.errors > 0 || loaded.run.counts.unresolved > 0}
+                >
+                  {c.commit({ n: loaded.run.counts.valid - loaded.run.counts.duplicates })}
                 </button>
               </form>
             </>

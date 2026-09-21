@@ -199,6 +199,112 @@ export interface Copy {
       locked: string;
       packStatus: Record<"draft" | "supported" | "unmaintained", string>;
     };
+    pager: {
+      label: string;
+      previous: string;
+      next: string;
+      of: (p: { page: number; pages: number; total: number }) => string;
+    };
+    assets: {
+      title: string;
+      add: string;
+      addButton: string;
+      edit: (p: { identifier: string }) => string;
+      editLink: string;
+      save: string;
+      delete: string;
+      columns: { asset: string; kind: string; currency: string; value: string; actions: string };
+      unknownKind: (p: { kind: string }) => string;
+      priced: (p: { source: string; date: string }) => string;
+      retry: string;
+      enterPrice: string;
+      prices: string;
+      pricesHelp: string;
+      manualPrice: string;
+      priceDate: string;
+      price: string;
+      setPrice: string;
+      removePrice: (p: { date: string }) => string;
+      backToList: string;
+    };
+    transactions: {
+      title: string;
+      add: string;
+      addButton: string;
+      edit: string;
+      save: string;
+      delete: string;
+      import: string;
+      addAssetFirst: string;
+      imported: (p: { n: number; skipped: number }) => string;
+      columns: {
+        date: string;
+        asset: string;
+        type: string;
+        quantity: string;
+        unitPrice: string;
+        fees: string;
+        note: string;
+        actions: string;
+      };
+      types: Record<"buy" | "sell" | "dividend" | "interest" | "fee", string>;
+      typeHelp: Record<"buy" | "sell" | "dividend" | "interest" | "fee", string>;
+      fields: {
+        asset: string;
+        date: string;
+        type: string;
+        quantity: string;
+        unitPrice: string;
+        currency: string;
+        fees: string;
+        note: string;
+      };
+      fxNote: string;
+    };
+    import: {
+      title: string;
+      back: string;
+      steps: { upload: string; map: string; preview: string; commit: string };
+      formatTitle: string;
+      formatHelp: string;
+      chooseFile: string;
+      upload: string;
+      unparsable: (p: { filename: string; reason: string; line: number }) => string;
+      discard: string;
+      file: (p: { filename: string; rows: number }) => string;
+      mapTitle: string;
+      mapHelp: string;
+      required: string;
+      notInFile: string;
+      saveMapping: string;
+      mappingSaved: string;
+      missingColumns: (p: { columns: string }) => string;
+      previewTitle: string;
+      counts: (p: { total: number; valid: number; errors: number; unresolved: number; duplicates: number }) => string;
+      unresolvedTitle: string;
+      unresolvedRows: (p: { pack: string; kind: string; identifier: string; rows: string }) => string;
+      unregisteredKind: string;
+      createAsset: string;
+      columns: {
+        row: string;
+        date: string;
+        type: string;
+        identifier: string;
+        quantity: string;
+        unitPrice: string;
+        fees: string;
+        status: string;
+      };
+      status: {
+        ready: string;
+        error: (p: { fields: string }) => string;
+        unresolved: string;
+        duplicate: string;
+        include: string;
+      };
+      commitHelp: string;
+      commit: (p: { n: number }) => string;
+    };
   };
   /** Fixed copy of the error boundary and the loading state — never a detail. */
   errors: {

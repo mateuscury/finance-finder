@@ -40,3 +40,8 @@ export function outcomeFrom(
   const message = copy.reasons[error as ActionReason] ?? copy.reasons.write_failed;
   return { kind: "error", message, fields };
 }
+
+/** The fields the last action refused, from `?fields=a,b`, for `aria-invalid` on a server-rendered form. */
+export function fieldsFrom(searchParams: Search): Set<string> {
+  return new Set((first(searchParams.fields) ?? "").split(",").filter(Boolean));
+}

@@ -164,6 +164,11 @@ td.num,
 th.num {
   text-align: right;
 }
+/* A date, or a figure with its unit (a price and its currency), stays on one line. */
+td.figure,
+.nowrap {
+  white-space: nowrap;
+}
 
 .display {
   font-family: var(--font-display);
@@ -421,4 +426,153 @@ main {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* ---- responsive tables (Milestone 4 Phase 5) ----------------------------- */
+/* Under 640 px each row becomes a card and each cell a labelled line;
+   above, a normal table. Wide numeric tables use .table-scroll instead. */
+@media (max-width: 639px) {
+  table.stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  table.stack,
+  table.stack tbody,
+  table.stack tr,
+  table.stack td {
+    display: block;
+    width: 100%;
+  }
+  table.stack tr {
+    border-bottom: var(--hairline);
+    padding: var(--space-3) 0;
+  }
+  table.stack td {
+    border: 0;
+    padding: var(--space-1) 0;
+    display: grid;
+    grid-template-columns: minmax(6rem, 40%) 1fr;
+    gap: var(--space-3);
+    align-items: baseline;
+  }
+  table.stack td.num {
+    text-align: left;
+  }
+  table.stack td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  table.stack td:not([data-label])::before {
+    content: "";
+  }
+  /* The actions cell: label on its own line, then the actions in one row. */
+  table.stack td.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  table.stack td.actions::before {
+    flex-basis: 100%;
+  }
+  table.stack td.actions button,
+  table.stack td.actions a {
+    margin-right: 0;
+  }
+}
+
+.actions {
+  white-space: nowrap;
+}
+.actions form {
+  display: inline;
+}
+.actions button,
+.actions a {
+  margin-right: var(--space-2);
+}
+.field-error {
+  border-color: var(--neg) !important;
+}
+.pager {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: var(--space-3) 0;
+}
+.pager a {
+  text-decoration: none;
+  padding: var(--space-1) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius);
+}
+details.panel {
+  border: var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-6) 0;
+}
+details.panel summary {
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+.steps {
+  list-style: none;
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.steps li[aria-current="step"] {
+  color: var(--text);
+  font-weight: 600;
+}
+.steps li::before {
+  content: counter(step) ". ";
+  counter-increment: step;
+}
+.steps {
+  counter-reset: step;
+}
+.section-label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: var(--space-8) 0 var(--space-2);
+}
+
+.row-form {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.row-form label {
+  margin-bottom: 0;
+}
+.inline-form {
+  display: inline;
+}
+.plain-list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+.plain-list li {
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline);
 }

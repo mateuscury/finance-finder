@@ -3,6 +3,7 @@ import { Notice } from "@/app/(app)/_components/notice";
 import { Pager, pageNumber } from "@/app/(app)/_components/pager";
 import { requireUser } from "@/lib/auth/session";
 import { listCashFlows } from "@/lib/ledger/queries";
+import { copyFor } from "@/lib/copy";
 import { readSettings } from "@/lib/ledger/rows";
 import { CashFlowForm } from "./_form";
 import { createCashFlowAction, deleteCashFlowAction } from "./actions";
@@ -17,6 +18,7 @@ export default async function CashFlowsPage({ searchParams }: PageProps<"/cash-f
   const page = pageNumber(params.page);
   const [result, settings] = await Promise.all([listCashFlows(client, page), readSettings(client)]);
   const base = settings.base_currency;
+  const copy = copyFor(settings.locale);
   return (
     <main>
       <h1>Cash flows</h1>
@@ -53,7 +55,7 @@ export default async function CashFlowsPage({ searchParams }: PageProps<"/cash-f
               ))}
             </tbody>
           </table>
-          <Pager href="/cash-flows" page={page} total={result.total} />
+          <Pager href="/cash-flows" page={page} total={result.total} copy={copy} />
         </>
       )}
       <h2>Add a cash flow</h2>

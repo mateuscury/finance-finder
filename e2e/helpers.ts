@@ -82,7 +82,31 @@ export async function setTheme(page: Page, theme: "system" | "light" | "dark"): 
 }
 
 /** The document never scrolls horizontally (US-013 AC-013.4). */
+/**
+ * `html, body { overflow-x: hidden }` clips a too-wide element instead of
+ * scrolling, so scrollWidth cannot see it: measure the boxes themselves.
+ * Content inside a `.table-scroll` may legitimately be wider.
+ */
 export async function expectNoHorizontalOverflow(page: Page, label: string): Promise<void> {
-  const ok = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
-  expect(ok, `${label} overflows horizontally`).toBe(true);
+  const offenders = await page.evaluate(() => {
+    const limit = document.documentElement.clientWidth + 1;
+    const found: string[] = [];
+    const hidden = (el: Element): boolean => {
+      for (let a: Element | null = el; a; a = a.parentElement) {
+        const s = getComputedStyle(a);
+        if (s.clip !== "auto" || (s.overflow === "hidden" && a.clientWidth <= 1)) return true;
+      }
+      return false;
+    };
+    for (const el of document.querySelectorAll("body *")) {
+      if (el.closest(".table-scroll") || hidden(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.right <= limit) continue;
+      const cls = typeof el.className === "string" && el.className ? `.${el.className.split(" ")[0]}` : "";
+      found.push(`${el.tagName.toLowerCase()}${cls}@${Math.round(r.right)}`);
+      if (found.length >= 5) break;
+    }
+    return found;
+  });
+  expect(offenders, `${label} overflows horizontally`).toEqual([]);
 }

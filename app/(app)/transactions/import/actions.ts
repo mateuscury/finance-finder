@@ -77,5 +77,5 @@ export async function commitImportAction(formData: FormData): Promise<void> {
   after(() => snapshotsJob({ kind: "users", userIds: [identity.userId] }, spent));
   revalidatePath("/transactions");
   revalidatePath("/");
-  redirect(`/transactions?saved=1&imported=${plan.rows.length}&skipped=${plan.skippedDuplicates}`);
+  redirect(`/transactions?imported=${plan.rows.length}&skipped=${plan.skippedDuplicates}`);
 }

@@ -86,17 +86,25 @@ export async function deleteAssetAction(formData: FormData): Promise<void> {
   redirect(`/assets${outcomeQuery(result)}`);
 }
 
+/** Manual prices are set and removed on the asset's own page; the outcome lands there (SPEC §9.4). */
 export async function setManualPriceAction(formData: FormData): Promise<void> {
   const { client } = await requireUser();
-  const result = await setManualPrice(client, formValues(formData, ["asset_id", "date", "price"] as const));
-  if (result.ok) revalidatePath("/assets");
-  redirect(`/assets${outcomeQuery(result)}`);
+  const values = formValues(formData, ["asset_id", "date", "price"] as const);
+  const result = await setManualPrice(client, values);
+  if (result.ok) {
+    revalidatePath("/assets");
+    revalidatePath("/");
+  }
+  redirect(`/assets/${values.asset_id ?? ""}${outcomeQuery(result)}#prices`);
 }
 
 export async function deleteManualPriceAction(formData: FormData): Promise<void> {
   const { client } = await requireUser();
   const { asset_id, date } = formValues(formData, ["asset_id", "date"] as const);
   const result = await deleteManualPrice(client, asset_id ?? "", date ?? "");
-  if (result.ok) revalidatePath("/assets");
-  redirect(`/assets${outcomeQuery(result)}`);
+  if (result.ok) {
+    revalidatePath("/assets");
+    revalidatePath("/");
+  }
+  redirect(`/assets/${asset_id ?? ""}${outcomeQuery(result)}#prices`);
 }
