@@ -5,13 +5,19 @@ on:
     branches: [main]
   pull_request:
 
+# One run per ref: a newer push cancels the older run's leftover minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
@@ -23,4 +29,47 @@ jobs:
         run: pnpm test:packs
       - name: CODEOWNERS is generated from manifests (PACKS.md §12)
         run: pnpm codeowners --check
+      - name: No known high-severity vulnerability in the lockfile
+        run: pnpm audit --audit-level=high
       - run: pnpm build
+
+  # The real-database tier (MILESTONES.md §2 decision 8) against a Supabase
+  # stack the job starts itself. It never skips: a missing variable or an
+  # unreachable stack fails in lib/testing/stack.ts with the name of what is
+  # missing.
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.72.7
+      - run: pnpm install --frozen-lockfile
+      - name: Start the local stack (migrations applied on start)
+        run: supabase start -x logflare,studio,vector
+      - name: Export the stack's keys under the names the app reads
+        # `supabase status -o env` prints API_URL, ANON_KEY and SERVICE_ROLE_KEY;
+        # the app and the harness read NEXT_PUBLIC_SUPABASE_URL,
+        # NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY. Values are
+        # the local stack's well-known development keys, never a real secret.
+        run: |
+          set -a
+          eval "$(supabase status -o env)"
+          set +a
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000"
+            echo "CRON_SECRET=$(openssl rand -base64 32)"
+          } >> "$GITHUB_ENV"
+      - run: pnpm test:db
+      - name: Stop the stack
+        if: always()
+        run: supabase stop --no-backup
