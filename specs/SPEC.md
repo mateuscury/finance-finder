@@ -877,25 +877,27 @@ screens 6–7, §9.5, §11)
 **Acceptance Criteria** (`docs/milestone-4-gaps.md` G-U2–G-U4; decisions 58,
 59, 60, 64):
 
-- [ ] AC-015.1: `/assets` lists every asset with today's quantity from its FIFO
-      lots, average cost and open cost _before fees_, the latest price with its
-      state, market value in the base currency, and unrealised gain as money and
-      a rate with a sign and an arrow. An asset with no transactions shows "—";
-      an unpriced or stale holding shows no unrealised figure. (SPEC §6, §9
-      screen 6, §9.5, §11)
-- [ ] AC-015.2: The table's foot carries the confident total in the base
+- [x] AC-015.1: `/assets` lists every asset with today's quantity from its FIFO
+      lots and its average cost _before fees_, the latest price with its state,
+      and market value in the base currency with its unrealised gain as money
+      and a rate, signed and arrowed. An asset with no transactions shows "—";
+      an unpriced or stale holding shows no unrealised figure. Open cost is on
+      the asset's page beside the lots (AC-015.3), not the list — see the
+      contract correction in `MILESTONES.md` §4. (SPEC §6, §9 screen 6, §9.5,
+      §11)
+- [x] AC-015.2: The table's foot carries the confident total in the base
       currency and, when any holding is outside it, how many — and that total
       equals the Overview headline on the same data. (decision 60)
-- [ ] AC-015.3: `/assets/[id]` lists the open lots (opened, quantity, unit
+- [x] AC-015.3: `/assets/[id]` lists the open lots (opened, quantity, unit
       price, cost) in FIFO order with the position's totals, above the manual
       prices already there. (SPEC §6)
-- [ ] AC-015.4: Every quantity, cost, value and gain is masked by privacy mode
+- [x] AC-015.4: Every quantity, cost, value and gain is masked by privacy mode
       and printed by `lib/format` from a decimal string; the only `Number(` on a
       value stays `app/(app)/_charts/coordinate.ts`. (decision 35)
-- [ ] AC-015.5: `/transactions` filters by asset, type and date range applied by
+- [x] AC-015.5: `/transactions` filters by asset, type and date range applied by
       the database before `.range()`; paging preserves the filter; an invalid
       value is ignored field by field; the filtered count is shown. (decision 64)
-- [ ] AC-015.6: A sell beyond the open position is refused with `oversell` on
+- [x] AC-015.6: A sell beyond the open position is refused with `oversell` on
       `quantity` by the transaction form, by an edit that would leave later
       sells uncovered, and by the import preview (which marks the row and blocks
       the commit). A ledger that still contains one shows that asset's row as a
@@ -921,7 +923,7 @@ Then:  each path refuses with oversell on quantity and writes nothing
 ```
 
 **Priority**: Must Have
-**Status**: Planned (Milestone 4 gaps)
+**Status**: Done (2026-09-23)
 
 ---
 
@@ -937,24 +939,24 @@ carry forward and still look like numbers (root SPEC §8, §9.2, §9.4, §11,
 **Acceptance Criteria** (`docs/milestone-4-gaps.md` G-U5; decisions 61, 62, 63,
 65):
 
-- [ ] AC-016.1: The strip says "no price run since <date>" when the latest
+- [x] AC-016.1: The strip says "no price run since <date>" when the latest
       `ingest_cursors.last_run_at` across the user's activated sources is older
       than two trading days (silent for an account's first two trading days);
       "source <id> failing: <reason>" for a source with `last_error`; and
       "history stopped at <date>" when a snapshot gap has had nothing written
       into it for two trading days. (decision 63)
-- [ ] AC-016.2: Each links to Settings → Instance, which states per source its
+- [x] AC-016.2: Each links to Settings → Instance, which states per source its
       last run and error or the variable it wants, the snapshot marker with the
       time it was last written, and row counts — own tables exact through RLS,
       `series_points` estimated and labelled. (decisions 63, 65)
-- [ ] AC-016.3: Disabling a pack whose assets are still held is refused with
+- [x] AC-016.3: Disabling a pack whose assets are still held is refused with
       `pack_in_use` and nothing is written. (decision 61)
-- [ ] AC-016.4: Refresh pressed while a run it started is still in its window
+- [x] AC-016.4: Refresh pressed while a run it started is still in its window
       schedules nothing; overlapping runs remain safe because every write is an
       idempotent upsert keyed by date. (decision 62)
-- [ ] AC-016.5: Nothing is pruned; root SPEC §8 states the growth arithmetic and
+- [x] AC-016.5: Nothing is pruned; root SPEC §8 states the growth arithmetic and
       Settings shows the live counts. (decision 65)
-- [ ] AC-016.6: No value, URL or secret appears in any log line, error message
+- [x] AC-016.6: No value, URL or secret appears in any log line, error message
       or screen this story adds — ids, counts, codes, dates and variable names
       only. (root SPEC §12.2)
 
@@ -977,7 +979,7 @@ Then:  no further job chain is scheduled and the strip says it is fetching
 ```
 
 **Priority**: Must Have
-**Status**: Planned (Milestone 4 gaps)
+**Status**: Done (2026-09-23)
 
 ---
 
@@ -1057,3 +1059,4 @@ How we know this works:
 | 2026-09-20 | US-003 to US-008 done; every AC ticked                                                                           | Milestone 3 Phases 1–7 delivered (`docs/milestone-3-plan.md`)      |
 | 2026-09-21 | US-009 to US-014 added; out-of-scope and metrics extended for Milestone 4                                        | Milestone 4 Phase 0 (`docs/milestone-4-execution.md` P0-U2)        |
 | 2026-09-23 | US-015 and US-016 added                                                                                          | Spec gaps found by the Phase 5 review (`docs/milestone-4-gaps.md`) |
+| 2026-09-23 | US-015 and US-016 done; every AC ticked; AC-015.1 restated (open cost is on the asset page)                      | `docs/milestone-4-gaps.md` G-U1–G-U6 delivered                     |

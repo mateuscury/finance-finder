@@ -106,7 +106,7 @@ One owner account created from the CLI, disabled public signups, optional
 TOTP. Export (JSON + CSV), restore into an empty account, and type-to-confirm
 deletion live in Settings and are proven against a real database by
 `pnpm test:db` (`lib/backup/roundtrip.dbtest.ts`). The backup reminder in
-the status strip arrives with the designed screens (Milestone 4).
+the status strip arrives with the designed screens (Milestone 4). Assets lists each holding's quantity, average cost (before fees), value and unrealised gain; Settings → Instance states whether the crons are running and how much data the instance holds.
 
 ## Disclaimer
 

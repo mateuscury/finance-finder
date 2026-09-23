@@ -133,9 +133,10 @@ designed on the SPEC §10 tokens. `br.stock`, budgets, smoke journeys,
 UK canary is Milestone 5.
 
 Between Phase 5 and Phase 6: `docs/milestone-4-gaps.md` (decisions 56–66,
-units G-U1…G-U6), the spec gaps the Phase 5 review found — positions on
-Assets, Transactions filters, instance liveness, and the `oversell` and
-`pack_in_use` guards.
+units G-U1…G-U6) is **done** — the spec gaps the Phase 5 review found:
+positions on Assets, Transactions filters, instance liveness in the strip
+and Settings → Instance, and the `oversell` and `pack_in_use` guards.
+**Next: P6-U1** (synthetic five-year ledger and measured budgets).
 
 From Milestone 1: five real adapters with offline fixtures; `lib/packs`;
 `PACK_API_VERSION` 3; forward migrations `initial_schema_hardening`,

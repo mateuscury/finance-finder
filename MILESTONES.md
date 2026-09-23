@@ -667,6 +667,27 @@ unitPrice` over the open lots, `averageCost = openCost / quantity`,
    across the boundary. That group holds strings only, and the per-reason
    lines it shows come from `copy.security`, which already were.
 
+### Contract corrections found while implementing the spec gaps
+
+1. **Open cost belongs on the asset page, not the Assets list.** G-U1 wrote
+   SPEC §9 screen 6 and AC-015.1 with quantity, average cost AND open cost
+   on every row. Built, that was eight columns, and the review gate's own
+   screenshot showed the unrealised figure — the column the screen exists
+   for — scrolled off a 1280 px viewport. The list now pairs quantity with
+   its average cost and value with its unrealised gain, six columns; open
+   cost sits beside the lots it is the sum of, on `/assets/[id]`, and is
+   average cost × quantity anyway. SPEC §9 screen 6 and AC-015.1 restated.
+2. **A derived unit value is money, not a price.** The list first printed
+   `holding.priceNative` through `formatPrice` (up to ten decimals, right
+   for a quoted price), which rendered an accrual kind's computed unit
+   value as `R$ 11.311,5585296758`. Those columns use `formatMoney`, as
+   Maturities already did for the same kind of figure.
+3. **`averageCost` dropped the currency guard `openCost` has.** Both
+   summed `Σ quantity × unitPrice`, but only `openCost` went through
+   `Money`, so lots bought in two currencies would have averaged into a
+   blended number where `openCost` refuses. Found by the code-quality pass
+   on G-U2, not by a test; `averageCost` now derives from `openCost`.
+
 ### Advisories recorded
 
 - **P1-U8, coverage floors.** `lib/calc` branches measured 93.6 % against
@@ -697,6 +718,20 @@ unitPrice` over the open lots, `averageCost = openCost / quantity`,
   drew two equal rows both signs were zero and `Object.is(0, -0)` is
   false. A latent flake since Phase 1 (one failure in roughly thirty
   coverage runs). The property now asserts `xy + yx === 0`.
+- **G-U3, a hydration diff in the e2e server log.** The dev server logs a
+  `caret-color: transparent` mismatch on the asset form's generated inputs
+  during every e2e run. Measured on the pre-change tree: eight occurrences,
+  and `caret` appears nowhere in this repository's source. Environmental
+  (the headless browser's own styling), not ours; left alone rather than
+  chased. The P5-U2 advisory's advice — read the e2e server log each time —
+  is what surfaced it.
+- **G-U4, a force-included duplicate is not oversell-checked.** The import
+  preview's check runs over the existing rows plus the file's
+  NON-duplicate rows, which is what the default commit writes. A user who
+  force-includes a duplicate that tips the position negative would write
+  it. Narrow (the row is by definition a repeat of one already counted),
+  and the ledger shows it rather than failing (SPEC §6). Revisit if the
+  synthetic ledger of P6-U1 makes it reachable.
 - **P5, pack metadata labels are English in both languages.** Field labels
   on the asset form are the pack schema's keys humanised (P5-U1 by
   design: packs own their field names). A Portuguese label for "maturity"

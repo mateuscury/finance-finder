@@ -453,9 +453,12 @@ Ten screens. Server components fetch; client components handle toggles/forms.
 5. **Maturities** — fixed-income ladder: upcoming maturities and the cash flow
    each generates; timeline view.
 6. **Assets** — **the positions screen**, and the registry. Each row carries the
-   holding's quantity today from its FIFO lots (§6), average cost and open cost
-   _before fees_, the latest price with its state, market value in the base
-   currency, and unrealised gain with a sign and an arrow. An asset with no
+   holding's quantity today from its FIFO lots (§6) with its average cost
+   _before fees_, the latest price with its state, and market value in the base
+   currency with its unrealised gain, signed and arrowed. Open cost is on the
+   asset's own page beside the lots it is the sum of: a column for it on the
+   list would push the unrealised figure off a desktop viewport, and it is
+   average cost × quantity. An asset with no
    transactions shows "—" rather than a zero; an unpriced or stale holding shows
    no unrealised figure, because a gain computed off a price the app does not
    trust is worse than no figure (§11). The table's foot carries the confident
