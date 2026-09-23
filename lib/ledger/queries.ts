@@ -176,18 +176,27 @@ export interface LedgerCounts {
   assets: number;
   transactions: number;
   cashFlows: number;
+  /** Own rows through RLS (SPEC §8 "Growth"; decision 65). */
+  prices: number;
+  snapshots: number;
 }
 
 export async function countLedger(client: Db): Promise<LedgerCounts> {
-  const count = async (table: UserTable): Promise<number> => {
+  // `prices` has no `user_id` — it is scoped by RLS through its asset (SPEC
+  // §2), so it is counted by name rather than through `UserTable`. Both are
+  // the caller's own rows either way; `series_points` is never counted here
+  // because it was never user data.
+  const count = async (table: UserTable | "prices"): Promise<number> => {
     const { count: n, error } = await client.from(table).select("*", { count: "exact", head: true });
     if (error) throw new Error(`ledger: count ${table} (${error.code ?? "unknown"})`);
     return n ?? 0;
   };
-  const [assets, transactions, cashFlows] = await Promise.all([
+  const [assets, transactions, cashFlows, prices, snapshots] = await Promise.all([
     count("assets"),
     count("transactions"),
     count("cash_flows"),
+    count("prices"),
+    count("portfolio_snapshots"),
   ]);
-  return { assets, transactions, cashFlows };
+  return { assets, transactions, cashFlows, prices, snapshots };
 }

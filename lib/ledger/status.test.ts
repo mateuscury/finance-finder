@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { fakeClient } from "@/lib/testing/fake-client";
-import { lastTradingDay, readStatus } from "./status";
+import { lastTradingDay, readStatus, tradingDaysBack } from "./status";
 
 const settings = (over: Record<string, unknown> = {}) => ({
   base_currency: "BRL",
@@ -36,6 +36,11 @@ describe("readStatus", () => {
       rebuild: null,
       disabledSources: [],
       exportNudge: null,
+      ingestStale: null,
+      failingSources: [],
+      lastIngestRunAt: null,
+      snapshotsThrough: null,
+      snapshotsWrittenAt: null,
     });
   });
 
@@ -59,7 +64,8 @@ describe("readStatus", () => {
     const s = await readStatus(client, PACKS, {}, TODAY);
     expect(s.unpricedAssets).toBe(2); // a2 (stock) and a4 (NAV); the CDB accrues
     expect(s.disabledSources).toEqual([{ sourceId: "br.brapi", variable: "BRAPI_TOKEN" }]);
-    expect(s.rebuild).toEqual({ from: "2026-01-15", through: "2026-09-15", target: "2026-09-21" });
+    // No write time on the marker at all: the gap is stalled, not progressing.
+    expect(s.rebuild).toEqual({ from: "2026-01-15", through: "2026-09-15", target: "2026-09-21", stalled: true });
     expect(s.exportNudge).toEqual({ lastExportAt: null });
   });
 
@@ -97,5 +103,109 @@ describe("lastTradingDay", () => {
     expect(lastTradingDay([br], "2026-09-18")).toBe("2026-09-18");
     // 7 Sep 2026 (Independence Day) is a Monday holiday.
     expect(lastTradingDay([br], "2026-09-07")).toBe("2026-09-04");
+  });
+});
+
+describe("liveness (SPEC §9.2; decision 63)", () => {
+  const held = (over: Record<string, unknown> = {}) => ({
+    user_settings: { select: { data: settings({ created_at: "2026-01-01T00:00:00Z", ...over }) } },
+    assets: { select: { data: [asset("a1", "br.cdb")] } },
+    snapshot_markers: {
+      select: {
+        data: {
+          last_snapshot_date: TODAY,
+          earliest_trade_date: "2026-01-15",
+          last_snapshot_written_at: `${TODAY}T23:00:00Z`,
+        },
+      },
+    },
+    transactions: { select: { count: 3 } },
+  });
+  const env = { BRAPI_TOKEN: "x" };
+
+  it("tradingDaysBack walks over a weekend", () => {
+    const calendars = PACKS.filter((p) => p.instruments.length > 0).map((p) => p.calendar);
+    // 2026-09-21 is a Monday; two trading days back is the previous Thursday.
+    expect(tradingDaysBack(calendars, "2026-09-21", 2)).toBe("2026-09-17");
+  });
+
+  it("reports no price run when every cursor is older than two trading days", async () => {
+    const { client } = fakeClient({
+      ...held(),
+      ingest_cursors: {
+        select: { data: [{ source_id: "br.bcb_sgs", last_run_at: "2026-09-10T21:30:00Z", last_error: null }] },
+      },
+    });
+    const s = await readStatus(client, PACKS, env, TODAY);
+    expect(s.ingestStale).toEqual({ lastRunAt: "2026-09-10T21:30:00Z" });
+  });
+
+  it("is silent when a cursor ran inside the window", async () => {
+    const { client } = fakeClient({
+      ...held(),
+      ingest_cursors: {
+        select: { data: [{ source_id: "br.bcb_sgs", last_run_at: "2026-09-18T21:30:00Z", last_error: null }] },
+      },
+    });
+    expect((await readStatus(client, PACKS, env, TODAY)).ingestStale).toBeNull();
+  });
+
+  it("is silent on an account younger than the window, which has missed no run", async () => {
+    const { client } = fakeClient({
+      ...held({ created_at: `${TODAY}T08:00:00Z` }),
+      ingest_cursors: { select: { data: [] } },
+    });
+    expect((await readStatus(client, PACKS, env, TODAY)).ingestStale).toBeNull();
+  });
+
+  it("names a source whose last attempt recorded an error", async () => {
+    const { client } = fakeClient({
+      ...held(),
+      ingest_cursors: {
+        select: {
+          data: [
+            { source_id: "br.bcb_sgs", last_run_at: `${TODAY}T21:30:00Z`, last_error: "rate_limited" },
+            { source_id: "br.tesouro", last_run_at: `${TODAY}T21:30:00Z`, last_error: null },
+          ],
+        },
+      },
+    });
+    const s = await readStatus(client, PACKS, env, TODAY);
+    expect(s.failingSources).toEqual([{ sourceId: "br.bcb_sgs", code: "rate_limited" }]);
+    expect(s.ingestStale).toBeNull();
+  });
+
+  it("calls a gap nothing has written into for two trading days stalled, not rebuilding", async () => {
+    const stale = {
+      ...held(),
+      snapshot_markers: {
+        select: {
+          data: {
+            last_snapshot_date: "2026-09-10",
+            earliest_trade_date: "2026-01-15",
+            last_snapshot_written_at: "2026-09-10T23:00:00Z",
+          },
+        },
+      },
+      ingest_cursors: {
+        select: { data: [{ source_id: "br.bcb_sgs", last_run_at: `${TODAY}T21:30:00Z`, last_error: null }] },
+      },
+    };
+    expect((await readStatus(fakeClient(stale).client, PACKS, env, TODAY)).rebuild).toMatchObject({ stalled: true });
+
+    // The same gap, written into today: a rebuild in progress, not a stall.
+    const moving = {
+      ...stale,
+      snapshot_markers: {
+        select: {
+          data: {
+            last_snapshot_date: "2026-09-10",
+            earliest_trade_date: "2026-01-15",
+            last_snapshot_written_at: `${TODAY}T02:00:00Z`,
+          },
+        },
+      },
+    };
+    expect((await readStatus(fakeClient(moving).client, PACKS, env, TODAY)).rebuild).toMatchObject({ stalled: false });
   });
 });

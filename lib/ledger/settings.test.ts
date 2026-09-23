@@ -118,3 +118,26 @@ describe("error paths surface as closed reasons, never a message", () => {
     expect(await stampExport(c.client, U)).toEqual({ ok: false, reason: "write_failed" });
   });
 });
+
+describe("decision 61 — a pack with held assets stays enabled", () => {
+  it("refuses pack_in_use and writes nothing", async () => {
+    const { client, calls } = fakeClient({
+      user_settings: { select: { data: { enabled_packs: ["br", "global"] } } },
+      assets: { select: { count: 1 } },
+    });
+    expect(await setEnabledPacks(client, "u1", PACKS, ["global"])).toEqual({
+      ok: false,
+      reason: "pack_in_use",
+      fields: ["enabled_packs"],
+    });
+    expect(calls.some((c) => c.op === "upsert")).toBe(false);
+  });
+
+  it("allows disabling a pack whose assets are all gone", async () => {
+    const { client } = fakeClient({
+      user_settings: { select: { data: { enabled_packs: ["br", "global"] } } },
+      assets: { select: { count: 0 } },
+    });
+    expect(await setEnabledPacks(client, "u1", PACKS, ["global"])).toMatchObject({ ok: true });
+  });
+});

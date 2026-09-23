@@ -56,6 +56,11 @@ export const en: Copy = {
     sourceDisabled: ({ sourceId, variable }) => `source ${sourceId} disabled: ${variable} not set`,
     exportNudge: ({ lastExportAt }) =>
       lastExportAt ? `last export ${lastExportAt.slice(0, 10)} — export a backup` : "no backup yet — export one",
+    ingestStale: ({ lastRun }) =>
+      lastRun ? `no price run since ${lastRun} — check the crons` : "no price run yet — check the crons",
+    sourceFailing: ({ sourceId, reason }) => `source ${sourceId} failing: ${reason}`,
+    rebuildStopped: ({ through, lastRun }) =>
+      `history stopped at ${through ?? "the start"}; last built ${lastRun} — check the crons`,
     refresh: "Refresh",
     refreshing: "Fetching in the background; reload in a moment.",
     dismiss: "Dismiss",
@@ -435,6 +440,28 @@ export const en: Copy = {
         restoreFile: "Backup file",
         acknowledge: "Restore even if some assets cannot be priced by this build.",
         restoreButton: "Restore into this account",
+        instance: {
+          title: "Instance",
+          help: "Whether the machinery is running. The app is the only place this appears — this project sends nothing to a third party.",
+          lastPriceRun: "Last price run",
+          never: "never",
+          sourceDisabled: ({ variable }) => `disabled: ${variable} not set`,
+          sourceOk: "no error",
+          snapshotsThrough: "History built through",
+          writtenAt: ({ at }) => `last written ${at}`,
+          storage: "Storage",
+          rows: {
+            assets: "Assets",
+            transactions: "Transactions",
+            cashFlows: "Cash flows",
+            prices: "Prices",
+            snapshots: "Snapshot rows",
+            series: "Market series points",
+          },
+          seriesNote: "shared market data, approximate",
+          growth:
+            "Nothing is pruned. A twenty-asset ledger grows by roughly five thousand price and snapshot rows a year. Ingested price history cannot be re-fetched, so export a backup.",
+        },
         deleteTitle: "Delete everything",
         deleteBefore: "Type ",
         deleteAfter: " and your password. The account and every row cascade; market data stays. This cannot be undone.",

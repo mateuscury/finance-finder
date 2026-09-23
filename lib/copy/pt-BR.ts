@@ -63,6 +63,13 @@ export const ptBR: Copy = {
       lastExportAt
         ? `última exportação em ${lastExportAt.slice(0, 10)} — exporte um backup`
         : "nenhum backup ainda — exporte um",
+    ingestStale: ({ lastRun }) =>
+      lastRun
+        ? `nenhuma busca de preços desde ${lastRun} — verifique os crons`
+        : "nenhuma busca de preços ainda — verifique os crons",
+    sourceFailing: ({ sourceId, reason }) => `fonte ${sourceId} com falha: ${reason}`,
+    rebuildStopped: ({ through, lastRun }) =>
+      `histórico parou em ${through ?? "o início"}; última construção em ${lastRun} — verifique os crons`,
     refresh: "Atualizar",
     refreshing: "Buscando em segundo plano; recarregue em instantes.",
     dismiss: "Dispensar",
@@ -445,6 +452,28 @@ export const ptBR: Copy = {
         restoreFile: "Arquivo de backup",
         acknowledge: "Restaurar mesmo que alguns ativos não possam ser precificados por esta versão.",
         restoreButton: "Restaurar nesta conta",
+        instance: {
+          title: "Instância",
+          help: "Se a máquina está rodando. O app é o único lugar onde isto aparece — este projeto não envia nada a terceiros.",
+          lastPriceRun: "Última busca de preços",
+          never: "nunca",
+          sourceDisabled: ({ variable }) => `desativada: ${variable} não definida`,
+          sourceOk: "sem erro",
+          snapshotsThrough: "Histórico construído até",
+          writtenAt: ({ at }) => `gravado em ${at}`,
+          storage: "Armazenamento",
+          rows: {
+            assets: "Ativos",
+            transactions: "Transações",
+            cashFlows: "Aportes e resgates",
+            prices: "Preços",
+            snapshots: "Linhas de snapshot",
+            series: "Pontos de séries de mercado",
+          },
+          seriesNote: "dados de mercado compartilhados, aproximado",
+          growth:
+            "Nada é removido. Uma carteira de vinte ativos cresce cerca de cinco mil linhas de preço e snapshot por ano. O histórico de preços já buscado não pode ser refeito, então exporte um backup.",
+        },
         deleteTitle: "Excluir tudo",
         deleteBefore: "Digite ",
         deleteAfter:

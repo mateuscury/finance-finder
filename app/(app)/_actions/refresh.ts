@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { priceThenSnapshot } from "@/lib/jobs";
 import {
+  isRefreshing,
   NUDGE_COOKIE,
   PREFERENCE_COOKIE_OPTIONS,
   REFRESHING_COOKIE,
@@ -22,15 +23,25 @@ export async function refreshAction(formData: FormData): Promise<void> {
   const started = Date.now();
   const { identity } = await requireUser();
   const spent = Date.now() - started;
-  after(() => priceThenSnapshot({ kind: "unpriced" }, [identity.userId], spent));
-  // The strip shows "fetching in the background" while this is fresh; a
-  // cookie rather than a query string, because the redirected render happens
-  // inside this request and a template cannot see the new URL.
   const jar = await cookies();
-  jar.set(REFRESHING_COOKIE, String(Date.now()), {
-    ...PREFERENCE_COOKIE_OPTIONS,
-    maxAge: Math.ceil(REFRESHING_WINDOW_MS / 1000),
-  });
+  // Debounced on the server (decision 62): while a run this control started is
+  // still inside its window, schedule nothing — ten impatient clicks are one
+  // run. The cookie existed from P2-U4 but only the strip read it, so every
+  // click queued another job chain. There is deliberately no lease: a lease
+  // row would be new user data, an advisory lock cannot span PostgREST's
+  // per-request transactions, and a lease outliving a crashed run would block
+  // the nightly cron. Overlapping runs stay safe because every write is an
+  // idempotent upsert keyed by date.
+  if (!isRefreshing(jar.get(REFRESHING_COOKIE)?.value, Date.now())) {
+    after(() => priceThenSnapshot({ kind: "unpriced" }, [identity.userId], spent));
+    // The strip shows "fetching in the background" while this is fresh; a
+    // cookie rather than a query string, because the redirected render happens
+    // inside this request and a template cannot see the new URL.
+    jar.set(REFRESHING_COOKIE, String(Date.now()), {
+      ...PREFERENCE_COOKIE_OPTIONS,
+      maxAge: Math.ceil(REFRESHING_WINDOW_MS / 1000),
+    });
+  }
   redirect(safePath(formData.get("return_to")));
 }
 

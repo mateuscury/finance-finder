@@ -54,6 +54,11 @@ test("review gate: Assets, one asset page and a filtered Transactions list", asy
       await page.goto("/transactions?type=sell");
       await expectNoHorizontalOverflow(page, `/transactions?type=sell ${name}`);
       await page.screenshot({ path: `docs/review/gaps/transactions-filtered-${name}.png`, fullPage: true });
+
+      await page.goto("/settings#instance");
+      await expect(page.locator("#instance")).toBeVisible();
+      await expectNoHorizontalOverflow(page, `/settings#instance ${name}`);
+      await page.screenshot({ path: `docs/review/gaps/settings-instance-${name}.png`, fullPage: true });
     }
 
     expect(violations).toEqual([]);

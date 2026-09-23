@@ -92,7 +92,7 @@ describe("pages and counts", () => {
     });
     expect((await listCashFlows(client, 2)).page).toBe(2);
     const counts = await countLedger(client);
-    expect(counts).toEqual({ assets: 2, transactions: 5, cashFlows: 1 });
+    expect(counts).toEqual({ assets: 2, transactions: 5, cashFlows: 1, prices: 0, snapshots: 0 });
     expect(calls.filter((c) => c.op === "select").every((c) => c.table)).toBe(true);
   });
 

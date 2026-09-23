@@ -35,13 +35,23 @@ describe("readStatus", () => {
     const client = await owner.signIn();
     const status = await readStatus(client, PACKS, { BRAPI_TOKEN: "x" }, "2026-03-02");
     expect(status.unpricedAssets).toBe(1);
-    expect(status.rebuild).toEqual({ from: "2026-01-15", through: null, target: "2026-03-02" });
+    // No snapshot has ever been written for this seed, so the gap is stalled
+    // by definition — the case decision 63 exists to name.
+    expect(status.rebuild).toEqual({ from: "2026-01-15", through: null, target: "2026-03-02", stalled: true });
     expect(status.exportNudge).toEqual({ lastExportAt: null });
     expect(status.disabledSources).toEqual([]);
 
     const stranger = await createThrowawayUser(admin);
     users.push(stranger);
     const theirs = await readStatus(await stranger.signIn(), PACKS, {}, "2026-03-02");
-    expect(theirs).toEqual({ unpricedAssets: 0, rebuild: null, disabledSources: [], exportNudge: null });
+    expect(theirs).toMatchObject({
+      unpricedAssets: 0,
+      rebuild: null,
+      disabledSources: [],
+      exportNudge: null,
+      ingestStale: null,
+      failingSources: [],
+      snapshotsThrough: null,
+    });
   });
 });

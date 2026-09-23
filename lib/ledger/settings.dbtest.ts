@@ -59,6 +59,20 @@ describe("settings", () => {
     expect(s.last_export_at).toMatch(/^2026-09-20T12:00:00/);
   });
 
+  it("refuses to disable a pack whose assets are still held (decision 61)", async () => {
+    const u = await newUser();
+    const client = await u.signIn();
+    await seedGoldenPortfolio(admin, u.userId, fixture, { series: false });
+    // The golden's assets are all `br`.
+    expect(await setEnabledPacks(client, u.userId, PACKS, ["global"])).toEqual({
+      ok: false,
+      reason: "pack_in_use",
+      fields: ["enabled_packs"],
+    });
+    const after = await client.from("user_settings").select("enabled_packs").eq("user_id", u.userId).single();
+    expect((after.data as { enabled_packs: string[] }).enabled_packs).toContain("br");
+  });
+
   it("the export's companion CSV, written by lib/csv from export_backup, re-imports as all duplicates", async () => {
     const a = await newUser();
     await seedGoldenPortfolio(admin, a.userId, fixture);

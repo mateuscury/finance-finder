@@ -69,6 +69,18 @@ export async function setEnabledPacks(
   const current = await client.from("user_settings").select("enabled_packs").eq("user_id", userId).maybeSingle();
   if (current.error) return fail(reasonFor(current.error));
   const before = new Set((current.data?.enabled_packs as string[] | null) ?? []);
+
+  // A pack whose assets are still held cannot be turned off (decision 61):
+  // `readLedger` activates the packs of held assets whatever this setting
+  // says, so the holdings would keep being priced and valued while Settings
+  // claimed the pack was off. Refusing makes the setting mean what it says.
+  const removed = [...before].filter((id) => !wanted.includes(id));
+  if (removed.length > 0) {
+    const held = await client.from("assets").select("*", { count: "exact", head: true }).in("pack_id", removed);
+    if (held.error) return fail(reasonFor(held.error));
+    if ((held.count ?? 0) > 0) return fail("pack_in_use", ["enabled_packs"]);
+  }
+
   const { error } = await client
     .from("user_settings")
     .upsert({ user_id: userId, enabled_packs: wanted }, { onConflict: "user_id" });

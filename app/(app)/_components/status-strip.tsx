@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { PACKS } from "@/packs";
 import { nowMs, todayIso } from "@/lib/clock";
 import { requireUser } from "@/lib/auth/session";
-import type { Copy } from "@/lib/copy";
+import type { Copy, ReasonCode } from "@/lib/copy";
 import { formatDate } from "@/lib/format";
 import { readStatus } from "@/lib/ledger/status";
 import { dismissNudgeAction, refreshAction } from "@/app/(app)/_actions/refresh";
@@ -41,16 +41,47 @@ export async function StatusStrip({
     items.push({ key: "unpriced", text: copy.strip.unpriced({ n: status.unpricedAssets }), href: "/assets" });
   if (status.rebuild) {
     const r = status.rebuild;
+    // A gap that is still closing is a rebuild; one nothing has written into
+    // for two trading days is a stall, and says so (decision 63).
+    items.push(
+      r.stalled
+        ? {
+            key: "rebuild",
+            text: copy.strip.rebuildStopped({
+              through: r.through ? formatDate(r.through, locale) : null,
+              lastRun: formatDate(r.target, locale),
+            }),
+            href: "/settings#instance",
+          }
+        : {
+            key: "rebuild",
+            text: copy.strip.rebuilding({
+              from: formatDate(r.from, locale),
+              through: r.through ? formatDate(r.through, locale) : null,
+              target: formatDate(r.target, locale),
+            }),
+            href: "/",
+          },
+    );
+  }
+  if (status.ingestStale) {
     items.push({
-      key: "rebuild",
-      text: copy.strip.rebuilding({
-        from: formatDate(r.from, locale),
-        through: r.through ? formatDate(r.through, locale) : null,
-        target: formatDate(r.target, locale),
+      key: "ingest-stale",
+      text: copy.strip.ingestStale({
+        lastRun: status.ingestStale.lastRunAt ? formatDate(status.ingestStale.lastRunAt.slice(0, 10), locale) : null,
       }),
-      href: "/",
+      href: "/settings#instance",
     });
   }
+  for (const f of status.failingSources)
+    items.push({
+      key: `failing-${f.sourceId}`,
+      text: copy.strip.sourceFailing({
+        sourceId: f.sourceId,
+        reason: copy.status.reasons[f.code as ReasonCode] ?? f.code,
+      }),
+      href: "/settings#instance",
+    });
   for (const s of status.disabledSources)
     items.push({ key: `source-${s.sourceId}`, text: copy.strip.sourceDisabled(s), href: "/settings" });
   if (showNudge && status.exportNudge)

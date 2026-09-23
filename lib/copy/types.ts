@@ -69,6 +69,10 @@ export interface Copy {
     rebuilding: (p: { from: string; through: string | null; target: string }) => string;
     sourceDisabled: (p: { sourceId: string; variable: string }) => string;
     exportNudge: (p: { lastExportAt: string | null }) => string;
+    /** Liveness (SPEC §9.2; decision 63): the crons stopped, and the app is the only channel. */
+    ingestStale: (p: { lastRun: string | null }) => string;
+    sourceFailing: (p: { sourceId: string; reason: string }) => string;
+    rebuildStopped: (p: { through: string | null; lastRun: string }) => string;
     refresh: string;
     refreshing: string;
     dismiss: string;
@@ -422,6 +426,28 @@ export interface Copy {
         restoreFile: string;
         acknowledge: string;
         restoreButton: string;
+        /** Instance health and size (SPEC §9.2 "Liveness", §12.3, §8; decisions 63, 65). */
+        instance: {
+          title: string;
+          help: string;
+          lastPriceRun: string;
+          never: string;
+          sourceDisabled: (p: { variable: string }) => string;
+          sourceOk: string;
+          snapshotsThrough: string;
+          writtenAt: (p: { at: string }) => string;
+          storage: string;
+          rows: {
+            assets: string;
+            transactions: string;
+            cashFlows: string;
+            prices: string;
+            snapshots: string;
+            series: string;
+          };
+          seriesNote: string;
+          growth: string;
+        };
         deleteTitle: string;
         /** The phrase itself is rendered in <code> between these two parts. */
         deleteBefore: string;

@@ -134,10 +134,19 @@ describe("readLedger under RLS", () => {
       assets: N.assets,
       transactions: N.transactions,
       cashFlows: N.cashFlows,
+      // Own rows only: the storage figures Settings shows (decision 65).
+      prices: N.prices,
+      snapshots: 0,
     });
 
     const stranger = await (await newUser()).signIn();
-    expect(await countLedger(stranger)).toEqual({ assets: 0, transactions: 0, cashFlows: 0 });
+    expect(await countLedger(stranger)).toEqual({
+      assets: 0,
+      transactions: 0,
+      cashFlows: 0,
+      prices: 0,
+      snapshots: 0,
+    });
     expect(await listAssets(stranger, PACKS)).toEqual([]);
     const theirs = await readLedger(stranger, PACKS);
     expect(theirs.assets).toEqual([]);

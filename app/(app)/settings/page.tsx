@@ -3,9 +3,14 @@ import { PACKS } from "@/packs";
 import { Notice } from "@/app/(app)/_components/notice";
 import { fieldsFrom } from "@/app/(app)/_lib/form";
 import { requireUser } from "@/lib/auth/session";
-import { copyFor, LOCALES, type DeleteOutcome, type RestoreOutcome } from "@/lib/copy";
+import { Fragment } from "react";
+import { copyFor, LOCALES, type DeleteOutcome, type ReasonCode, type RestoreOutcome } from "@/lib/copy";
 import { formatDate } from "@/lib/format";
 import { readSettings } from "@/lib/ledger/rows";
+import { countLedger } from "@/lib/ledger/queries";
+import { readStatus } from "@/lib/ledger/status";
+import { resolveActivation } from "@/lib/packs/activate";
+import { todayIso } from "@/lib/clock";
 import {
   changeBaseCurrencyAction,
   changePasswordAction,
@@ -35,6 +40,20 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
   const { client, identity } = await requireUser();
   const params = await searchParams;
   const settings = await readSettings(client);
+  const today = todayIso();
+  const [status, counts, seriesCount] = await Promise.all([
+    readStatus(client, PACKS, process.env, today),
+    countLedger(client),
+    // Shared market data, not this user's: an estimate is the honest figure
+    // and an exact count over years of points is not worth the scan.
+    client
+      .from("series_points")
+      .select("*", { count: "estimated", head: true })
+      .then((r) => r.count ?? 0),
+  ]);
+  const activePacks = resolveActivation(PACKS, [...new Set(settings.enabled_packs ?? [])]).packs;
+  const disabledBy = new Map(status.disabledSources.map((d) => [d.sourceId, d.variable]));
+  const failingBy = new Map(status.failingSources.map((f) => [f.sourceId, f.code]));
   const copy = copyFor(settings.locale);
   const s = copy.screens.settings;
   const factors = await client.auth.mfa.listFactors();
@@ -196,6 +215,74 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
         <form action={signOutEverywhereAction} className={styles.form}>
           <button type="submit">{s.security.signOutEverywhere}</button>
         </form>
+      </section>
+
+      <section id="instance" aria-labelledby="instance-h" className={styles.section}>
+        <h2 id="instance-h" className="section-label">
+          {s.data.instance.title}
+        </h2>
+        <p className="muted">{s.data.instance.help}</p>
+        <dl className={styles.instance}>
+          <dt>{s.data.instance.lastPriceRun}</dt>
+          <dd className={status.ingestStale ? "neg" : undefined}>
+            {status.lastIngestRunAt
+              ? formatDate(status.lastIngestRunAt.slice(0, 10), settings.locale)
+              : s.data.instance.never}
+          </dd>
+          {activePacks
+            .flatMap((p) => p.sources)
+            .map((source) => (
+              <Fragment key={source.id}>
+                <dt>
+                  <code>{source.id}</code>
+                </dt>
+                <dd>
+                  {disabledBy.has(source.id) ? (
+                    s.data.instance.sourceDisabled({ variable: disabledBy.get(source.id) as string })
+                  ) : failingBy.has(source.id) ? (
+                    <span className="neg">
+                      {copy.status.reasons[failingBy.get(source.id) as ReasonCode] ?? failingBy.get(source.id)}
+                    </span>
+                  ) : (
+                    <span className="muted">{s.data.instance.sourceOk}</span>
+                  )}
+                </dd>
+              </Fragment>
+            ))}
+          <dt>{s.data.instance.snapshotsThrough}</dt>
+          <dd className={status.rebuild?.stalled ? "neg" : undefined}>
+            {status.snapshotsThrough ? formatDate(status.snapshotsThrough, settings.locale) : s.data.instance.never}
+            {status.snapshotsWrittenAt ? (
+              <>
+                {" "}
+                <span className="muted">
+                  {s.data.instance.writtenAt({
+                    at: formatDate(status.snapshotsWrittenAt.slice(0, 10), settings.locale),
+                  })}
+                </span>
+              </>
+            ) : null}
+          </dd>
+        </dl>
+
+        <h3>{s.data.instance.storage}</h3>
+        <dl className={styles.instance}>
+          <dt>{s.data.instance.rows.assets}</dt>
+          <dd className="figure">{counts.assets}</dd>
+          <dt>{s.data.instance.rows.transactions}</dt>
+          <dd className="figure">{counts.transactions}</dd>
+          <dt>{s.data.instance.rows.cashFlows}</dt>
+          <dd className="figure">{counts.cashFlows}</dd>
+          <dt>{s.data.instance.rows.prices}</dt>
+          <dd className="figure">{counts.prices}</dd>
+          <dt>{s.data.instance.rows.snapshots}</dt>
+          <dd className="figure">{counts.snapshots}</dd>
+          <dt>{s.data.instance.rows.series}</dt>
+          <dd className="figure">
+            ~{seriesCount} <span className="muted">{s.data.instance.seriesNote}</span>
+          </dd>
+        </dl>
+        <p className="muted">{s.data.instance.growth}</p>
       </section>
 
       <section aria-labelledby="data-h" className={styles.section}>

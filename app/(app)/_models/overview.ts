@@ -17,7 +17,8 @@ import type { SnapshotAssetRow, SnapshotTotal } from "@/lib/ledger/snapshots";
 import { sharesSummingTo100 } from "./shares";
 
 export interface OverviewInput {
-  counts: LedgerCounts;
+  /** Only the three row counts the first-run card derives from (SPEC §9.3). */
+  counts: Pick<LedgerCounts, "assets" | "transactions" | "cashFlows">;
   settings: SettingsRow;
   /** Today's valuation over a latest-price read, or null when there is nothing to value. */
   valuation: PortfolioValuation | null;

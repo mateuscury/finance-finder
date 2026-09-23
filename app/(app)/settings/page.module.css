@@ -76,3 +76,32 @@
   text-transform: uppercase;
   font-family: var(--font-mono);
 }
+
+/* Instance (SPEC §12.3): a definition list of short facts — the label reads
+   as a caption and the value sits beside it, wrapping to its own line when
+   the viewport is too narrow for two columns. */
+.instance {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0;
+}
+
+.instance dt {
+  color: var(--text-muted);
+}
+
+.instance dd {
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .instance {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .instance dd {
+    margin-bottom: var(--space-2);
+  }
+}

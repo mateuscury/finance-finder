@@ -402,16 +402,19 @@ export type Database = {
         Row: {
           earliest_trade_date: string | null
           last_snapshot_date: string | null
+          last_snapshot_written_at: string | null
           user_id: string | null
         }
         Insert: {
           earliest_trade_date?: never
           last_snapshot_date?: never
+          last_snapshot_written_at?: never
           user_id?: string | null
         }
         Update: {
           earliest_trade_date?: never
           last_snapshot_date?: never
+          last_snapshot_written_at?: never
           user_id?: string | null
         }
         Relationships: []
