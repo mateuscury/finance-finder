@@ -148,7 +148,7 @@ fallback so the run continues end to end.
 | P5-U1 | Schema-driven fields and the asset form                                 | P2-U6      | done `233cbf9` |
 | P5-U2 | Assets, Transactions and Import designed                                | P5-U1      | done `5ff08c2` |
 | P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1      | done `884ee05` |
-| G-U1  | Spec gaps: the SPEC states what the tree decided (`gaps.md`)            | P5-U3      | not started    |
+| G-U1  | Spec gaps: the SPEC states what the tree decided (`gaps.md`)            | P5-U3      | done `5293633` |
 | G-U2  | Spec gaps: open cost in the kernel; the holdings model                  | G-U1       | not started    |
 | G-U3  | Spec gaps: Assets shows what you hold; the asset page's lots            | G-U2       | not started    |
 | G-U4  | Spec gaps: Transactions filters; the `oversell` write guard             | G-U1       | not started    |

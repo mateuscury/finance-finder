@@ -51,6 +51,7 @@ export const ptBR: Copy = {
       stale: "desatualizado em uma das pontas do período",
       zero_start_value: "nada estava investido no início",
       no_position: "não mantido no período",
+      oversell: "as vendas superam o que foi comprado — corrija as transações deste ativo",
     },
   },
   strip: {

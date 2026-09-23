@@ -1,7 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { ZERO } from "./decimal";
 import { isKernelError } from "./errors";
-import { lotsAt, netInvested, quantityAt, sortLedger } from "./positions";
+import { averageCost, lotQuantity, lotsAt, netInvested, openCost, quantityAt, sortLedger } from "./positions";
 import type { LedgerTransaction, TransactionType } from "./types";
 import { addDays } from "./dates";
 
@@ -214,6 +215,74 @@ describe("properties", () => {
           code = isKernelError(err) ? err.code : "other";
         }
         expect(code).toBe("oversell");
+      }),
+    );
+  });
+});
+
+describe("openCost / averageCost", () => {
+  it("is the FIFO remainder's cost, before fees (SPEC §6; decision 59)", () => {
+    const rows = [
+      txn({ type: "buy", quantity: "10", unitPrice: "100", fees: "7", tradeDate: "2026-01-05" }),
+      txn({ type: "buy", quantity: "10", unitPrice: "120", fees: "7", tradeDate: "2026-01-06" }),
+      txn({ type: "sell", quantity: "-5", unitPrice: "200", fees: "7", tradeDate: "2026-01-07" }),
+    ];
+    // FIFO leaves 5 @ 100 and 10 @ 120 → 500 + 1200 = 1700 over 15 units.
+    const lots = lotsAt(rows, "2026-12-31");
+    expect(openCost(lots, "BRL").toString()).toBe("1700");
+    expect(averageCost(lots)?.toFixed(10)).toBe("113.3333333333");
+    // The 21 in fees is nowhere in either figure — that is the whole point.
+    expect(openCost(lots, "BRL").toString()).not.toContain("21");
+  });
+
+  it("is zero and null once the position is fully sold", () => {
+    const rows = [
+      txn({ type: "buy", quantity: "10", unitPrice: "100", tradeDate: "2026-01-05" }),
+      txn({ type: "sell", quantity: "-10", unitPrice: "150", tradeDate: "2026-01-06" }),
+    ];
+    const lots = lotsAt(rows, "2026-12-31");
+    expect(openCost(lots, "BRL").toString()).toBe("0");
+    expect(averageCost(lots)).toBeNull();
+    expect(averageCost([])).toBeNull();
+  });
+
+  it("throws currency_mismatch on a lot in another currency — averageCost too", () => {
+    const lots = lotsAt(
+      [txn({ type: "buy", quantity: "1", unitPrice: "1", currency: "USD", tradeDate: "2026-01-06" })],
+      "2026-12-31",
+    );
+    try {
+      openCost(lots, "BRL");
+      expect.unreachable();
+    } catch (err) {
+      expect(isKernelError(err, "currency_mismatch")).toBe(true);
+    }
+    // Mixed lots must not average into a blended number that means nothing.
+    const mixed = lotsAt(
+      [
+        txn({ type: "buy", quantity: "1", unitPrice: "1", currency: "BRL", tradeDate: "2026-01-05" }),
+        txn({ type: "buy", quantity: "1", unitPrice: "1", currency: "USD", tradeDate: "2026-01-06" }),
+      ],
+      "2026-12-31",
+    );
+    try {
+      averageCost(mixed);
+      expect.unreachable();
+    } catch (err) {
+      expect(isKernelError(err, "currency_mismatch")).toBe(true);
+    }
+  });
+
+  it("property: openCost === Σ quantity × unitPrice over the open lots, and averageCost × quantity === openCost", () => {
+    fc.assert(
+      fc.property(validLedger, (rows) => {
+        const lots = lotsAt(rows, "2026-12-31");
+        // Summed independently of the implementation, in the test's own arithmetic.
+        const expected = lots.reduce((sum, l) => sum.plus(l.quantity.times(l.unitPrice)), ZERO);
+        expect(openCost(lots, "BRL").amount.equals(expected)).toBe(true);
+        const average = averageCost(lots);
+        if (average === null) expect(lotQuantity(lots).isZero()).toBe(true);
+        else expect(average.times(lotQuantity(lots)).minus(expected).abs().lt("1e-20")).toBe(true);
       }),
     );
   });

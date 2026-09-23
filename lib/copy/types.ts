@@ -16,7 +16,7 @@ import type { ActionReason } from "@/lib/ledger/result";
 import type { UnpricedReason } from "@/lib/calc/staleness";
 
 /** Every closed reason a figure can be undefined for: the kernel's unpriced reasons plus the performance modules' own. */
-export type ReasonCode = UnpricedReason | "stale" | "zero_start_value" | "no_position";
+export type ReasonCode = UnpricedReason | "stale" | "zero_start_value" | "no_position" | "oversell";
 
 /** The outcome codes the import page shows, beyond the commit planner's own. */
 export type ImportOutcome = CommitRefusal | "no_file" | "too_large" | "write_failed" | "not_found" | "invalid_input";

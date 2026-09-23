@@ -46,6 +46,7 @@ export const en: Copy = {
       stale: "stale at one end of the period",
       zero_start_value: "nothing was invested at the start",
       no_position: "not held over the period",
+      oversell: "sells exceed what was bought — fix this asset's transactions",
     },
   },
   strip: {

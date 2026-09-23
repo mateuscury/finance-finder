@@ -124,6 +124,38 @@ export function quantityAt(transactions: readonly LedgerTransaction[], date: Iso
   return lotQuantity(lotsAt(transactions, date));
 }
 
+/**
+ * What the open lots cost to buy: `Σ quantity × unitPrice`, in `currency`
+ * (SPEC §6 "Cost"; MILESTONES.md §4 decision 59).
+ *
+ * TRADE COST BEFORE FEES, deliberately. Capitalising fees into the cost of a
+ * holding produces the fiscal "preço médio" that ARCHITECTURE §2 keeps out of
+ * this project, and a `Lot` carries no fee leg to do it with — apportioning a
+ * transaction's fees across a lot that a later sell has partly consumed is a
+ * kernel decision no golden fixture exercises. Fees belong to the figures that
+ * are about money in and out: `investedFlows`, `netInvested`, MWR.
+ *
+ * A lot in another currency is `currency_mismatch`, through `Money.add`.
+ */
+export function openCost(lots: readonly Lot[], currency: string): Money {
+  let total = Money.zero(currency);
+  for (const lot of lots) total = total.add(Money.of(lot.quantity.times(lot.unitPrice), lot.currency));
+  return total;
+}
+
+/**
+ * Cost per open unit: `openCost / quantity`, or null when nothing is open —
+ * a fully sold position has no average to report, and zero would read as free.
+ */
+export function averageCost(lots: readonly Lot[]): KDecimal | null {
+  const quantity = lotQuantity(lots);
+  if (quantity.isZero()) return null;
+  // Through `openCost`, so the currency guard applies here too: averaging lots
+  // bought in different currencies would otherwise return a blended number
+  // that means nothing, where `openCost` on the same lots refuses.
+  return openCost(lots, lots[0].currency).amount.div(quantity);
+}
+
 /** One transaction's signed cash effect: money put in is positive, money taken out negative. */
 export interface InvestedFlow {
   transactionId: string;

@@ -55,9 +55,10 @@ computed under: `docs/milestone-2-plan.md`; decisions: `MILESTONES.md` §2.
 
 - `positions.ts` — `sortLedger` (`(tradeDate, rank, id)`, rank
   `buy < dividend = interest = fee < sell`), `lotsAt` (FIFO, `oversell`
-  throws), `lotQuantity`, `quantityAt`, `investedFlows` (one signed cash
-  effect per transaction in `(from, to]`) and `netInvested`, their sum in one
-  currency, `groupByAsset`.
+  throws), `lotQuantity`, `quantityAt`, `openCost` and `averageCost` (trade
+  cost BEFORE fees — SPEC §6, decision 59; `averageCost` is null at zero
+  quantity), `investedFlows` (one signed cash effect per transaction in
+  `(from, to]`) and `netInvested`, their sum in one currency, `groupByAsset`.
 - `series/` — one function per closed `SeriesKind`; every result is a
   status-carrying union, never `NaN`:
   - `rate.ts` — `compoundRate` for `rate_daily` (Π(1 + m·rᵈ)) and
