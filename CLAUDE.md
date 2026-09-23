@@ -28,8 +28,10 @@ became multi-country and open-source; the code was scaffolded from it.
 - The installed stack (`package.json`) beats any version pinned in prose.
 
 The root `SPEC.md` is the technical spec. `specs/SPEC.md` and
-`specs/PERSONAS.md` are the QA-system user-story templates (still unfilled) —
-keep them distinct.
+`specs/PERSONAS.md` are the QA-system user stories and personas — keep them
+distinct. Those acceptance criteria are **derived from** the root `SPEC.md`: a
+decision found only in `specs/` is a root-SPEC gap to fix, not a second
+authority (decision 66).
 
 ## The one rule (PACKS.md §1)
 
@@ -119,17 +121,21 @@ pnpm db:start / db:reset # local Supabase (Docker)
 
 Milestones 1 (trusted ingestion), 2 (financial kernel and recovery) and 3
 (authenticated ledger) are complete; `packs/br` and `packs/global` remain
-`draft`. `pnpm release:check` is red only on the two draft packs and
-`specs/PERSONAS.md`.
+`draft`. `pnpm release:check` is red only on the two draft packs.
 
 **Milestone 4 — "Brazil to production (MVP)" — is in progress.** Plan:
 `docs/milestone-4-plan.md` (conventions, decisions 32–52 — all confirmed
 and recorded in `MILESTONES.md` §4 — and the technical-debt inventory paid
 in Phase 1). Runbook: `docs/milestone-4-execution.md` (one unit per commit;
-its index is the live status). Today's pages are functional and unstyled
-(decision 19); the ten designed screens, `br.stock`, budgets, smoke
-journeys, `supported` packs and the first deploy are this milestone. The UK
-canary is Milestone 5.
+its index is the live status). Phases 0–5 are done: the ten screens are
+designed on the SPEC §10 tokens. `br.stock`, budgets, smoke journeys,
+`supported` packs and the first deploy are the rest of this milestone. The
+UK canary is Milestone 5.
+
+Between Phase 5 and Phase 6: `docs/milestone-4-gaps.md` (decisions 56–66,
+units G-U1…G-U6), the spec gaps the Phase 5 review found — positions on
+Assets, Transactions filters, instance liveness, and the `oversell` and
+`pack_in_use` guards.
 
 From Milestone 1: five real adapters with offline fixtures; `lib/packs`;
 `PACK_API_VERSION` 3; forward migrations `initial_schema_hardening`,

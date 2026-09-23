@@ -864,6 +864,123 @@ Then:  it builds at ≥ 50 days per second and the number is in the doc
 
 ---
 
+### US-015: See what I hold
+
+**As a** the owner (Marina, `PERSONAS.md`)
+**I want** one screen that lists every holding with its quantity, what it cost
+me, what it is worth and what it has gained — and a list of transactions I can
+narrow to the ones I am looking for
+**So that** "what do I actually own" is a screen rather than an inference from
+three other screens, and a ledger of years is navigable (root SPEC §6, §9
+screens 6–7, §9.5, §11)
+
+**Acceptance Criteria** (`docs/milestone-4-gaps.md` G-U2–G-U4; decisions 58,
+59, 60, 64):
+
+- [ ] AC-015.1: `/assets` lists every asset with today's quantity from its FIFO
+      lots, average cost and open cost _before fees_, the latest price with its
+      state, market value in the base currency, and unrealised gain as money and
+      a rate with a sign and an arrow. An asset with no transactions shows "—";
+      an unpriced or stale holding shows no unrealised figure. (SPEC §6, §9
+      screen 6, §9.5, §11)
+- [ ] AC-015.2: The table's foot carries the confident total in the base
+      currency and, when any holding is outside it, how many — and that total
+      equals the Overview headline on the same data. (decision 60)
+- [ ] AC-015.3: `/assets/[id]` lists the open lots (opened, quantity, unit
+      price, cost) in FIFO order with the position's totals, above the manual
+      prices already there. (SPEC §6)
+- [ ] AC-015.4: Every quantity, cost, value and gain is masked by privacy mode
+      and printed by `lib/format` from a decimal string; the only `Number(` on a
+      value stays `app/(app)/_charts/coordinate.ts`. (decision 35)
+- [ ] AC-015.5: `/transactions` filters by asset, type and date range applied by
+      the database before `.range()`; paging preserves the filter; an invalid
+      value is ignored field by field; the filtered count is shown. (decision 64)
+- [ ] AC-015.6: A sell beyond the open position is refused with `oversell` on
+      `quantity` by the transaction form, by an edit that would leave later
+      sells uncovered, and by the import preview (which marks the row and blocks
+      the commit). A ledger that still contains one shows that asset's row as a
+      ledger error and every derived screen says so instead of failing.
+      (decision 58, SPEC §6, §11)
+
+**Test Scenarios**:
+
+```
+Given: the golden ledger and snapshots
+When:  the owner opens /assets
+Then:  each row shows quantity, average cost, price, value and unrealised;
+       the foot total equals the Overview headline to the last digit
+
+Given: an asset bought 10 @ 100 then 10 @ 120, with 5 sold
+When:  its asset page is opened
+Then:  the open lots are 5 @ 100 and 10 @ 120, quantity 15, open cost
+       1700, average cost 113.333…, all labelled before fees
+
+Given: a position of 10 units
+When:  a sell of 100 is submitted on the form, in an edit, or in a CSV
+Then:  each path refuses with oversell on quantity and writes nothing
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 gaps)
+
+---
+
+### US-016: Know my instance is alive
+
+**As a** the owner running this on my own Vercel and Supabase
+**I want** the app itself to tell me when its crons stopped, when a source is
+failing, and how much data it holds
+**So that** a self-hosted instance cannot rot in silence behind prices that
+carry forward and still look like numbers (root SPEC §8, §9.2, §9.4, §11,
+§12.3)
+
+**Acceptance Criteria** (`docs/milestone-4-gaps.md` G-U5; decisions 61, 62, 63,
+65):
+
+- [ ] AC-016.1: The strip says "no price run since <date>" when the latest
+      `ingest_cursors.last_run_at` across the user's activated sources is older
+      than two trading days (silent for an account's first two trading days);
+      "source <id> failing: <reason>" for a source with `last_error`; and
+      "history stopped at <date>" when a snapshot gap has had nothing written
+      into it for two trading days. (decision 63)
+- [ ] AC-016.2: Each links to Settings → Instance, which states per source its
+      last run and error or the variable it wants, the snapshot marker with the
+      time it was last written, and row counts — own tables exact through RLS,
+      `series_points` estimated and labelled. (decisions 63, 65)
+- [ ] AC-016.3: Disabling a pack whose assets are still held is refused with
+      `pack_in_use` and nothing is written. (decision 61)
+- [ ] AC-016.4: Refresh pressed while a run it started is still in its window
+      schedules nothing; overlapping runs remain safe because every write is an
+      idempotent upsert keyed by date. (decision 62)
+- [ ] AC-016.5: Nothing is pruned; root SPEC §8 states the growth arithmetic and
+      Settings shows the live counts. (decision 65)
+- [ ] AC-016.6: No value, URL or secret appears in any log line, error message
+      or screen this story adds — ids, counts, codes, dates and variable names
+      only. (root SPEC §12.2)
+
+**Test Scenarios**:
+
+```
+Given: an instance whose price cron last ran three trading days ago
+When:  the owner opens any screen
+Then:  the strip says no price run since that date and links to
+       /settings#instance, which shows the same date per source
+
+Given: the golden ledger held under pack br
+When:  the owner unticks br in Settings and saves
+Then:  the action returns pack_in_use, enabled_packs is unchanged, and the
+       notice names the reason
+
+Given: a Refresh that is still within its window
+When:  Refresh is pressed again
+Then:  no further job chain is scheduled and the strip says it is fetching
+```
+
+**Priority**: Must Have
+**Status**: Planned (Milestone 4 gaps)
+
+---
+
 ## Technical Constraints
 
 From `CLAUDE.md` non-negotiables and the root `SPEC.md` §12; these apply to
@@ -939,3 +1056,4 @@ How we know this works:
 | 2026-09-20 | US-003 to US-008 added; out-of-scope and metrics extended for Milestone 3                                        | Milestone 3 Phase 0 step 5 (`docs/milestone-3-plan.md`)            |
 | 2026-09-20 | US-003 to US-008 done; every AC ticked                                                                           | Milestone 3 Phases 1–7 delivered (`docs/milestone-3-plan.md`)      |
 | 2026-09-21 | US-009 to US-014 added; out-of-scope and metrics extended for Milestone 4                                        | Milestone 4 Phase 0 (`docs/milestone-4-execution.md` P0-U2)        |
+| 2026-09-23 | US-015 and US-016 added                                                                                          | Spec gaps found by the Phase 5 review (`docs/milestone-4-gaps.md`) |

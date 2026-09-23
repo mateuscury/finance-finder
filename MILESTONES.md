@@ -436,6 +436,10 @@ that `PACKS.md` §14 placed here is now §5.
   `pnpm release:check`; only a fully green result permits real data.
 - Leave the second country as a documented seam (`PACKS.md` §16) and an
   enforced neutrality test — no `packs/uk` code.
+- Close the spec gaps the Phase 5 review found (`docs/milestone-4-gaps.md`):
+  positions on Assets, Transactions filters, instance liveness, and the
+  `oversell` and `pack_in_use` guards — plus the SPEC sections that never
+  recorded what the tree had already decided.
 
 - Pay the technical debt of Milestones 1–3 first (`docs/milestone-4-plan.md`
   "Technical debt inventory"): a CI that runs on a remote, a typed client,
@@ -552,6 +556,89 @@ ts` committed and diff-checked in CI; `SupabaseClient<Database>` in
     pattern plus `aria-invalid` on the fields the query names. Decision 48
     applied: no form library, client state only where the form cannot be
     drawn without it; zod schemas never reach the client.
+
+### Decisions taken 2026-09-23 (spec gaps found by the Phase 5 review)
+
+The Phase 5 review read the tree against `SPEC.md` and found two kinds of
+gap: decisions the code had to make because the SPEC never made them, and
+product holes the SPEC never contemplated. Plan and runbook:
+`docs/milestone-4-gaps.md`, units G-U1…G-U6 between Phases 5 and 6.
+
+56. **The analysis period vocabulary is `1m · ytd · 1y · all`.** Each
+    period's nominal start resolves to the latest snapshot date at or
+    before it; the default is `all` under a year of history and `1y`
+    after; a period with no snapshot at or before its start is not
+    offered. Built in Phase 3 (`app/(app)/_models/period.ts`, US-010
+    AC-010.1) and never written down in the document that owns features.
+57. **Top movers are the five largest absolute base-currency changes
+    between the last two snapshot dates, confident rows only.** A stale
+    row on either date drops the asset. Built in Phase 2
+    (`app/(app)/_models/overview.ts`); SPEC §9 screen 1 said only "top
+    movers".
+58. **Positions are FIFO lots; a sell beyond the open position is refused
+    at write, never absorbed.** The kernel has thrown `oversell` since
+    Milestone 2, but nothing outside it handled the throw: the schema
+    checks the quantity's sign only, so a too-large sell was written, and
+    from then on every screen that values the ledger fell to the generic
+    error boundary while the nightly snapshot job marked the user
+    `error`. Now the form, the edit and the import preview check
+    `quantityAt` before writing. A ledger that still holds one — only a
+    restored backup can, since `restore_backup` is a database transaction
+    and cannot run the kernel — is shown with the asset marked, not
+    computed.
+59. **Cost is trade cost before fees.** `openCost = Σ quantity ×
+unitPrice` over the open lots, `averageCost = openCost / quantity`,
+    `unrealised = market value native − open cost`, all labelled _before
+    fees_ on screen. A fee-capitalised average is Brazil's fiscal "preço
+    médio", the one number ARCHITECTURE §2 keeps out; the `Lot` has no fee
+    leg, and allocating fees across a partially consumed lot would be a
+    kernel decision the golden fixture does not exercise. Fees stay in the
+    figures that are about money in and out — `investedFlows`, MWR,
+    Contribution.
+60. **Assets is the positions screen.** No eleventh route: the list gains
+    quantity, average cost, value in base and unrealised; the asset page
+    gains its open lots. "Ten screens" stays true in all five documents
+    that say it, the nav keeps the two groups of SPEC §9.2, and the §9.5
+    empty copy ("Add what you hold") finally describes the screen it is
+    on.
+61. **A pack with held assets cannot be disabled** — `setEnabledPacks`
+    refuses with `pack_in_use`. `readLedger` activates the packs of held
+    assets whatever the setting says, so the holdings would keep being
+    priced and valued while Settings claimed the pack was off. The
+    refusal makes the setting mean what it says.
+62. **Refresh is debounced server-side on its own cookie; overlapping
+    runs are safe by idempotence; no lease.** The cookie existed from
+    P2-U4 but only the strip read it, so ten clicks scheduled ten job
+    chains. A lease was rejected: a lease row is new user data (decision
+    52 forbids), a Postgres advisory lock cannot span PostgREST's
+    per-request transactions, and a lease outliving a crashed run would
+    block the nightly cron — the failure it was meant to prevent, made
+    permanent.
+63. **Liveness is derived from the data, never logged.** Two missed
+    nightly price runs, a source with `last_error`, or a snapshot gap
+    nothing has written into for two trading days each raise a strip item
+    linking to Settings → Instance. D-19 chose `console.log` over a runs
+    table; with no error-reporting SaaS by design (SPEC §12) the app is
+    the only channel the owner has, and a self-hosted cron that dies
+    quietly is the failure most likely to rot an instance while its
+    carried-forward prices still look like numbers.
+64. **Transactions filters by asset, type and date range**, applied by
+    the database before paging; the pager preserves them; an invalid
+    value is ignored field by field, because a filter is navigation, not
+    input; the filtered count is shown. SPEC §9.1's own premise is a user
+    arriving with years of history, and the list had a pager and nothing
+    else. `?asset=` — the link Maturities already uses to record a sell —
+    now both filters the list and preselects the form, so the sell is
+    entered while that asset's own history is on screen.
+65. **Nothing is pruned in v1; growth is visible.** SPEC §8 states the
+    arithmetic (per pack ≈ series × 252 rows a year; per user ≈ assets ×
+    252 prices and as many snapshot rows) and Settings → Instance shows
+    the live counts, own tables exact and `series_points` estimated.
+66. **The root `SPEC.md` carries the accessibility floor (§10) and the
+    performance budgets (§8); `specs/SPEC.md` never holds a decision the
+    root lacks.** The acceptance criteria that drove Phases 2–5 were
+    written in `specs/` while the document that wins on features stayed
+    silent. `CLAUDE.md`'s precedence table now says so.
 
 ### Contract corrections found while implementing
 

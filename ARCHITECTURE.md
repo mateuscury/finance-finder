@@ -54,7 +54,11 @@ Out of scope. Do not build these unless `MILESTONES.md` explicitly schedules the
   never a credential the app holds.
 - Tax reporting, IR (Imposto de Renda) calculation, DARF generation, or any
   per-jurisdiction fiscal logic. Stay out of fiscal territory entirely — it
-  multiplies per-country liability faster than any other feature.
+  multiplies per-country liability faster than any other feature. Average cost,
+  open cost and unrealised gain are **position analytics** and stay (`SPEC.md`
+  §6): they answer "what is this holding doing". A fee-capitalised or
+  lot-elected cost computed to fill in a tax return is fiscal, and does not —
+  which is why cost here is trade cost before fees, and says so on screen.
 - Order execution. This is read-only analytics, not a trading platform.
 - Mobile-native apps. The web app must work in mobile browsers; no React Native
   or PWA work.

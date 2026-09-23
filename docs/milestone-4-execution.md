@@ -119,41 +119,52 @@ fallback so the run continues end to end.
 
 ## 1. Unit index
 
-| Unit  | Title                                                                   | Depends on   | Status         |
-| ----- | ----------------------------------------------------------------------- | ------------ | -------------- |
-| P0-U1 | Docs baseline: ARCHITECTURE §3, PACKS §5/§15/§16                        | —            | done `02b9cb4` |
-| P0-U2 | Stories US-009–US-014 and personas                                      | —            | done `57453cd` |
-| P0-U3 | Dependencies: Recharts, Playwright, e2e tier                            | —            | done `bc78150` |
-| P0-U4 | Neutrality: `INSTANCE_DEFAULTS`, the test, the lint changes             | —            | done `bc8a414` |
-| P0-U5 | `br.stock`: kind, fixtures, golden row                                  | P0-U4        | done `46c0c32` |
-| P1-U1 | Remote and CI (M-1)                                                     | —            | done `3420c29` |
-| P1-U2 | Prettier and dependency currency                                        | P1-U1        | done `04b23cc` |
-| P1-U3 | Typed client and `lib/env.ts`                                           | P1-U2        | done `78bd5ff` |
-| P1-U4 | Security headers and nonce CSP                                          | P1-U3        | done `a5e6a5f` |
-| P1-U5 | Reads and jobs: helpers, views, bounded reads, chunked writes, run logs | P1-U3        | done `49d01b9` |
-| P1-U6 | Restore hardening                                                       | P1-U5        | done `50087be` |
-| P1-U7 | Copy in two languages, test utilities, doc drift, one-factor rule       | P1-U3        | done `f90cb0e` |
-| P1-U8 | Coverage thresholds                                                     | P1-U7        | done `498004f` |
-| P2-U1 | Tokens, fonts, theme and `lang`                                         | P1-U8        | done `903d8f8` |
-| P2-U2 | `lib/format`                                                            | P2-U1        | done `78f9af2` |
-| P2-U3 | Shell: nav, toggles, privacy mode, loading/error                        | P2-U2        | done `fe782c2` |
-| P2-U4 | Status strip and Refresh                                                | P2-U3        | done `2977827` |
-| P2-U5 | Overview and the first-run card                                         | P2-U4        | done `419c2bb` |
-| P2-U6 | Review gate (M-2)                                                       | P2-U5        | done `42cf33a` |
-| P3-U1 | Snapshot readers and `seriesReturn`                                     | P2-U6        | done `aa6014d` |
-| P3-U2 | Performance                                                             | P3-U1        | done `311e4e5` |
-| P3-U3 | Allocation                                                              | P3-U1        | done `df1bf25` |
-| P4-U1 | Contribution and attribution drill-in                                   | P3-U1        | done `186c88b` |
-| P4-U2 | Maturities                                                              | P3-U1        | done `55927d5` |
-| P5-U1 | Schema-driven fields and the asset form                                 | P2-U6        | done `233cbf9` |
-| P5-U2 | Assets, Transactions and Import designed                                | P5-U1        | done `5ff08c2` |
-| P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1        | done `884ee05` |
-| P6-U1 | Synthetic ledger and performance budgets                                | P4-U2, P5-U3 | not started    |
-| P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1        | not started    |
-| P7-U2 | Accessibility pass                                                      | P7-U1        | not started    |
-| P8-U1 | Fixtures re-recorded; packs `supported` (M-3)                           | P7-U2        | not started    |
-| P8-U2 | Deploy runbook, `.env.example`, release gate green                      | P8-U1        | not started    |
-| P9-U1 | First deploy with the maintainer (M-4)                                  | P8-U2        | not started    |
+| Unit  | Title                                                                   | Depends on | Status         |
+| ----- | ----------------------------------------------------------------------- | ---------- | -------------- |
+| P0-U1 | Docs baseline: ARCHITECTURE §3, PACKS §5/§15/§16                        | —          | done `02b9cb4` |
+| P0-U2 | Stories US-009–US-014 and personas                                      | —          | done `57453cd` |
+| P0-U3 | Dependencies: Recharts, Playwright, e2e tier                            | —          | done `bc78150` |
+| P0-U4 | Neutrality: `INSTANCE_DEFAULTS`, the test, the lint changes             | —          | done `bc8a414` |
+| P0-U5 | `br.stock`: kind, fixtures, golden row                                  | P0-U4      | done `46c0c32` |
+| P1-U1 | Remote and CI (M-1)                                                     | —          | done `3420c29` |
+| P1-U2 | Prettier and dependency currency                                        | P1-U1      | done `04b23cc` |
+| P1-U3 | Typed client and `lib/env.ts`                                           | P1-U2      | done `78bd5ff` |
+| P1-U4 | Security headers and nonce CSP                                          | P1-U3      | done `a5e6a5f` |
+| P1-U5 | Reads and jobs: helpers, views, bounded reads, chunked writes, run logs | P1-U3      | done `49d01b9` |
+| P1-U6 | Restore hardening                                                       | P1-U5      | done `50087be` |
+| P1-U7 | Copy in two languages, test utilities, doc drift, one-factor rule       | P1-U3      | done `f90cb0e` |
+| P1-U8 | Coverage thresholds                                                     | P1-U7      | done `498004f` |
+| P2-U1 | Tokens, fonts, theme and `lang`                                         | P1-U8      | done `903d8f8` |
+| P2-U2 | `lib/format`                                                            | P2-U1      | done `78f9af2` |
+| P2-U3 | Shell: nav, toggles, privacy mode, loading/error                        | P2-U2      | done `fe782c2` |
+| P2-U4 | Status strip and Refresh                                                | P2-U3      | done `2977827` |
+| P2-U5 | Overview and the first-run card                                         | P2-U4      | done `419c2bb` |
+| P2-U6 | Review gate (M-2)                                                       | P2-U5      | done `42cf33a` |
+| P3-U1 | Snapshot readers and `seriesReturn`                                     | P2-U6      | done `aa6014d` |
+| P3-U2 | Performance                                                             | P3-U1      | done `311e4e5` |
+| P3-U3 | Allocation                                                              | P3-U1      | done `df1bf25` |
+| P4-U1 | Contribution and attribution drill-in                                   | P3-U1      | done `186c88b` |
+| P4-U2 | Maturities                                                              | P3-U1      | done `55927d5` |
+| P5-U1 | Schema-driven fields and the asset form                                 | P2-U6      | done `233cbf9` |
+| P5-U2 | Assets, Transactions and Import designed                                | P5-U1      | done `5ff08c2` |
+| P5-U3 | Cash flows, Settings, Login/MFA/reset designed                          | P5-U1      | done `884ee05` |
+| G-U1  | Spec gaps: the SPEC states what the tree decided (`gaps.md`)            | P5-U3      | not started    |
+| G-U2  | Spec gaps: open cost in the kernel; the holdings model                  | G-U1       | not started    |
+| G-U3  | Spec gaps: Assets shows what you hold; the asset page's lots            | G-U2       | not started    |
+| G-U4  | Spec gaps: Transactions filters; the `oversell` write guard             | G-U1       | not started    |
+| G-U5  | Spec gaps: liveness, Instance, `pack_in_use`, the Refresh guard         | G-U1       | not started    |
+| G-U6  | Spec gaps: the runbook absorbs them (P6–P8 amended); stories ticked     | G-U3–G-U5  | not started    |
+| P6-U1 | Synthetic ledger and performance budgets                                | G-U6       | not started    |
+| P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1      | not started    |
+| P7-U2 | Accessibility pass                                                      | P7-U1      | not started    |
+| P8-U1 | Fixtures re-recorded; packs `supported` (M-3)                           | P7-U2      | not started    |
+| P8-U2 | Deploy runbook, `.env.example`, release gate green                      | P8-U1      | not started    |
+| P9-U1 | First deploy with the maintainer (M-4)                                  | P8-U2      | not started    |
+
+The `G-U*` units are specified in `docs/milestone-4-gaps.md` (its §1 is their
+live status; tick both indexes in the unit's own commit). They close what the
+Phase 5 review found: decisions the tree made that `SPEC.md` never recorded, and
+the product holes it never contemplated.
 
 **Blocked:** (none yet)
 

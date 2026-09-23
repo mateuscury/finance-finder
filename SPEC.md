@@ -296,8 +296,27 @@ zero. An adapter must reject data it cannot normalize safely.
 
 ## 6. Calculations (`lib/calc/`) — all pure functions
 
-**Positions** (`positions.ts`): `sum(signed quantity) per asset` from
-transactions up to a date. No stored balances.
+**Positions** (`positions.ts`): **lots**, derived from the ledger, never stored.
+Transactions are processed in `(tradeDate, rank, id)` order with
+`buy < dividend = interest = fee < sell`, so a same-day round trip never
+oversells. A buy opens a lot; a sell consumes lots **FIFO**; dividend, interest
+and fee touch no lot. Lots are kept rather than a bare quantity because
+`accrual` values each lot from its own purchase date.
+
+A sell beyond the open position is `oversell`. It is **refused at write** — by
+the transaction form, by an edit that would leave later sells uncovered, and by
+the CSV import's preview (§9.1) — so the ledger cannot normally hold one. A
+ledger that does (a restored backup, which the database writes without running
+the kernel — §12.3) is **shown, not computed**: the asset's row says so and
+every derived screen says so, rather than failing.
+
+**Cost** (`positions.ts`): `openCost = Σ quantity × unitPrice` over the open
+lots, `averageCost = openCost / quantity` (null at zero quantity), and
+`unrealised = market value native − open cost`. All three are **trade cost
+before fees**, and are labelled so on screen. Fees are not capitalised into
+cost: a fee-inclusive average is the fiscal "preço médio", which ARCHITECTURE §2
+keeps out of this project permanently. Fees enter the figures that are about
+money in and out — `investedFlows`, `netInvested`, Contribution and MWR.
 
 **Valuation → base** (`valuation/` + `fx.ts`): value each holding natively via
 its strategy, then convert:
@@ -389,7 +408,24 @@ time budget runs out mid-rebuild, the status strip shows _history rebuilding
 A → B of today_ derived from the gap between the marker and the last business
 day, and the next trigger continues from where it stopped. Real portfolios
 have years × assets of daily rows; this is why the job is resumable rather
-than synchronous.
+than synchronous. A gap that stops closing is a stalled rebuild, and the strip
+says so rather than repeating _rebuilding_ forever (§9.2).
+
+**Growth.** Nothing is pruned in v1, and the arithmetic is small enough to say
+why. Per pack, `series_points` grows by roughly `series × 252` rows a year — a
+few thousand, shared by every user of the instance. Per user, `prices` and
+`portfolio_snapshots` each grow by roughly `assets × 252` rows a year: a
+twenty-asset ledger over ten years is about 100k rows in each, comfortably
+inside a free Postgres tier. Settings → Instance (§12.3) shows the live counts
+so the estimate is never the only evidence. Ingested price history is also the
+part of a lost database that cannot be re-fetched (§12.3), which is an argument
+for exporting backups, not for deleting rows.
+
+**Budgets.** Over a five-year, twenty-asset ledger: `runSnapshots` builds at
+least 50 days per second; every read a page performs is under 500 ms at p50; and
+`parseCsv` reads a 20,000-row file in under 500 ms. Measured numbers, the
+machine they were measured on and how to re-run them live in
+`docs/performance-budgets.md`.
 
 ---
 
@@ -398,21 +434,48 @@ than synchronous.
 Ten screens. Server components fetch; client components handle toggles/forms.
 
 1. **Overview** — total value in base currency, day/period change, allocation
-   donut, sparkline of portfolio value, top movers.
+   donut, sparkline of portfolio value, top movers. **Top movers** are the five
+   largest absolute base-currency changes between the last two snapshot dates,
+   confident rows only: a stale row on either date drops that asset rather than
+   reporting a move that the data does not support.
 2. **Performance** — portfolio TWR vs a togglable set of benchmark-role series;
-   MWR/XIRR figure; nominal-vs-real toggle (uses a deflator-role series).
+   MWR/XIRR figure; nominal-vs-real toggle (uses a deflator-role series). The
+   **period selector** is `1m · ytd · 1y · all`, shared with screen 4: each
+   period's nominal start resolves to the latest snapshot date at or before it,
+   so the first sub-period has a start value to chain from; the default is `all`
+   while the history is shorter than a year and `1y` after that; a period with no
+   snapshot at or before its start is not offered.
 3. **Allocation** — by instrument kind, by pack/country, by currency; native vs
    base exposure.
-4. **Contribution** — per-asset contribution bars for the period; drill into any
-   foreign-currency asset to see asset-vs-FX attribution.
+4. **Contribution** — per-asset contribution bars for the period (screen 2's
+   selector); drill into any foreign-currency asset to see asset-vs-FX
+   attribution.
 5. **Maturities** — fixed-income ladder: upcoming maturities and the cash flow
    each generates; timeline view.
-6. **Assets** — list + create/edit. The entry form picks pack → instrument kind →
-   (kind-specific metadata fields validated by the pack's zod schema) → native
-   currency.
+6. **Assets** — **the positions screen**, and the registry. Each row carries the
+   holding's quantity today from its FIFO lots (§6), average cost and open cost
+   _before fees_, the latest price with its state, market value in the base
+   currency, and unrealised gain with a sign and an arrow. An asset with no
+   transactions shows "—" rather than a zero; an unpriced or stale holding shows
+   no unrealised figure, because a gain computed off a price the app does not
+   trust is worse than no figure (§11). The table's foot carries the confident
+   total and, when any holding is outside it, says how many. The asset's own page
+   lists its open lots and adds/edits it: the entry form picks pack → instrument
+   kind → (kind-specific metadata fields validated by the pack's zod schema) →
+   native currency.
 7. **Transactions** — list + create/edit; editing recomputes everything (§1.1).
-   Also the home of **CSV import** (§9.1), the bulk path into the ledger.
-8. **Cash flows** — deposits/withdrawals entry (feeds TWR/MWR).
+   The list **filters** by asset, type and date range, because §9.1's own premise
+   is a user arriving with years of history; filters are applied by the database
+   before paging, the pager preserves them, an invalid filter value is ignored
+   field by field (a filter is navigation, not input), and the filtered count is
+   shown. `?asset=` — the link Maturities uses to record a sell — both filters
+   the list and preselects the form, so the sell is entered with that asset's own
+   history on screen. Also the home of **CSV import** (§9.1), the bulk path into
+   the ledger.
+8. **Cash flows** — deposits/withdrawals entry (feeds TWR/MWR), in the base
+   currency only (`MILESTONES.md` §2 decision 25). The column exists for a
+   multi-currency ledger and the kernel already converts at the flow date;
+   entering one is Milestone 5.
 9. **Settings** — base currency, enabled packs, theme, locale; security
    (change password, enrol/remove TOTP, sign out everywhere — §9.6); your data
    (export, backup reminder, delete everything — §12).
@@ -443,7 +506,11 @@ broker-specific parsers.
 
 **Dry-run first, always.** Upload parses and validates but writes nothing. The
 preview shows, per row: parsed values, validation errors, and whether the row
-looks like a duplicate. The user commits explicitly.
+looks like a duplicate. A sell the ledger cannot cover is one of those validation
+errors (`oversell`, §6, §11) — checked over the existing rows **plus the whole
+file** in trade-date order, so a buy further down the file still covers a sell
+above it when the buy is the earlier trade, and only a sell genuinely exceeding
+the position on its date is marked. The user commits explicitly.
 
 **Commit is all-or-nothing.** One transaction; any unresolved error aborts the
 whole file. A half-imported ledger silently corrupts every downstream figure,
@@ -483,6 +550,22 @@ pending: _N assets unpriced_ (§9.4), _history rebuilding 2019-03-01 → 2021-07
 of 2026-09-05_ (§8), _source br.brapi disabled: BRAPI_TOKEN not set_. Each item
 links to the screen that resolves it. It carries a single **Refresh** control
 (§9.4) and nothing else — it is a status line, not a toolbar.
+
+**Liveness.** The strip is also where the owner learns that the instance stopped
+working, because there is no other channel: this project ships no
+error-reporting SaaS by design (§12), so a cron that dies would otherwise rot an
+instance in silence while stale prices carried forward. Three further items,
+each derived from the data itself — never from a log, never from a new table:
+
+| Item                                                   | When                                                                                                                                                                                 |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| _no price run since 2026-09-12 — check the crons_      | The latest `ingest_cursors.last_run_at` across the user's activated sources is older than two trading days, and they hold something. Silent for an account's first two trading days. |
+| _source br.brapi failing: 429_                         | That source's `ingest_cursors.last_error` is set.                                                                                                                                    |
+| _history stopped at 2026-09-10; last built 2026-09-11_ | A snapshot gap exists (§8) **and** nothing has been written into it for two trading days — the rebuild is stalled, not progressing.                                                  |
+
+Each links to Settings → **Instance** (§12.3), which states per source its last
+run and its last error, the snapshot marker with the time it was last written,
+and the instance's row counts.
 
 ### 9.3 First run
 
@@ -533,23 +616,33 @@ the scoped fetch for every currently unpriced asset and advances snapshot
 rebuilding (§8). It reuses the cron code paths under the cron's time budget;
 it is not a third cron and adds no scheduled job.
 
+Refresh is **debounced on the server**: while a run it started is still within
+its window it schedules nothing and says so, so ten impatient clicks are one
+run. Overlapping runs are nonetheless safe rather than merely unlikely — a
+Refresh during the nightly cron duplicates fetches under the same per-source
+rate limit, and every write is an idempotent upsert keyed by date (§7, §8).
+There is deliberately **no lease**: a lease row would be new user data (which
+this milestone's migrations exclude), a Postgres advisory lock cannot span
+PostgREST's per-request transactions, and a lease outliving a crashed run would
+block the nightly cron — the failure it was meant to prevent, made permanent.
+
 ### 9.5 Empty states
 
 Every derived screen, with no data, names what it _will_ show and links to the
 action that unblocks it. Never a blank chart; never a fake zero.
 
-| Screen                          | Needs                                                 | Empty copy → link                                                                                                             |
-| ------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Overview headline               | ≥ 1 priced position                                   | "—" with _N assets unpriced_ → Assets                                                                                         |
-| Overview sparkline / day change | ≥ 2 snapshots                                         | "History starts after tonight's snapshot."                                                                                    |
-| Performance                     | ≥ 2 snapshots **and** ≥ 1 `benchmark` series ingested | "Needs two days of history to plot a return." / "Benchmarks arrive with the nightly ingest."                                  |
-| Allocation                      | ≥ 1 priced position                                   | "Nothing to allocate yet." → Assets                                                                                           |
-| Contribution                    | snapshots spanning the chosen period                  | "Contribution needs history across the period."                                                                               |
-| Maturities                      | ≥ 1 asset whose kind has maturity metadata            | "No fixed-income holdings yet. Add a Tesouro Direto, CDB, LCI…" → Assets                                                      |
-| Assets                          | —                                                     | "Add what you hold." + "or import a CSV — unknown identifiers can be created from the preview."                               |
-| Transactions                    | —                                                     | "No transactions yet." + Add · Import CSV                                                                                     |
-| Cash flows                      | —                                                     | "Deposits and withdrawals are what separate your return from your contributions." + Add                                       |
-| Login                           | —                                                     | Email + password only. No signup link. One line: "Single-owner instance — the account is created with `pnpm bootstrap:user`." |
+| Screen                          | Needs                                                 | Empty copy → link                                                                                                                                 |
+| ------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview headline               | ≥ 1 priced position                                   | "—" with _N assets unpriced_ → Assets                                                                                                             |
+| Overview sparkline / day change | ≥ 2 snapshots                                         | "History starts after tonight's snapshot."                                                                                                        |
+| Performance                     | ≥ 2 snapshots **and** ≥ 1 `benchmark` series ingested | "Needs two days of history to plot a return." / "Benchmarks arrive with the nightly ingest."                                                      |
+| Allocation                      | ≥ 1 priced position                                   | "Nothing to allocate yet." → Assets                                                                                                               |
+| Contribution                    | snapshots spanning the chosen period                  | "Contribution needs history across the period."                                                                                                   |
+| Maturities                      | ≥ 1 asset whose kind has maturity metadata            | "No fixed-income holdings yet. Add a Tesouro Direto, CDB, LCI…" → Assets                                                                          |
+| Assets                          | —                                                     | "Add what you hold." + "or import a CSV — unknown identifiers can be created from the preview." An asset with no transactions shows quantity "—". |
+| Transactions                    | —                                                     | "No transactions yet." + Add · Import CSV                                                                                                         |
+| Cash flows                      | —                                                     | "Deposits and withdrawals are what separate your return from your contributions." + Add                                                           |
+| Login                           | —                                                     | Email + password only. No signup link. One line: "Single-owner instance — the account is created with `pnpm bootstrap:user`."                     |
 
 A position with quantity but no price renders with its quantity and
 _unpriced_, never a value of zero; a stale one renders its last value with the
@@ -611,6 +704,24 @@ where space allows, a small arrow.
 legends where feasible. Benchmark comparison lines are muted; the portfolio line
 is the accent. Currency and percentage axes formatted per the user's `locale`.
 
+**Accessibility.** The floor, not an aspiration — this is the one screen-facing
+requirement a design system can guarantee rather than hope for:
+
+- **Contrast** meets WCAG AA in **both** themes: 4.5:1 for body text, 3:1 for
+  large text and for the boundary of any control or mark that carries meaning.
+  The token pairs are asserted by a test, not by eye.
+- **Focus** is always visible, and every control is reachable and operable by
+  keyboard in a sensible order. Nothing is hover-only.
+- **Motion**: `prefers-reduced-motion` stops chart animation and transitions.
+- **Width**: no horizontal scroll at 400 px. Tables that cannot fit become
+  stacked cards; a genuinely wide table scrolls inside its own container, never
+  the page.
+- **Announcements**: the status strip is `aria-live="polite"`; a form error names
+  the field in its copy, and marks it `aria-invalid` — never colour alone (as
+  with `--pos`/`--neg` above).
+
+The per-screen walk that proves it, dated, is `docs/accessibility.md`.
+
 ---
 
 ## 11. Edge cases (decide these once, here)
@@ -634,6 +745,27 @@ is the accent. Currency and percentage axes formatted per the user's `locale`.
   every snapshot from the earliest touched date forward is invalidated and
   rebuilt by the next snapshot run (§8) — never patched in place, never left
   stale.
+- **A sell beyond the open position** is `oversell` (§6). It is refused at write
+  by the transaction form, by an edit that would leave later sells uncovered, and
+  by the import preview, which marks the row and blocks the commit like any other
+  row error. It is refused rather than clamped or allowed to go negative because
+  a negative position poisons every figure downstream silently, while a refusal
+  names the row that is wrong. Only a restored backup can introduce one, since
+  `restore_backup` is a database transaction and cannot run the kernel; that
+  ledger is shown with the asset marked, not computed.
+- **Disabling a pack whose assets are still held** is refused (`pack_in_use`).
+  The setting would otherwise be a lie: a held asset's pack is activated for
+  valuation whatever the setting says, so the holding would keep being priced and
+  valued while Settings claimed the pack was off. Delete or re-home the assets
+  first.
+- **A stale date is not a valuation point.** A date enters the TWR chain and the
+  cumulative line only when _every_ asset with open lots on it has a confident
+  row — no stale row, and no holding missing a row because it was unpriced (an
+  unpriced holding leaves no row at all, so the row count is compared with the
+  open holdings). A failing date is excluded, drawn as a gap, and counted: the
+  screen states the span the figures cover and how many days were left out. Its
+  confident total omits a holding, and chaining it would read as a move that
+  never happened.
 
 ---
 
@@ -675,6 +807,18 @@ parameter, and a URL in a log is a token in a log. Enforced by review; a
 helper in `lib/packs/http.ts` redacts before anything reaches a logger.
 
 ### 12.3 Your data (Settings)
+
+**Instance.** What the strip's liveness items (§9.2) link to, and the one place
+the owner can see whether the machinery is running. Per source of the activated
+packs: its last run, its last error as a reason phrase, or _disabled_ with the
+name of the environment variable it wants. Then the snapshot marker — the date
+history is built through, and when that was last written. Then the row counts:
+assets, transactions, cash flows, prices and snapshot rows exactly (through the
+owner's own RLS), and `series_points` approximately, labelled as the shared
+market data it is (§2). No value, no URL, no secret — the same rule as §12.2,
+because this block is the logging rule rendered as a screen. It states that
+nothing is pruned (§8) and that the export is what makes ingested history
+survivable.
 
 **Export.** Two files, dated: `transactions-YYYY-MM-DD.csv` in the §9.1
 canonical format — so the app's own import reads it back — and
