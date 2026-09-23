@@ -32,8 +32,6 @@ export interface HoldingPrice {
   /** Per unit, native currency — the kernel's `price_native`, an accrued unit value for `accrual` kinds. */
   native: string;
   date: IsoDate;
-  /** The source that priced it, where one did; null for a kernel-derived value. */
-  sourceId: string | null;
 }
 
 export interface HoldingModelRow {
@@ -47,6 +45,8 @@ export interface HoldingModelRow {
   currency: string;
   /** How the kind is valued, so the screen can say "accrues" rather than "unpriced". */
   valuation: AssetListItem["valuation"];
+  /** The source that prices this kind — named in the unpriced reason, where there is one. */
+  sourceId: string | null;
   /** Open quantity today. "0" for an asset that was never traded or is fully sold. */
   quantity: string;
   /** Null with no open position. Both are trade cost BEFORE fees (decision 59). */
@@ -115,6 +115,7 @@ export function holdingsModel(input: HoldingsInput): HoldingsModel {
       instrumentKind: asset.instrument_kind,
       currency: asset.native_currency,
       valuation: asset.valuation,
+      sourceId: asset.sourceId,
       quantity: "0",
       averageCost: null,
       openCost: null,
@@ -164,11 +165,7 @@ export function holdingsModel(input: HoldingsInput): HoldingsModel {
     const delta = marketValueNative.minus(cost);
     return {
       ...row,
-      price: {
-        native: toDecimalString(holding.priceNative),
-        date: holding.priceDate,
-        sourceId: asset.latest?.sourceId ?? null,
-      },
+      price: { native: toDecimalString(holding.priceNative), date: holding.priceDate },
       marketValueNative: toDecimalString(marketValueNative),
       marketValueBase: toDecimalString(holding.marketValueBase.amount),
       // A gain is reported only against a value the app stands behind (SPEC §11).

@@ -26,11 +26,15 @@ export default async function ContributionPage({ searchParams }: PageProps<"/con
   const currency = w.read.settings.base_currency;
   const c = copy.screens.contribution;
 
-  if (!w.period || !w.input) {
+  if (!w.period || !w.input || !w.start || !w.end) {
     return (
       <main>
         <h1>{c.title}</h1>
-        <p className="muted">{copy.empty.contribution}</p>
+        {w.oversold.length > 0 ? (
+          <p role="alert">{copy.errors.ledger({ n: w.oversold.length })}</p>
+        ) : (
+          <p className="muted">{copy.empty.contribution}</p>
+        )}
       </main>
     );
   }

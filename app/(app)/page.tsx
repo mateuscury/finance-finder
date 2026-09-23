@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { PACKS } from "@/packs";
 import { requireUser } from "@/lib/auth/session";
-import { valuePortfolio } from "@/lib/calc/portfolio";
 import { todayIso } from "@/lib/clock";
 import { copyFor } from "@/lib/copy";
-import { formatChange, formatDate, formatMoney, formatPercent, formatShare } from "@/lib/format";
+import { formatDate, formatMoney, formatShare } from "@/lib/format";
 import { countLedger } from "@/lib/ledger/queries";
 import { readLedger, toPortfolioInput } from "@/lib/ledger/rows";
 import { readSnapshotRowsAt, readSnapshotTotals } from "@/lib/ledger/snapshots";
 import { readStatus } from "@/lib/ledger/status";
 import { addDays } from "@/lib/calc/dates";
 import { Amount } from "./_components/amount";
+import { Change } from "./_components/change";
 import { Donut } from "./_charts/donut";
 import { Sparkline } from "./_charts/sparkline";
+import { valueLedger } from "./_lib/valuation";
 import { overviewModel, type FirstRunStep } from "./_models/overview";
 import styles from "./page.module.css";
 
@@ -41,7 +42,7 @@ export default async function OverviewPage() {
     lastDate ? readSnapshotRowsAt(client, lastDate) : Promise.resolve([]),
     prevDate ? readSnapshotRowsAt(client, prevDate) : Promise.resolve([]),
   ]);
-  const valuation = read.assets.length > 0 ? valuePortfolio(toPortfolioInput(read), today) : null;
+  const { valuation, oversold } = valueLedger(toPortfolioInput(read), today);
   const model = overviewModel({
     counts,
     settings: read.settings,
@@ -64,21 +65,14 @@ export default async function OverviewPage() {
       href: "/assets",
     },
   };
-  const change = (c: NonNullable<typeof model.dayChange>) => {
-    const money = formatChange(c.delta, currency, locale);
-    const pct = c.rate === null ? null : formatPercent(c.rate, locale);
-    const arrow = money.direction === "pos" ? "↑" : money.direction === "neg" ? "↓" : "→";
-    return (
-      <span className={`${styles.change} ${money.direction}`}>
-        <span aria-hidden="true">{arrow}</span> <Amount value={money.text} hiddenLabel={copy.nav.amountHidden} />
-        {pct ? <span className="figure"> ({pct.text})</span> : null}
-      </span>
-    );
-  };
+  const change = (c: NonNullable<typeof model.dayChange>) => (
+    <Change delta={c.delta} rate={c.rate} currency={currency} locale={locale} copy={copy} className={styles.change} />
+  );
 
   return (
     <main>
       <h1>{copy.screens.overview.title}</h1>
+      {oversold.length > 0 ? <p role="alert">{copy.errors.ledger({ n: oversold.length })}</p> : null}
 
       {model.firstRun ? (
         <section className={styles.card} aria-labelledby="first-run">

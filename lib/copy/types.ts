@@ -213,7 +213,31 @@ export interface Copy {
       editLink: string;
       save: string;
       delete: string;
-      columns: { asset: string; kind: string; currency: string; value: string; actions: string };
+      columns: {
+        asset: string;
+        kind: string;
+        quantity: string;
+        averageCost: string;
+        price: string;
+        value: string;
+        unrealised: string;
+        actions: string;
+      };
+      asOf: (p: { date: string }) => string;
+      /** An asset with no transactions: every figure is this, never a zero (SPEC §9.5). */
+      untraded: string;
+      /** The cost columns carry this note once: decision 59. */
+      beforeFees: string;
+      total: string;
+      outsideTotal: (p: { n: number }) => string;
+      /** The open lots behind one holding (SPEC §6). */
+      position: {
+        title: string;
+        help: string;
+        columns: { opened: string; quantity: string; unitPrice: string; cost: string };
+        none: string;
+        totals: string;
+      };
       unknownKind: (p: { kind: string }) => string;
       priced: (p: { source: string; date: string }) => string;
       retry: string;
@@ -431,6 +455,8 @@ export interface Copy {
     body: string;
     retry: string;
     loading: string;
+    /** A ledger whose sells exceed its buys: which screen figures are withheld, and why (SPEC §6). */
+    ledger: (p: { n: number }) => string;
   };
   /** This language's own name, for the language select (decision 34). */
   languageName: string;

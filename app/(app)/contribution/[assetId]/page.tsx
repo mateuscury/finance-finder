@@ -32,13 +32,17 @@ export default async function AttributionPage({ params, searchParams }: PageProp
       <Link href={w.period ? `/contribution?period=${w.period.key}` : "/contribution"}>{c.back}</Link>
     </p>
   );
-  if (!w.period || !w.input) {
+  if (!w.period || !w.input || !w.start || !w.end) {
     return (
       <main>
         <h1>
           {c.attribution} · {asset.identifier}
         </h1>
-        <p className="muted">{copy.empty.contribution}</p>
+        {w.oversold.length > 0 ? (
+          <p role="alert">{copy.errors.ledger({ n: w.oversold.length })}</p>
+        ) : (
+          <p className="muted">{copy.empty.contribution}</p>
+        )}
         {back}
       </main>
     );

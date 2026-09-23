@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { PACKS } from "@/packs";
 import { requireUser } from "@/lib/auth/session";
-import { valuePortfolio } from "@/lib/calc/portfolio";
 import { todayIso } from "@/lib/clock";
 import { copyFor, type ReasonCode } from "@/lib/copy";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
 import { readLedger, toPortfolioInput } from "@/lib/ledger/rows";
 import { Amount } from "@/app/(app)/_components/amount";
 import { ValueStatus } from "@/app/(app)/_components/value-status";
+import { valueLedger } from "@/app/(app)/_lib/valuation";
 import { maturitiesModel, type MaturityRow } from "@/app/(app)/_models/maturities";
 import styles from "./page.module.css";
 
@@ -26,7 +26,7 @@ export default async function MaturitiesPage() {
   const currency = read.settings.base_currency;
   const c = copy.screens.maturities;
   const input = toPortfolioInput(read);
-  const valuation = read.assets.length > 0 ? valuePortfolio(input, today) : null;
+  const { valuation, oversold } = valueLedger(input, today);
   const model = maturitiesModel({ read, input, today, valuation });
 
   const current = (r: MaturityRow) => {
@@ -68,6 +68,7 @@ export default async function MaturitiesPage() {
   return (
     <main>
       <h1>{c.title}</h1>
+      {oversold.length > 0 ? <p role="alert">{copy.errors.ledger({ n: oversold.length })}</p> : null}
       {model.empty ? (
         <p className="muted">
           {copy.empty.maturities} <Link href="/assets">{copy.nav.assets}</Link>
