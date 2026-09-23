@@ -217,3 +217,69 @@ describe("manual prices and cash flows", () => {
     expect(row.data).toEqual({ amount: "-100.5000000000", currency: "BRL" });
   });
 });
+
+describe("decision 58 — a sell beyond the position is refused at write", () => {
+  const sell = (assetId: string, quantity: string, tradeDate = "2026-03-02") => ({
+    asset_id: assetId,
+    trade_date: tradeDate,
+    type: "sell",
+    quantity,
+    unit_price: "120",
+    currency: "BRL",
+    fees: "0",
+    note: null,
+  });
+
+  it("refuses a create, refuses an edit that uncovers later sells, and writes nothing either time", async () => {
+    const a = await newUser();
+    const client = await a.signIn();
+    const created = await createAsset(client, PACKS, a.userId, { ...fii, identifier: "OVER11" });
+    const assetId = created.ok ? created.value.id : "";
+    const bought = await createTransaction(client, a.userId, buy(assetId)); // 10 units
+    expect(bought.ok).toBe(true);
+    const buyId = bought.ok ? bought.value.id : "";
+
+    // A sell of 100 against a position of 10.
+    expect(await createTransaction(client, a.userId, sell(assetId, "-100"))).toEqual({
+      ok: false,
+      reason: "oversell",
+      fields: ["quantity"],
+    });
+    const after = await client
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("asset_id", assetId);
+    expect(after.count).toBe(1); // nothing was written
+
+    // Exactly the position is fine.
+    const full = await createTransaction(client, a.userId, sell(assetId, "-10"));
+    expect(full.ok).toBe(true);
+
+    // Now lowering the BUY would leave that sell uncovered — the edit is
+    // refused even though the edited row is itself a buy.
+    expect(await updateTransaction(client, buyId, { ...buy(assetId), quantity: "4" })).toEqual({
+      ok: false,
+      reason: "oversell",
+      fields: ["quantity"],
+    });
+    const stillTen = await client.from("transactions").select("quantity::text").eq("id", buyId).single();
+    expect((stillTen.data as { quantity: string }).quantity).toBe("10.0000000000");
+  });
+
+  it("allows a sell whose covering buy is backdated before it, and refuses one dated before every buy", async () => {
+    const a = await newUser();
+    const client = await a.signIn();
+    const created = await createAsset(client, PACKS, a.userId, { ...fii, identifier: "BACK11" });
+    const assetId = created.ok ? created.value.id : "";
+    expect((await createTransaction(client, a.userId, buy(assetId))).ok).toBe(true); // 10 on 2026-02-02
+
+    // FIFO is by trade date, so a sell BEFORE the buy has nothing to consume.
+    expect(await createTransaction(client, a.userId, sell(assetId, "-5", "2026-01-15"))).toEqual({
+      ok: false,
+      reason: "oversell",
+      fields: ["quantity"],
+    });
+    // The same sell after the buy is fine.
+    expect((await createTransaction(client, a.userId, sell(assetId, "-5", "2026-02-03"))).ok).toBe(true);
+  });
+});

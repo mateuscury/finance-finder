@@ -6,6 +6,7 @@
 import type { Db, TableName, UserTable } from "@/lib/supabase/types";
 import type { MarketPack } from "@/packs/types";
 import { readAll } from "@/lib/supabase/paginate";
+import type { TransactionFilter } from "./schemas";
 import {
   ASSET_SELECT,
   CASH_FLOW_SELECT,
@@ -92,15 +93,29 @@ export interface Page<T> {
   total: number;
 }
 
+/**
+ * The subset of the PostgREST builder a list filter uses. Narrow on purpose:
+ * a filter may only narrow rows, never change the select, the order or the
+ * range, which `pageOf` owns.
+ */
+export type Filterable = {
+  eq(column: string, value: unknown): Filterable;
+  gte(column: string, value: unknown): Filterable;
+  lte(column: string, value: unknown): Filterable;
+};
+
 async function pageOf<T>(
   client: Db,
   table: TableName,
   select: string,
   order: string[],
   page: number,
+  /** Applied BEFORE `.order()` and `.range()`, so the database filters and counts, not the page. */
+  apply?: (q: Filterable) => Filterable,
 ): Promise<Page<T>> {
   const from = (page - 1) * LIST_PAGE_SIZE;
   let q = client.from(table).select(select, { count: "exact" });
+  if (apply) q = apply(q as never) as never;
   for (const col of order) q = q.order(col.replace(/^-/, ""), { ascending: !col.startsWith("-") });
   const { data, error, count } = await q.range(from, from + LIST_PAGE_SIZE - 1);
   if (error) throw new Error(`ledger: ${table} page (${error.code ?? "unknown"})`);
@@ -112,10 +127,26 @@ export interface TransactionListItem extends TransactionDbRow {
   assetName: string;
 }
 
-export async function listTransactions(client: Db, page = 1): Promise<Page<TransactionListItem>> {
+/**
+ * One page of the ledger, narrowed by the list's filter (decision 64). The
+ * filter is applied by the database, so `count` is the FILTERED count and a
+ * user with years of history pages through what they asked for.
+ */
+export async function listTransactions(
+  client: Db,
+  page = 1,
+  filter: TransactionFilter = {},
+): Promise<Page<TransactionListItem>> {
   const result = await pageOf<
     TransactionDbRow & { assets: { identifier: string; name: string } | { identifier: string; name: string }[] | null }
-  >(client, "transactions", `${TRANSACTION_SELECT},assets!inner(identifier,name)`, ["-trade_date", "id"], page);
+  >(client, "transactions", `${TRANSACTION_SELECT},assets!inner(identifier,name)`, ["-trade_date", "id"], page, (q) => {
+    let out = q;
+    if (filter.asset) out = out.eq("asset_id", filter.asset);
+    if (filter.type) out = out.eq("type", filter.type);
+    if (filter.from) out = out.gte("trade_date", filter.from);
+    if (filter.to) out = out.lte("trade_date", filter.to);
+    return out;
+  });
   return {
     ...result,
     rows: result.rows.map((r) => {

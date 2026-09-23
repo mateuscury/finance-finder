@@ -79,3 +79,43 @@ export const BaseCurrencyInputSchema = z.object({
 export function failedFields(error: z.ZodError): string[] {
   return [...new Set(error.issues.map((i) => String(i.path[0] ?? "")).filter((p) => p !== ""))];
 }
+
+/**
+ * The Transactions list's filter (SPEC §9 screen 7; MILESTONES.md §4
+ * decision 64). A filter is NAVIGATION, not input: an unusable value is
+ * dropped field by field and the rest of the filter still applies, because
+ * refusing the whole page over a mistyped date would be the worse answer.
+ * Nothing here reaches a write.
+ */
+export const TransactionFilterSchema = z.object({
+  asset: z.uuid().optional(),
+  type: z.enum(["buy", "sell", "dividend", "interest", "fee"]).optional(),
+  from: RealDate.optional(),
+  to: RealDate.optional(),
+});
+export type TransactionFilter = z.infer<typeof TransactionFilterSchema>;
+
+export function parseTransactionFilter(params: Record<string, string | string[] | undefined>): TransactionFilter {
+  const one = (v: string | string[] | undefined) => (typeof v === "string" && v !== "" ? v : undefined);
+  const keep = <T>(result: { success: boolean; data?: T }) => (result.success ? result.data : undefined);
+  const filter: TransactionFilter = {
+    asset: keep(TransactionFilterSchema.shape.asset.safeParse(one(params.asset))),
+    type: keep(TransactionFilterSchema.shape.type.safeParse(one(params.type))),
+    from: keep(TransactionFilterSchema.shape.from.safeParse(one(params.from))),
+    to: keep(TransactionFilterSchema.shape.to.safeParse(one(params.to))),
+  };
+  // An end before the start would select nothing; keep the start and drop the
+  // end, which is what the person meant to narrow.
+  if (filter.from && filter.to && filter.to < filter.from) filter.to = undefined;
+  return filter;
+}
+
+/** Whether any field is set — the list shows its count and a Clear link only then. */
+export function hasFilter(filter: TransactionFilter): boolean {
+  return Object.values(filter).some((v) => v !== undefined);
+}
+
+/** The filter as query parameters, for a pager link that must keep it. */
+export function filterQuery(filter: TransactionFilter): Record<string, string> {
+  return Object.fromEntries(Object.entries(filter).filter(([, v]) => v !== undefined)) as Record<string, string>;
+}

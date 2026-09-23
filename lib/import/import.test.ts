@@ -132,6 +132,56 @@ describe("dryRun", () => {
   });
 });
 
+describe("dryRun oversell (SPEC §9.1, §6; decision 58)", () => {
+  const sell = (over: Record<string, string> = {}) => row({ type: "sell", quantity: "-100", ...over });
+
+  it("marks a sell the ledger cannot cover, and blocks the commit like any other row error", () => {
+    const run = dryRun(HEADER, [sell({ date: "2024-04-01" })], {}, [FII], [], PACKS);
+    if (!run.ok) throw new Error("run failed");
+    expect(run.rows[0].oversell).toBe(true);
+    expect(run.rows[0].errors).toContain("quantity");
+    expect(run.counts.errors).toBe(1);
+    expect(planCommit(run, run.previewHash, new Set())).toMatchObject({ ok: false, reason: "rows_have_errors" });
+  });
+
+  it("does NOT mark a sell a buy further down the file covers, when the buy is the earlier trade", () => {
+    // The sell is row 0 and dated AFTER the buy on row 1: FIFO orders by trade
+    // date, not by file order, so the file covers itself.
+    const run = dryRun(
+      HEADER,
+      [sell({ date: "2024-04-01", quantity: "-100" }), row({ date: "2024-03-14", quantity: "100" })],
+      {},
+      [FII],
+      [],
+      PACKS,
+    );
+    if (!run.ok) throw new Error("run failed");
+    expect(run.rows.map((r) => r.oversell)).toEqual([false, false]);
+    expect(run.counts.errors).toBe(0);
+  });
+
+  it("counts the existing ledger, so a sell covered by rows already in the database is fine", () => {
+    const existing = [{ asset_id: FII.id, trade_date: "2024-01-02", type: "buy", quantity: "100", unit_price: "150" }];
+    const run = dryRun(HEADER, [sell({ date: "2024-04-01" })], {}, [FII], existing, PACKS);
+    if (!run.ok) throw new Error("run failed");
+    expect(run.rows[0].oversell).toBe(false);
+    expect(run.counts.errors).toBe(0);
+  });
+
+  it("names every offending row, not just the first", () => {
+    const run = dryRun(
+      HEADER,
+      [sell({ date: "2024-04-01", quantity: "-5" }), sell({ date: "2024-04-02", quantity: "-7" })],
+      {},
+      [FII],
+      [],
+      PACKS,
+    );
+    if (!run.ok) throw new Error("run failed");
+    expect(run.rows.map((r) => r.oversell)).toEqual([true, true]);
+  });
+});
+
 describe("planCommit", () => {
   const fresh = () => dryRun(HEADER, [row(), row({ date: "2024-03-15" })], {}, [FII], [], PACKS);
 

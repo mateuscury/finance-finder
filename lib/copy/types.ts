@@ -258,6 +258,19 @@ export interface Copy {
       edit: string;
       save: string;
       delete: string;
+      /** The list's filter (SPEC §9 screen 7; decision 64). */
+      filter: {
+        label: string;
+        asset: string;
+        type: string;
+        from: string;
+        to: string;
+        all: string;
+        apply: string;
+        clear: string;
+        showing: (p: { n: number }) => string;
+        none: string;
+      };
       import: string;
       addAssetFirst: string;
       imported: (p: { n: number; skipped: number }) => string;

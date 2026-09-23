@@ -103,3 +103,45 @@ describe("pages and counts", () => {
     await expect(listTransactions(client)).rejects.toThrow(/^ledger: transactions page \(42501\)$/);
   });
 });
+
+describe("listTransactions filters (decision 64)", () => {
+  const rows = [
+    {
+      id: "t1",
+      asset_id: "a1",
+      trade_date: "2026-01-05",
+      type: "sell",
+      quantity: "-1",
+      unit_price: "1",
+      currency: "BRL",
+      fees: "0",
+      fx_rate: null,
+      assets: { identifier: "HGLG11", name: "HGLG11" },
+    },
+  ];
+
+  it("applies asset, type and both dates as database filters, and pages the filtered count", async () => {
+    const { client, calls } = fakeClient({ transactions: { select: { data: rows, count: 140 } } });
+    const page = await listTransactions(client, 2, {
+      asset: "11111111-1111-4111-8111-111111111111",
+      type: "sell",
+      from: "2026-01-01",
+      to: "2026-06-30",
+    });
+    expect(calls[0].filters).toEqual([
+      ["asset_id", "eq", "11111111-1111-4111-8111-111111111111"],
+      ["type", "eq", "sell"],
+      ["trade_date", "gte", "2026-01-01"],
+      ["trade_date", "lte", "2026-06-30"],
+    ]);
+    // The count is the FILTERED count — what the pager and the "n match" line use.
+    expect(page.total).toBe(140);
+    expect(page.page).toBe(2);
+  });
+
+  it("issues no filter at all when none is set", async () => {
+    const { client, calls } = fakeClient({ transactions: { select: { data: rows, count: 1 } } });
+    await listTransactions(client);
+    expect(calls[0].filters).toEqual([]);
+  });
+});

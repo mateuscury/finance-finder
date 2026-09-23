@@ -8,14 +8,28 @@ export function pageNumber(param: string | string[] | undefined): number {
   return Number.isFinite(n) && n >= 1 ? n : 1;
 }
 
-export function Pager({ href, page, total, copy }: { href: string; page: number; total: number; copy: Copy }) {
+export function Pager({
+  href,
+  page,
+  total,
+  copy,
+  query,
+}: {
+  href: string;
+  page: number;
+  total: number;
+  copy: Copy;
+  /** Carried into every page link, so paging never silently drops a filter. */
+  query?: Record<string, string>;
+}) {
   const pages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
   if (pages <= 1) return null;
+  const to = (n: number) => `${href}?${new URLSearchParams({ ...query, page: String(n) }).toString()}`;
   return (
     <nav className="pager" aria-label={copy.screens.pager.label}>
-      {page > 1 ? <Link href={`${href}?page=${page - 1}`}>{copy.screens.pager.previous}</Link> : null}
+      {page > 1 ? <Link href={to(page - 1)}>{copy.screens.pager.previous}</Link> : null}
       <span>{copy.screens.pager.of({ page, pages, total })}</span>
-      {page < pages ? <Link href={`${href}?page=${page + 1}`}>{copy.screens.pager.next}</Link> : null}
+      {page < pages ? <Link href={to(page + 1)}>{copy.screens.pager.next}</Link> : null}
     </nav>
   );
 }

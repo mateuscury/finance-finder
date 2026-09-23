@@ -3,7 +3,10 @@ import {
   AssetInputSchema,
   CashFlowInputSchema,
   failedFields,
+  filterQuery,
+  hasFilter,
   ManualPriceInputSchema,
+  parseTransactionFilter,
   TransactionInputSchema,
 } from "./schemas";
 
@@ -124,5 +127,49 @@ describe("CashFlowInputSchema / ManualPriceInputSchema / AssetInputSchema", () =
         native_currency: "BRL",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("parseTransactionFilter (decision 64)", () => {
+  it("keeps a full valid filter", () => {
+    expect(
+      parseTransactionFilter({
+        asset: "11111111-1111-4111-8111-111111111111",
+        type: "dividend",
+        from: "2026-01-01",
+        to: "2026-12-31",
+      }),
+    ).toEqual({
+      asset: "11111111-1111-4111-8111-111111111111",
+      type: "dividend",
+      from: "2026-01-01",
+      to: "2026-12-31",
+    });
+  });
+
+  it("drops each unusable field on its own and keeps the rest — a filter is navigation, not input", () => {
+    expect(parseTransactionFilter({ asset: "not-a-uuid", type: "nope", from: "2026-02-30", to: "2026-12-31" })).toEqual(
+      { asset: undefined, type: undefined, from: undefined, to: "2026-12-31" },
+    );
+    // An array or an empty string is simply absent.
+    expect(parseTransactionFilter({ type: ["buy", "sell"], asset: "" })).toEqual({
+      asset: undefined,
+      type: undefined,
+      from: undefined,
+      to: undefined,
+    });
+  });
+
+  it("drops an end before the start, keeping the start the person narrowed to", () => {
+    const f = parseTransactionFilter({ from: "2026-06-01", to: "2026-01-01" });
+    expect(f.from).toBe("2026-06-01");
+    expect(f.to).toBeUndefined();
+  });
+
+  it("hasFilter and filterQuery describe what is set", () => {
+    expect(hasFilter({})).toBe(false);
+    expect(hasFilter({ type: "buy" })).toBe(true);
+    expect(filterQuery({ type: "buy", from: "2026-01-01" })).toEqual({ type: "buy", from: "2026-01-01" });
+    expect(filterQuery({})).toEqual({});
   });
 });

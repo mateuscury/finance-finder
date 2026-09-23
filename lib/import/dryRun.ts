@@ -13,6 +13,9 @@ import type { MarketPack } from "@/packs/types";
 import { isDecimalString, parseDecimal, toDecimalString } from "@/lib/calc/decimal";
 import { normalizeIdentifier } from "@/lib/ledger/assets";
 import { failedFields, TransactionInputSchema } from "@/lib/ledger/schemas";
+import { isKernelError } from "@/lib/calc/errors";
+import { lotsAt } from "@/lib/calc/positions";
+import type { LedgerTransaction } from "@/lib/calc/types";
 import { resolveColumns, type CanonicalColumn, type ColumnMap } from "./mapping";
 
 /** An existing asset, as the action reads it: identity → id. */
@@ -42,6 +45,12 @@ export interface PreviewRow {
   /** The resolved asset, or null when the identity is not among the user's assets. */
   assetId: string | null;
   duplicate: boolean;
+  /**
+   * This row would make its asset sell more than it ever bought, counting the
+   * existing ledger and the rest of the file (SPEC §6, §9.1; decision 58).
+   * `errors` also carries "quantity", so every existing gate already refuses.
+   */
+  oversell: boolean;
   /** The row as the ledger schema parsed it, when valid and resolved. */
   parsed: ImportRow | null;
 }
@@ -139,7 +148,15 @@ export function dryRun(
       entry.rows.push(index);
       unresolved.set(key, entry);
     }
-    const row: PreviewRow = { index, values, errors, assetId: asset?.id ?? null, duplicate: false, parsed: null };
+    const row: PreviewRow = {
+      index,
+      values,
+      errors,
+      assetId: asset?.id ?? null,
+      duplicate: false,
+      oversell: false,
+      parsed: null,
+    };
     if (parsed.success && asset) {
       row.parsed = { ...parsed.data, asset_id: asset.id };
       const key = duplicateKey(row.parsed);
@@ -149,6 +166,8 @@ export function dryRun(
     }
     rows.push(row);
   });
+
+  markOversells(rows, existing);
 
   const previewHash = createHash("sha256")
     .update(JSON.stringify(rows.map((r) => r.values)))
@@ -166,4 +185,75 @@ export function dryRun(
       duplicates: rows.filter((r) => r.duplicate).length,
     },
   };
+}
+
+/**
+ * Marks every row whose sell the ledger cannot cover (SPEC §9.1, §6).
+ *
+ * Checked over the EXISTING rows plus the whole file, per asset, in trade-date
+ * order — so a buy further down the file still covers a sell above it when the
+ * buy is the earlier trade, and only a sell genuinely exceeding the position on
+ * its date is marked. `lotsAt` names the offending transaction, which is how
+ * the row is found rather than guessed.
+ *
+ * Duplicates are excluded because the default commit skips them; they are by
+ * definition already counted in `existing`.
+ */
+function markOversells(rows: PreviewRow[], existing: readonly KnownTransaction[]): void {
+  const planned = rows.filter((r) => r.parsed !== null && !r.duplicate && r.errors.length === 0);
+  if (planned.length === 0) return;
+  const assetIds = new Set(planned.map((r) => r.parsed!.asset_id));
+  const byRowId = new Map<string, PreviewRow>(planned.map((r) => [`row:${r.index}`, r]));
+
+  for (const assetId of assetIds) {
+    const ledger: LedgerTransaction[] = [
+      ...existing
+        .filter((t) => t.asset_id === assetId)
+        .map((t, i) => ({
+          id: `db:${String(i).padStart(9, "0")}`,
+          assetId,
+          tradeDate: t.trade_date,
+          type: t.type as LedgerTransaction["type"],
+          quantity: t.quantity,
+          unitPrice: t.unit_price,
+          currency: "XXX",
+          fees: "0",
+          fxRate: null,
+        })),
+      ...planned
+        .filter((r) => r.parsed!.asset_id === assetId)
+        .map((r) => ({
+          id: `row:${r.index}`,
+          assetId,
+          tradeDate: r.parsed!.trade_date,
+          type: r.parsed!.type,
+          quantity: r.parsed!.quantity,
+          unitPrice: r.parsed!.unit_price,
+          currency: "XXX",
+          fees: "0",
+          fxRate: null,
+        })),
+    ];
+    // One asset at a time, and one offender at a time: mark it, drop it, and
+    // look again, so a file with several bad sells names them all.
+    for (;;) {
+      try {
+        lotsAt(ledger, "9999-12-31");
+        break;
+      } catch (err) {
+        if (!isKernelError(err, "oversell")) throw err;
+        const culprit = String((err.details as Record<string, unknown>).transactionId ?? "");
+        const row = byRowId.get(culprit);
+        const at = ledger.findIndex((t) => t.id === culprit);
+        if (at === -1) break;
+        ledger.splice(at, 1);
+        // An existing row can be the one that tips over only because the file
+        // added a sell before it; the file's own rows are what we can mark.
+        if (!row) continue;
+        row.oversell = true;
+        if (!row.errors.includes("quantity")) row.errors.push("quantity");
+        row.parsed = null;
+      }
+    }
+  }
 }

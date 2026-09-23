@@ -20,6 +20,10 @@ export type ActionReason =
   | "asset_has_transactions"
   /** The base currency locks at the first transaction (decision 26). */
   | "base_locked"
+  /** The row would make this asset sell more than it ever bought (decision 58). */
+  | "oversell"
+  /** A pack whose assets are still held cannot be disabled (decision 61). */
+  | "pack_in_use"
   /** The database refused for a reason the code did not anticipate. */
   | "write_failed";
 

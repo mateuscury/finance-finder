@@ -273,6 +273,18 @@ export const ptBR: Copy = {
       edit: "Editar transação",
       save: "Salvar",
       delete: "Excluir",
+      filter: {
+        label: "Filtrar transações",
+        asset: "Ativo",
+        type: "Tipo",
+        from: "De",
+        to: "Até",
+        all: "Todos",
+        apply: "Filtrar",
+        clear: "Limpar",
+        showing: ({ n }) => (n === 1 ? "1 transação encontrada" : `${n} transações encontradas`),
+        none: "Nenhuma transação corresponde a este filtro.",
+      },
       import: "Importar um CSV",
       addAssetFirst: "Adicione um ativo primeiro.",
       imported: ({ n, skipped }) =>
@@ -494,6 +506,8 @@ export const ptBR: Copy = {
     asset_has_transactions: "Este ativo tem transações e não pode ser excluído.",
     base_locked:
       "A moeda base foi travada pela sua primeira transação. Confirme a redefinição para trocá-la e reconstruir o histórico.",
+    oversell: "Essa venda é maior do que a posição na data.",
+    pack_in_use: "Um pacote com ativos em carteira continua ativo; exclua ou mova esses ativos primeiro.",
     write_failed: "A alteração não foi salva.",
   },
   security: {

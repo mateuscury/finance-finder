@@ -224,7 +224,11 @@ export default async function ImportPage({ searchParams }: PageProps<"/transacti
                               )}
                             </td>
                             <td>
-                              {bad ? (
+                              {r.oversell ? (
+                                // Naming the rule beats naming the column: the
+                                // quantity is well-formed, the ledger is not.
+                                <span className="neg">⚠ {copy.status.reasons.oversell}</span>
+                              ) : bad ? (
                                 <span className="neg">⚠ {c.status.error({ fields: r.errors.join(", ") })}</span>
                               ) : r.assetId === null ? (
                                 <span className="muted">— {c.status.unresolved}</span>

@@ -266,6 +266,18 @@ export const en: Copy = {
       edit: "Edit transaction",
       save: "Save",
       delete: "Delete",
+      filter: {
+        label: "Filter transactions",
+        asset: "Asset",
+        type: "Type",
+        from: "From",
+        to: "To",
+        all: "All",
+        apply: "Filter",
+        clear: "Clear",
+        showing: ({ n }) => (n === 1 ? "1 transaction matches" : `${n} transactions match`),
+        none: "No transaction matches this filter.",
+      },
       import: "Import a CSV",
       addAssetFirst: "Add an asset first.",
       imported: ({ n, skipped }) =>
@@ -482,6 +494,8 @@ export const en: Copy = {
     asset_has_transactions: "This asset has transactions and cannot be deleted.",
     base_locked:
       "The base currency is locked by your first transaction. Confirm the reset to change it and rebuild history.",
+    oversell: "That sell is larger than the position on its date.",
+    pack_in_use: "A pack with held assets stays enabled; delete or re-home those assets first.",
     write_failed: "The change was not saved.",
   },
   security: {

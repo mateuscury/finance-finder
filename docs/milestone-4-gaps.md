@@ -38,7 +38,7 @@ kernel unit stops the session before any screen is touched.
 | ---- | ---------------------------------------------------------------- | ---------- | -------------- |
 | G-U1 | The SPEC states what the tree decided; US-015/US-016; decisions  | P5-U3      | done `5293633` |
 | G-U2 | Open cost in the kernel; the holdings model                      | G-U1       | done `d5357ac` |
-| G-U3 | Assets shows what you hold; the asset page shows its lots        | G-U2       | not started    |
+| G-U3 | Assets shows what you hold; the asset page shows its lots        | G-U2       | done `6ca248a` |
 | G-U4 | Transactions filters; the `oversell` write guard                 | G-U1       | not started    |
 | G-U5 | Liveness in the strip and Settings; `pack_in_use`; Refresh guard | G-U1       | not started    |
 | G-U6 | The runbook absorbs the gaps (P6–P8 amended); stories ticked     | G-U3–G-U5  | not started    |
