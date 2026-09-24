@@ -35,5 +35,5 @@ export const globalPack: MarketPack = {
     settlement: "T+0",
   },
   maintainers: ["mateuscury"],
-  status: "draft",
+  status: "supported",
 };

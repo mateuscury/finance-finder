@@ -1,6 +1,6 @@
 # packs/global
 
-Status: **draft**. Maintainers: @mateuscury.
+Status: **supported**. Maintainers: @mateuscury.
 
 Sources and series that belong to no single national market (PACKS.md §13).
 

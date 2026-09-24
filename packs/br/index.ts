@@ -18,6 +18,6 @@ export const brPack: MarketPack = {
   sources: [bcbSgsSource, ibgeSidraSource, brapiSource, tesouroTransparenteSource],
   calendar: brCalendar,
   maintainers: ["mateuscury"],
-  status: "draft",
+  status: "supported",
   dependencies: ["global"],
 };

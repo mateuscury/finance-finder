@@ -1,6 +1,6 @@
 # packs/br — Brazil
 
-Status: **draft**. Maintainers: @mateuscury.
+Status: **supported**. Maintainers: @mateuscury.
 
 ## Coverage
 

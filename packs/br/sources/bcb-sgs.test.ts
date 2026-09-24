@@ -31,6 +31,32 @@ describe("bcb-sgs adapter", () => {
     ]);
   });
 
+  it("survives SGS answering 200 with an HTML error page, and keeps the other refs", async () => {
+    // VERIFIED LIVE 2026-09-24 (Milestone 4 P8-U1): SGS intermittently returns
+    // "Requisição inválida!" as HTML with a 200 for a window it serves on the
+    // next attempt. Parsing that as JSON throws, and a throwing adapter loses
+    // every ref of the run — including the ones whose answers were fine.
+    const html = '<?xml version="1.0" encoding="pt-br"?><html><head><title>Requisição inválida!</title></head></html>';
+    const ctx = testContext({
+      now: "2025-06-30T12:00:00Z",
+      get: (url) =>
+        url.includes("bcdata.sgs.12")
+          ? textResponse(200, html, { "content-type": "text/html" })
+          : jsonResponse(200, [{ data: "02/01/2025", valor: "0.045513" }]),
+    });
+    const r = await fetchBcbSgs(
+      { capability: "series", refs: ["br.cdi", "br.selic"], from: "2025-01-02", to: "2025-01-03" },
+      ctx,
+    );
+    expect(r.warnings).toContain("bcb_sgs: non-JSON payload for 'br.cdi'");
+    // The ref that answered correctly still produced its point.
+    expect(r.points.map((p) => p.ref)).toEqual(["br.selic"]);
+    // And the broken ref certifies NOTHING, so its watermark cannot advance
+    // past a window that was never actually read.
+    expect(r.coverage?.find((c) => c.ref === "br.cdi")?.complete).toBe(false);
+    expect(r.coverage?.find((c) => c.ref === "br.selic")?.complete).toBe(true);
+  });
+
   it("normalizes percentage points exactly without using floating-point math", () => {
     expect(percentagePointsToUnitRate("0.045513")).toBe("0.00045513");
     expect(percentagePointsToUnitRate("1")).toBe("0.01");

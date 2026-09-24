@@ -767,6 +767,28 @@ about the tree that a later reader would otherwise rediscover.
    spec describes) showed no reason at all. `holdingsModel` now prefers the
    source's own error and carries it on the untraded row; three tests pin it.
 
+### Contract correction found while re-recording the fixtures (P8-U1)
+
+**BCB SGS intermittently answers 200 with an HTML error page.** Recording
+stopped on `Unexpected token '<', "<?xml vers"...`; the same window succeeded
+on the next attempt and six times in a row after that, while a 2024 window
+served JSON throughout. So it is not a rate limit, a block or a bad query —
+SGS simply returns "Requisição inválida!" as HTML, with a success status, for
+a request it will honour moments later.
+
+Production was already safe: `lib/packs/ingest.ts` catches a throwing adapter
+per source and records `adapter_threw`, so one flaky answer cannot take down a
+run. But the adapter parsed with `res.json()`, which throws before its own
+`!Array.isArray(body)` guard can fire — so a single malformed answer lost
+**every remaining ref of that fetch**, including the ones that answered
+correctly. The body is now parsed defensively: the malformed ref gets its own
+warning, certifies no coverage (so its watermark cannot advance past a window
+never actually read), and the other refs complete. A test pins it.
+
+This is the fourth upstream behaviour in this project that looks like success
+and is not, after PTAX's absent bulletin filter, SGS's 404-for-empty-window,
+and brapi's silently-ignored date range.
+
 ### Advisories recorded
 
 - **P1-U8, coverage floors.** `lib/calc` branches measured 93.6 % against

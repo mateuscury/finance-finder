@@ -120,7 +120,19 @@ export async function fetchBcbSgs(req: FetchRequest, ctx: FetchContext): Promise
       warnings.push(`bcb_sgs: HTTP ${res.status} for '${ref}'`);
       continue;
     }
-    const body = (await res.json()) as unknown;
+    // VERIFIED LIVE 2026-09-24: SGS intermittently answers 200 with an HTML
+    // error page ("Requisição inválida!") instead of JSON, for a window it
+    // serves correctly on the next attempt. `res.json()` throws on that, and
+    // an adapter that throws loses every remaining ref of the run — so the
+    // body is parsed defensively and the malformed answer becomes this
+    // source's own warning, which is what the guard below always meant.
+    let body: unknown;
+    try {
+      body = JSON.parse(await res.text()) as unknown;
+    } catch {
+      warnings.push(`bcb_sgs: non-JSON payload for '${ref}'`);
+      continue;
+    }
     if (!Array.isArray(body)) {
       warnings.push(`bcb_sgs: unexpected payload for '${ref}'`);
       continue;
