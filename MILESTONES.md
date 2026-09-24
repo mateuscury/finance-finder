@@ -688,6 +688,32 @@ unitPrice` over the open lots, `averageCost = openCost / quantity`,
    blended number where `openCost` refuses. Found by the code-quality pass
    on G-U2, not by a test; `averageCost` now derives from `openCost`.
 
+### Budgets measured 2026-09-24 (P6-U1)
+
+Decision 44 asked for measurement, not assertion. `docs/performance-budgets.md`
+is the record; `FF_BUDGETS=1 pnpm test:db` reproduces it from seed `20260924`.
+
+- **Every screen read is inside 500 ms except the two that value the portfolio
+  in the kernel**, and the CSV reader parses 20,000 rows in 10.4 ms — D-23 is
+  closed, `parseCsv` is not rewritten.
+- **`coverTotals` was 2,855 ms and is now 275 ms.** It asked the kernel for
+  `quantityAt` once per (snapshot date × asset); an asset's quantity can only
+  change on a date it traded, so the FIFO walk now runs once per traded date
+  and the dates between read it off a timeline. A view model, fixed in the
+  unit, tests unchanged.
+- **Blocked: 3.3 days/s against ≥ 50, and `valueLedger` 815 ms /
+  `readContributionWindow` 1,486 ms.** One cause: `compoundRate` re-walks every
+  business day since each lot opened, so five years of monthly contributions
+  cost ~152,000 Decimal iterations per valuation — 90 % of the measured cost.
+  Unblocking is two maintainer decisions, both outside P6-U1's remit: chain an
+  asset's accrual lots (~60× less work, and the BR golden must first gain a
+  multi-lot accrual case — today it has one lot per accrual asset and cannot
+  see the change), and batch the job's per-day write, or revise 50 days/s to
+  what an all-or-nothing per-day write can reach. Until then the daily cron is
+  instant and only a multi-year backfill is slow (~7 cron invocations for five
+  years). Detail, projections and the practical consequence:
+  `docs/performance-budgets.md`.
+
 ### Advisories recorded
 
 - **P1-U8, coverage floors.** `lib/calc` branches measured 93.6 % against
@@ -732,6 +758,15 @@ unitPrice` over the open lots, `averageCost = openCost / quantity`,
   it. Narrow (the row is by definition a repeat of one already counted),
   and the ledger shows it rather than failing (SPEC §6). Revisit if the
   synthetic ledger of P6-U1 makes it reachable.
+- **P6-U1, `priceOn` in the synthetic generator is a linear scan.** Each of
+  the 1,220 buys scans that asset's price rows to find the last one on or
+  before the trade date — about 1.5 M comparisons. The whole generator runs
+  in 480 ms, so an index would buy nothing a test tier notices; left simple
+  and obvious over fast.
+- **P6-U1, `timings` is module-level mutable state in the budgets dbtest.**
+  One `it` fills it and the table prints it. A second test in the file would
+  inherit the first one's rows. Acceptable while the file holds exactly one
+  test, which is the shape the unit specifies; a second test must reset it.
 - **P5, pack metadata labels are English in both languages.** Field labels
   on the asset form are the pack schema's keys humanised (P5-U1 by
   design: packs own their field names). A Portuguese label for "maturity"

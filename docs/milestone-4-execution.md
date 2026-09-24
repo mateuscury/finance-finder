@@ -154,7 +154,7 @@ fallback so the run continues end to end.
 | G-U4  | Spec gaps: Transactions filters; the `oversell` write guard             | G-U1       | done `3a8c69f`     |
 | G-U5  | Spec gaps: liveness, Instance, `pack_in_use`, the Refresh guard         | G-U1       | done `81ffff4`     |
 | G-U6  | Spec gaps: the runbook absorbs them (P6–P8 amended); stories ticked     | G-U3–G-U5  | done (this commit) |
-| P6-U1 | Synthetic ledger and performance budgets                                | G-U6       | not started        |
+| P6-U1 | Synthetic ledger and performance budgets                                | G-U6       | done (this commit) |
 | P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1      | not started        |
 | P7-U2 | Accessibility pass                                                      | P7-U1      | not started        |
 | P8-U1 | Fixtures re-recorded; packs `supported` (M-3)                           | P7-U2      | not started        |
@@ -166,7 +166,24 @@ live status; tick both indexes in the unit's own commit). They close what the
 Phase 5 review found: decisions the tree made that `SPEC.md` never recorded, and
 the product holes it never contemplated.
 
-**Blocked:** (none yet)
+**Blocked:**
+
+- **The snapshot job runs at 3.3 days/s against decision 44's ≥ 50, and two
+  kernel-valuing reads are over 500 ms** (`valueLedger` 815 ms,
+  `readContributionWindow` 1,486 ms). One cause: `compoundRate` re-walks every
+  business day since a lot opened, once per lot, so a five-year monthly
+  contribution costs ~152,000 Decimal iterations per valuation — 90 % of the
+  cost of valuing the synthetic portfolio. Measured and diagnosed in
+  `docs/performance-budgets.md`. **Unblocking it is two maintainer decisions**,
+  both outside what P6-U1 may change (kernel arithmetic, and the job's
+  all-or-nothing per-day write): chain an asset's accrual lots instead of
+  restarting each one (~60× less work; needs a multi-lot accrual case added to
+  the BR golden first, because today's golden has one lot per accrual asset and
+  cannot see the change), and batch `writeDay` across days — or revise the 50
+  days/s figure to what a per-day atomic write can reach. Consequence until
+  then: the daily cron is instant, but a five-year backfill spreads over ~7
+  cron invocations (~3 days at two crons a day). `coverTotals`, the third
+  failure, was a view model and was fixed in this unit (2,855 → 275 ms).
 
 ## 2. Units
 
