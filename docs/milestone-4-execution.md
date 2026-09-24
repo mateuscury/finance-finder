@@ -2163,3 +2163,47 @@ and at the top of the index's Blocked list:
   or passed by default; M-3 flipped with evidence; M-4 pending).
 - The Advisories recorded and the Contract corrections found.
 - `docs/DEPLOY.md` is the next step; nothing in it needs a code change.
+
+### The run of 2026-09-24 (Phases 6, 7 and 8)
+
+**Commits.** `352a325`..`9277112` on `main`, eight in all, each pushed and
+CI-verified:
+
+| Commit    | Unit                                                           |
+| --------- | -------------------------------------------------------------- |
+| `352a325` | P6-U1 — synthetic ledger and measured budgets                  |
+| `61fb9a2` | P7-U1 — ten smoke journeys, in CI                              |
+| `b34f3f9` | P7-U2 — accessibility pass                                     |
+| `87da61b` | P7-U1 follow-up — journey 03 no longer waits on the ingest job |
+| `ba51cfb` | P8-U1 — fixtures refreshed; packs `supported`                  |
+| `c601c0b` | P8-U2 — deploy runbook and a green release gate                |
+| `9277112` | the plan's Progress table                                      |
+
+**CI.** Run `35954180062` on `9277112`: `check`, `db`, `e2e` and `release` all
+green. The last of those runs `pnpm release:check` end to end — the first CI
+run in this project's history to do so.
+
+**The four touchpoints.**
+
+- **M-1 Git remote** — closed. The remote existed and every commit of this run
+  is pushed and green.
+- **M-2 Review gate** — closed earlier, in Phase 2 (`42cf33a`).
+- **M-3 `supported` status** — done, with the PACKS §12 evidence in
+  `ba51cfb`'s body: maintainer @mateuscury, CI run 35952870630 green, all 20
+  fixtures re-recorded live on 2026-09-24 with redaction verified.
+- **M-4 Deploy accounts** — **PENDING, and the only thing left.** It cannot be
+  done alone. `docs/DEPLOY.md` is written and needs no code change; it wants
+  the maintainer at the keyboard for the Supabase and Vercel account steps.
+
+**Blocked.** One item, in §1's Blocked list: the snapshot job runs at 3.3
+days/s against decision 44's ≥ 50, with `valueLedger` and
+`readContributionWindow` over 500 ms for the same reason. It is two maintainer
+decisions (kernel arithmetic, and the job's per-day atomic write), and
+`docs/DEPLOY.md` §2.4 records the cheapest mitigation that needs no code
+change: raising two literals to Vercel's 300 s maximum.
+
+**Recorded in `MILESTONES.md` §4.** "Budgets measured 2026-09-24", "Contract
+corrections found while implementing the journeys" (nine), "Contract
+correction found while re-recording the fixtures" (BCB SGS), "Platform facts
+verified while writing the deploy runbook", and two new advisories under
+"Advisories recorded".
