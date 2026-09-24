@@ -77,3 +77,53 @@ jobs:
       - name: Stop the stack
         if: always()
         run: supabase stop --no-backup
+
+  # The browser tier (MILESTONES.md §4 decision 46, decision 40's
+  # security-boundary journey). Like `db`, it starts its own stack and never
+  # skips. It builds AFTER exporting the stack's keys: `NEXT_PUBLIC_*` is
+  # inlined at build time, so `check`'s build cannot be reused here.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.72.7
+      - run: pnpm install --frozen-lockfile
+      - name: Start the local stack (migrations applied on start)
+        run: supabase start -x logflare,studio,vector
+      - name: Export the stack's keys under the names the app reads
+        run: |
+          set -a
+          eval "$(supabase status -o env)"
+          set +a
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000"
+            echo "CRON_SECRET=$(openssl rand -base64 32)"
+          } >> "$GITHUB_ENV"
+      - name: Install the browser the journeys run in
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build what the journeys exercise (CI runs `pnpm start`)
+        run: pnpm build
+      - run: pnpm test:e2e
+      - name: The report, when a journey failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+      - name: Stop the stack
+        if: always()
+        run: supabase stop --no-backup

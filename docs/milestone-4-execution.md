@@ -155,7 +155,7 @@ fallback so the run continues end to end.
 | G-U5  | Spec gaps: liveness, Instance, `pack_in_use`, the Refresh guard         | G-U1       | done `81ffff4`     |
 | G-U6  | Spec gaps: the runbook absorbs them (P6–P8 amended); stories ticked     | G-U3–G-U5  | done (this commit) |
 | P6-U1 | Synthetic ledger and performance budgets                                | G-U6       | done (this commit) |
-| P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1      | not started        |
+| P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1      | done (this commit) |
 | P7-U2 | Accessibility pass                                                      | P7-U1      | not started        |
 | P8-U1 | Fixtures re-recorded; packs `supported` (M-3)                           | P7-U2      | not started        |
 | P8-U2 | Deploy runbook, `.env.example`, release gate green                      | P8-U1      | not started        |

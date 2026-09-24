@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PACKS } from "@/packs";
 import { KernelDecimal, ZERO } from "@/lib/calc/decimal";
 import { valuePortfolio } from "@/lib/calc/portfolio";
-import type { LedgerTransaction } from "@/lib/calc/types";
+import { buildMarketData, type LedgerTransaction } from "@/lib/calc/types";
 import { toPortfolioInput } from "@/lib/ledger/rows";
 import type { AssetListItem } from "@/lib/ledger/queries";
 import { goldenLedgerRead, loadGoldenFixture } from "@/lib/testing/golden";
@@ -172,4 +172,37 @@ describe("holdingsModel over the golden ledger", () => {
     const values = confident.map((r) => new KernelDecimal(r.marketValueBase!));
     for (let i = 1; i < values.length; i += 1) expect(values[i - 1].gte(values[i])).toBe(true);
   });
+});
+
+describe("the unpriced reason (SPEC §9.4)", () => {
+  it("names the source's own error, which is the cause, over the kernel's no_price", () => {
+    // A held market-priced asset with no price at all: the kernel excludes it
+    // as unpriced, and the source says why there is nothing to price with.
+    const withSourceError = assetList.map((a) =>
+      a.instrument_kind === "br.fii" ? { ...a, sourceId: "br.brapi", sourceError: "missing_env:BRAPI_TOKEN" } : a,
+    );
+    const row = rowFor("fii", {
+      assets: withSourceError,
+      valuation: valuePortfolio({ ...toPortfolioInput(read), market: buildMarketData([], []) }, TODAY),
+    });
+    expect(row.status).toBe("unpriced");
+    expect(row.reason).toBe("missing_env:BRAPI_TOKEN");
+  });
+
+  it("falls back to the kernel's reason where no source recorded an error", () => {
+    const row = rowFor("fii", {
+      valuation: valuePortfolio({ ...toPortfolioInput(read), market: buildMarketData([], []) }, TODAY),
+    });
+    expect(row.status).toBe("unpriced");
+    expect(row.reason).toBe("no_price");
+  });
+});
+
+it("a just-created asset that holds nothing still says why it has no price (SPEC §9.4)", () => {
+  const untraded = assetList.map((a) =>
+    a.instrument_kind === "br.fii" ? { ...a, sourceId: "br.brapi", sourceError: "missing_env:BRAPI_TOKEN" } : a,
+  );
+  const row = rowFor("fii", { assets: untraded, transactions: [] });
+  expect(row.quantity).toBe("0");
+  expect(row.reason).toBe("missing_env:BRAPI_TOKEN");
 });

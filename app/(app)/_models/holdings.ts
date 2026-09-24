@@ -125,7 +125,10 @@ export function holdingsModel(input: HoldingsInput): HoldingsModel {
       unrealised: null,
       status: "ok",
       statusDate: null,
-      reason: null,
+      // SPEC §9.4 describes the row of an asset JUST CREATED — which holds
+      // nothing yet — saying why it has no price. That row returns from here,
+      // before any lot exists, so the source's error belongs on it too.
+      reason: asset.sourceError ?? null,
       ledgerError: null,
     };
 
@@ -154,8 +157,15 @@ export function holdingsModel(input: HoldingsInput): HoldingsModel {
     const holding = valued.get(asset.id);
     if (!holding) {
       // No row from the kernel: unpriced, or the whole valuation was unavailable.
+      //
+      // SPEC §9.4: "the reason comes from `ingest_cursors.last_error`". The
+      // source's own error is the CAUSE of the missing price, so it wins over
+      // the kernel's `no_price`, which only restates the symptom — a holding
+      // reading "br.brapi: missing_env:BRAPI_TOKEN" tells the owner what to
+      // fix, "no price at or before the date" does not. Accrual kinds carry no
+      // source and keep the kernel's reason, which is the only one they have.
       const gone = excluded.get(asset.id);
-      const reason = gone && gone.status === "unpriced" ? gone.reason : (asset.sourceError ?? null);
+      const reason = (asset.sourceError ?? null) || (gone && gone.status === "unpriced" ? gone.reason : null);
       const accrues = asset.valuation === "accrual" && input.valuation === null;
       return { ...row, status: accrues ? "accrues" : "unpriced", reason };
     }

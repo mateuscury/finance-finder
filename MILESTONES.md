@@ -714,6 +714,50 @@ is the record; `FF_BUDGETS=1 pnpm test:db` reproduces it from seed `20260924`.
   years). Detail, projections and the practical consequence:
   `docs/performance-budgets.md`.
 
+### Contract corrections found while implementing the journeys (P7-U1)
+
+The browser tier disagreed with the runbook in nine places. Each is a fact
+about the tree that a later reader would otherwise rediscover.
+
+1. **`e2e/setup.ts` and `e2e/helpers.ts` already existed** (P0-U3, P2-U6) with
+   `createOwner`, `signIn`, `restoreGoldenWithSnapshots`, `cspViolations`,
+   `setTheme` and `expectNoHorizontalOverflow`. They were extended, and the
+   per-journey throwaway owner that `e2e/README.md` documents was kept over the
+   runbook's single global one.
+2. **No journey may reach a live source.** `Refresh` runs ingestion from a
+   server action and `.env.local` carries a real `BRAPI_TOKEN`, so a local run
+   would have called brapi. `playwright.config.ts` now starts the server with
+   `BRAPI_TOKEN=""`; ingestion preflights on `!env[name]`, so the run is
+   offline and `missing_env:BRAPI_TOKEN` is reproducible rather than an
+   accident of whose machine ran it.
+3. **The `e2e` CI job builds after exporting the stack's keys.** `NEXT_PUBLIC_*`
+   is inlined at build time, so `check`'s build cannot be reused.
+4. **Assert what renders, not where the address bar points.** After the sign-in
+   action redirects to `/`, Next serves the MFA challenge in place and leaves
+   the URL at `/`. The boundary holds — the response carries the challenge and
+   no portfolio markup, verified — but a URL assertion reads it as a breach.
+   `09-boundary.spec.ts` asserts the thing that matters: no `.amount` reaches
+   an AAL1 session on any route.
+5. **`/transactions` has two `select[name=type]`** since the G-U4 filter: an
+   unscoped locator fills the filter, the form submits its default "buy", and
+   the guard under test is never reached. Every field is scoped to its form.
+6. **A sell carries a NEGATIVE quantity** (the form says so) and `trade_date`
+   has no default. Both are refused by field validation before the `oversell`
+   guard is consulted.
+7. **`waitForLoadState("networkidle")` resolves immediately on a page that is
+   already idle**, before the action's request starts — so navigating after it
+   aborted the import commit intermittently. The journey polls the ledger
+   instead, which is both the wait and the stronger assertion.
+8. **The nav menu is a `<details>`/`<summary>`** so it works without
+   JavaScript, which `getByRole("button")` does not match.
+9. **SPEC §9.4 was not implemented as written** - found by journey 03. The spec
+   says an unpriced row's reason "comes from `ingest_cursors.last_error`" and
+   that "a source with no API key is reported immediately as disabled with the
+   env var name". The tree preferred the kernel's `no_price`, which restates
+   the symptom, and a just-created asset (no lots yet - exactly the row the
+   spec describes) showed no reason at all. `holdingsModel` now prefers the
+   source's own error and carries it on the untraded row; three tests pin it.
+
 ### Advisories recorded
 
 - **P1-U8, coverage floors.** `lib/calc` branches measured 93.6 % against

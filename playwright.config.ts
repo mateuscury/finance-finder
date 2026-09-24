@@ -16,7 +16,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  reporter: "list",
+  // A browsable report in CI, where the artifact is all a reader gets; the
+  // terminal list locally.
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   timeout: 60_000,
   globalSetup: "./e2e/setup.ts",
   use: {
@@ -34,6 +36,12 @@ export default defineConfig({
     // Production build in CI so a journey exercises what deploys; the dev
     // server locally so a change is seen without a rebuild.
     command: process.env.CI ? "pnpm start" : "pnpm dev",
+    // No journey may reach a live source (P7-U1). `Refresh` runs ingestion
+    // from a server action, and `.env.local` carries a real BRAPI_TOKEN, so
+    // the server under test is started without it: `lib/packs/ingest.ts`
+    // preflights on `!env[name]`, so an empty value is a missing one and the
+    // run is offline, deterministic, and identical in CI.
+    env: { ...(process.env as Record<string, string>), BRAPI_TOKEN: "" },
     url: `${baseURL}/login`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
