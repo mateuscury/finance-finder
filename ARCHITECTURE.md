@@ -291,11 +291,16 @@ nav; light and dark are both first-class, neither an afterthought. Full tokens i
 6. `pnpm dev`, log in. Overview shows the setup card (`SPEC.md` §9.3) until
    the first asset, transaction and price exist.
 
+**Deploying.** `docs/DEPLOY.md` is the runbook: the Supabase project and the
+auth settings the dashboard must mirror, the Vercel project and its variables,
+the two crons and what Hobby actually guarantees of them, the owner bootstrap,
+and rollback. Performed with the maintainer, on their own accounts (decision
+43).
+
 **Production-data gate.** `pnpm release:check` is intentionally stricter than
 CI and must pass before entering real portfolio data. It rejects draft packs,
-stub adapters, missing replay/golden fixtures, placeholder UX, absent kernel
-modules, and the currently unimplemented full-restore path. See
-`MILESTONES.md`.
+stub adapters, missing replay/golden fixtures, placeholder UX and absent
+kernel modules. It passes as of Milestone 4 Phase 8. See `MILESTONES.md`.
 
 **Adding a new country / market.** This is a pack, not a kernel change. See
 `PACKS.md` — add `packs/<id>/`, implement its instruments/series/sources against

@@ -117,26 +117,51 @@ pnpm db:start / db:reset # local Supabase (Docker)
 5. `fixtures/portfolio.json` + hand-computed `fixtures/expected.json` (the real gate).
 6. `README.md` with Coverage, Sources, Quirks. `pnpm test:packs` green. `pnpm codeowners`.
 
-## Current state (2026-09-21)
+## Current state (2026-09-24)
 
 Milestones 1 (trusted ingestion), 2 (financial kernel and recovery) and 3
-(authenticated ledger) are complete; `packs/br` and `packs/global` remain
-`draft`. `pnpm release:check` is red only on the two draft packs.
+(authenticated ledger) are complete. **Milestone 4 — "Brazil to production
+(MVP)" — is through Phase 8.** `packs/br` and `packs/global` are
+**`supported`** and **`pnpm release:check` passes** ("Release readiness checks
+passed."), for the first time.
 
-**Milestone 4 — "Brazil to production (MVP)" — is in progress.** Plan:
-`docs/milestone-4-plan.md` (conventions, decisions 32–52 — all confirmed
-and recorded in `MILESTONES.md` §4 — and the technical-debt inventory paid
-in Phase 1). Runbook: `docs/milestone-4-execution.md` (one unit per commit;
-its index is the live status). Phases 0–5 are done: the ten screens are
-designed on the SPEC §10 tokens. `br.stock`, budgets, smoke journeys,
-`supported` packs and the first deploy are the rest of this milestone. The
-UK canary is Milestone 5.
+Plan: `docs/milestone-4-plan.md` (conventions, decisions 32–52). Runbook:
+`docs/milestone-4-execution.md` (one unit per commit; its §1 index is the live
+status). Phases 0–8 are done, plus the Phase 5b spec gaps
+(`docs/milestone-4-gaps.md`, decisions 56–66).
 
-Between Phase 5 and Phase 6: `docs/milestone-4-gaps.md` (decisions 56–66,
-units G-U1…G-U6) is **done** — the spec gaps the Phase 5 review found:
-positions on Assets, Transactions filters, instance liveness in the strip
-and Settings → Instance, and the `oversell` and `pack_in_use` guards.
-**Next: P6-U1** (synthetic five-year ledger and measured budgets).
+**Next and last: P9-U1, the first deploy** — `docs/DEPLOY.md`, performed with
+the maintainer on their own Vercel and Supabase accounts (M-4, decision 43).
+It cannot be done unattended. The UK canary is Milestone 5.
+
+What Phases 6–8 added, and what a later reader most needs to know:
+
+- **The budgets are measured, not asserted** (`docs/performance-budgets.md`,
+  `FF_BUDGETS=1 pnpm test:db` over `lib/testing/synthetic.ts`). Every screen
+  read is inside 500 ms except the two that value the portfolio in the kernel,
+  and 20k CSV rows parse in 10 ms (D-23 closed).
+- **One budget is BLOCKED and is two maintainer decisions** (MILESTONES §4,
+  "Budgets measured"): `runSnapshots` does 3.3 days/s against a target of 50,
+  because `compoundRate` re-walks every business day since each lot opened —
+  90 % of the cost of valuing the synthetic portfolio. Chaining an asset's
+  accrual lots is a KERNEL arithmetic change and today's BR golden cannot see
+  it (one lot per accrual asset), so it needs a multi-lot golden case first.
+  Consequence today: the daily cron is instant; only a multi-year backfill is
+  slow.
+- **Ten browser journeys run in CI** (`e2e/`, the `e2e` job). They run OFFLINE
+  by construction — the server under test starts without `BRAPI_TOKEN`. Two
+  rules they cost real time to learn: assert what RENDERS, not the URL (after
+  sign-in the MFA challenge is served in place at `/`), and wait on a RESULT,
+  never `waitForLoadState`, which resolves instantly on an idle page.
+- **`ingest_cursors` is global state with no `user_id`.** A journey that
+  depends on it passes locally on a previous run's leftovers and fails in CI
+  on a clean database. Write what you assert.
+- **BCB SGS intermittently answers 200 with an HTML error page** for a window
+  it serves correctly moments later — the fourth upstream behaviour here that
+  looks like success and is not.
+- **Accessibility is walked and recorded** (`docs/accessibility.md`); the
+  contrast half is enforced by `lib/testing/contrast.test.ts`, which reads the
+  tokens out of `globals.css`.
 
 From Milestone 1: five real adapters with offline fixtures; `lib/packs`;
 `PACK_API_VERSION` 3; forward migrations `initial_schema_hardening`,

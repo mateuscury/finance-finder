@@ -31,7 +31,12 @@ pnpm dev
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm test:packs
+pnpm test:db                      # needs the local stack up
+pnpm test:e2e                     # browser journeys; starts its own server
 ```
+
+Deploying to your own Vercel + Supabase accounts:
+[`docs/DEPLOY.md`](./docs/DEPLOY.md).
 
 ## Contributing a market pack
 
@@ -41,18 +46,26 @@ conformance suite in `packs/conformance/`. `pnpm test:packs` is the gate.
 ## Status
 
 Milestones 1 (trusted ingestion), 2 (financial kernel and recovery) and 3
-(authenticated ledger) are complete: the kernel reproduces the BR golden
-portfolio to 1e-8, a backup round-trips through a real Postgres, and the
-owner can sign in (password + TOTP), keep the ledger, import a CSV, and
-see daily snapshots rebuilt by a resumable job. Pages are functional and
-unstyled until Milestone 5; packs `br` and `global` are draft. Status of
-record: `MILESTONES.md`.
+(authenticated ledger) are complete, and **Milestone 4 — "Brazil to
+production" — is through Phase 8**: the ten screens are built on the SPEC §10
+tokens in English and Brazilian Portuguese, ten browser journeys run in CI
+alongside the unit and real-database tiers, the performance budgets are
+measured (`docs/performance-budgets.md`), the accessibility pass is walked
+(`docs/accessibility.md`), and `packs/br` and `packs/global` are
+**supported**. `pnpm release:check` passes.
 
-**Do not enter real portfolio data yet.** Normal CI validates development work,
-including explicitly skipped draft-pack tests. `pnpm release:check` is the
-separate production-data gate and intentionally fails until all adapters,
-financial golden tests, authentication screens, and full backup restore are
-implemented. Draft packs are never enabled for new users.
+What remains of Milestone 4 is the first deploy, which needs the maintainer's
+own accounts: [`docs/DEPLOY.md`](./docs/DEPLOY.md). The UK canary is
+Milestone 5. Status of record: [`MILESTONES.md`](./MILESTONES.md).
+
+**Before entering real portfolio data**, run the gate yourself:
+
+```bash
+pnpm release:check
+```
+
+It must print "Release readiness checks passed." Green CI is a weaker signal —
+it does not include the release check.
 
 ## Importing transactions from CSV
 

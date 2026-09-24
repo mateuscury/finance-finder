@@ -158,7 +158,7 @@ fallback so the run continues end to end.
 | P7-U1 | Smoke journeys, including the security-boundary journey                 | P6-U1      | done (this commit) |
 | P7-U2 | Accessibility pass                                                      | P7-U1      | done (this commit) |
 | P8-U1 | Fixtures re-recorded; packs `supported` (M-3)                           | P7-U2      | done (this commit) |
-| P8-U2 | Deploy runbook, `.env.example`, release gate green                      | P8-U1      | not started        |
+| P8-U2 | Deploy runbook, `.env.example`, release gate green                      | P8-U1      | done (this commit) |
 | P9-U1 | First deploy with the maintainer (M-4)                                  | P8-U2      | not started        |
 
 The `G-U*` units are specified in `docs/milestone-4-gaps.md` (its §1 is their

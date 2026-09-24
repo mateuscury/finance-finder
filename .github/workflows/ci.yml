@@ -127,3 +127,44 @@ jobs:
       - name: Stop the stack
         if: always()
         run: supabase stop --no-backup
+
+  # The production-data gate (MILESTONES.md, "Do not enter real portfolio data
+  # until `pnpm release:check` passes"). It is the whole pyramid plus the
+  # readiness script, so it runs on `main` only — `check`, `db` and `e2e`
+  # already cover a pull request.
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.72.7
+      - run: pnpm install --frozen-lockfile
+      - name: Start the local stack (migrations applied on start)
+        run: supabase start -x logflare,studio,vector
+      - name: Export the stack's keys under the names the app reads
+        run: |
+          set -a
+          eval "$(supabase status -o env)"
+          set +a
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000"
+            echo "CRON_SECRET=$(openssl rand -base64 32)"
+          } >> "$GITHUB_ENV"
+      - name: Install the browser the journeys run in
+        run: pnpm exec playwright install --with-deps chromium
+      - name: The gate itself
+        run: pnpm release:check
+      - name: Stop the stack
+        if: always()
+        run: supabase stop --no-backup

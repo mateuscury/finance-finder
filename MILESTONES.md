@@ -789,6 +789,36 @@ This is the fourth upstream behaviour in this project that looks like success
 and is not, after PTAX's absent bulletin filter, SGS's 404-for-empty-window,
 and brapi's silently-ignored date range.
 
+### Platform facts verified while writing the deploy runbook (P8-U2)
+
+Checked against Vercel's and Supabase's current documentation rather than
+written from memory, because `docs/DEPLOY.md` is followed against real
+accounts.
+
+- **Vercel Hobby crons run at most once per day, with per-hour precision
+  (±59 minutes).** Both of this project's schedules qualify; an expression
+  that would run more often fails at deploy time. A 21:30 job may fire any
+  time in the 21:00 hour — the runbook says so, so a late run is not read as
+  a broken one. Crons fire against production deployments only.
+- **D-27 resolved: Fluid compute is on by default and Hobby's function
+  maximum is 300 s**, not the 60 s this project ships in
+  `lib/cron/budget.ts`. The literals are deliberately left at 60 (correct
+  either way); `docs/DEPLOY.md` §2.4 documents raising both to 300 and what
+  it buys — at the measured 3.3 days/s, a first backfill of five years
+  catches up in about two invocations instead of seven. That is the cheapest
+  mitigation of the blocked Phase 6 budget and needs no code change beyond
+  two literals.
+- **A Supabase Free project pauses after a week of inactivity** and is
+  restored from the dashboard; free is 500 MB of database and 5 GB of egress.
+  The weekday crons are themselves activity, so a deployed instance stays
+  awake.
+
+**`release:check` ordered `pnpm test:e2e` before `pnpm build`.** Harmless
+locally, where Playwright starts `pnpm dev`, and broken in CI, where it starts
+`pnpm start` and there is nothing built yet. The build now precedes the
+journeys — which is also the honest order, since the journeys are meant to
+exercise what deploys.
+
 ### Advisories recorded
 
 - **P1-U8, coverage floors.** `lib/calc` branches measured 93.6 % against
