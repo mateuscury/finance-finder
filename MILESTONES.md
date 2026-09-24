@@ -750,6 +750,15 @@ about the tree that a later reader would otherwise rediscover.
    instead, which is both the wait and the stronger assertion.
 8. **The nav menu is a `<details>`/`<summary>`** so it works without
    JavaScript, which `getByRole("button")` does not match.
+   8b. **A journey must not wait on the ingest job.** Journey 03 asserted the
+   unpriced reason after pressing Refresh, which schedules ingestion AFTER the
+   response — and that job talks to every source the asset's kinds need. It
+   passed locally on a cursor an earlier run had left behind and failed in CI
+   on a clean database. `ingest_cursors` has no `user_id`, so it is global
+   state that survives between journeys: a local pass proves nothing unless
+   the table is cleared first. The journey now writes the cursor itself and
+   asserts what it actually owns — that the SCREEN names the variable and
+   offers §9.4's two actions.
 9. **SPEC §9.4 was not implemented as written** - found by journey 03. The spec
    says an unpriced row's reason "comes from `ingest_cursors.last_error`" and
    that "a source with no API key is reported immediately as disabled with the
